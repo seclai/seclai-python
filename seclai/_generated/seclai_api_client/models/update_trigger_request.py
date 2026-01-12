@@ -11,7 +11,9 @@ from ..models.agent_trigger_type import AgentTriggerType
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.update_trigger_request_metadata_type_0 import UpdateTriggerRequestMetadataType0
+    from ..models.update_trigger_request_metadata_type_0 import (
+        UpdateTriggerRequestMetadataType0,
+    )
 
 
 T = TypeVar("T", bound="UpdateTriggerRequest")
@@ -37,7 +39,9 @@ class UpdateTriggerRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.update_trigger_request_metadata_type_0 import UpdateTriggerRequestMetadataType0
+        from ..models.update_trigger_request_metadata_type_0 import (
+            UpdateTriggerRequestMetadataType0,
+        )
 
         input_: None | str | Unset
         if isinstance(self.input_, Unset):
@@ -93,7 +97,9 @@ class UpdateTriggerRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.update_trigger_request_metadata_type_0 import UpdateTriggerRequestMetadataType0
+        from ..models.update_trigger_request_metadata_type_0 import (
+            UpdateTriggerRequestMetadataType0,
+        )
 
         d = dict(src_dict)
 
@@ -123,7 +129,9 @@ class UpdateTriggerRequest:
 
         knowledge_base_id = _parse_knowledge_base_id(d.pop("knowledge_base_id", UNSET))
 
-        def _parse_metadata(data: object) -> None | Unset | UpdateTriggerRequestMetadataType0:
+        def _parse_metadata(
+            data: object,
+        ) -> None | Unset | UpdateTriggerRequestMetadataType0:
             if data is None:
                 return data
             if isinstance(data, Unset):

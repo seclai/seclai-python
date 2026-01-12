@@ -19,9 +19,9 @@ T = TypeVar("T", bound="FileUploadConfigResponseSupportedTypes")
 class FileUploadConfigResponseSupportedTypes:
     """Map of MIME types to file info with 'ext' and 'category' keys"""
 
-    additional_properties: dict[str, FileUploadConfigResponseSupportedTypesAdditionalProperty] = _attrs_field(
-        init=False, factory=dict
-    )
+    additional_properties: dict[
+        str, FileUploadConfigResponseSupportedTypesAdditionalProperty
+    ] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         field_dict: dict[str, Any] = {}
@@ -41,21 +41,31 @@ class FileUploadConfigResponseSupportedTypes:
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
-            additional_property = FileUploadConfigResponseSupportedTypesAdditionalProperty.from_dict(prop_dict)
+            additional_property = (
+                FileUploadConfigResponseSupportedTypesAdditionalProperty.from_dict(
+                    prop_dict
+                )
+            )
 
             additional_properties[prop_name] = additional_property
 
-        file_upload_config_response_supported_types.additional_properties = additional_properties
+        file_upload_config_response_supported_types.additional_properties = (
+            additional_properties
+        )
         return file_upload_config_response_supported_types
 
     @property
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> FileUploadConfigResponseSupportedTypesAdditionalProperty:
+    def __getitem__(
+        self, key: str
+    ) -> FileUploadConfigResponseSupportedTypesAdditionalProperty:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: FileUploadConfigResponseSupportedTypesAdditionalProperty) -> None:
+    def __setitem__(
+        self, key: str, value: FileUploadConfigResponseSupportedTypesAdditionalProperty
+    ) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

@@ -16,7 +16,9 @@ def _get_kwargs(
     _kwargs: dict[str, Any] = {
         "method": "delete",
         "url": "/api/contents/{source_connection_content_version}".format(
-            source_connection_content_version=quote(str(source_connection_content_version), safe=""),
+            source_connection_content_version=quote(
+                str(source_connection_content_version), safe=""
+            ),
         ),
     }
 

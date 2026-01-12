@@ -10,8 +10,12 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.test_prompt_call_request_json_template_type_0 import TestPromptCallRequestJsonTemplateType0
-    from ..models.test_prompt_call_request_manual_inputs_type_0 import TestPromptCallRequestManualInputsType0
+    from ..models.test_prompt_call_request_json_template_type_0 import (
+        TestPromptCallRequestJsonTemplateType0,
+    )
+    from ..models.test_prompt_call_request_manual_inputs_type_0 import (
+        TestPromptCallRequestManualInputsType0,
+    )
 
 
 T = TypeVar("T", bound="TestPromptCallRequest")
@@ -53,8 +57,12 @@ class TestPromptCallRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.test_prompt_call_request_json_template_type_0 import TestPromptCallRequestJsonTemplateType0
-        from ..models.test_prompt_call_request_manual_inputs_type_0 import TestPromptCallRequestManualInputsType0
+        from ..models.test_prompt_call_request_json_template_type_0 import (
+            TestPromptCallRequestJsonTemplateType0,
+        )
+        from ..models.test_prompt_call_request_manual_inputs_type_0 import (
+            TestPromptCallRequestManualInputsType0,
+        )
 
         model = self.model
 
@@ -155,8 +163,12 @@ class TestPromptCallRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.test_prompt_call_request_json_template_type_0 import TestPromptCallRequestJsonTemplateType0
-        from ..models.test_prompt_call_request_manual_inputs_type_0 import TestPromptCallRequestManualInputsType0
+        from ..models.test_prompt_call_request_json_template_type_0 import (
+            TestPromptCallRequestJsonTemplateType0,
+        )
+        from ..models.test_prompt_call_request_manual_inputs_type_0 import (
+            TestPromptCallRequestManualInputsType0,
+        )
 
         d = dict(src_dict)
         model = d.pop("model")
@@ -187,9 +199,13 @@ class TestPromptCallRequest:
                 return data
             return cast(None | str | Unset, data)
 
-        current_step_input = _parse_current_step_input(d.pop("current_step_input", UNSET))
+        current_step_input = _parse_current_step_input(
+            d.pop("current_step_input", UNSET)
+        )
 
-        def _parse_json_template(data: object) -> None | TestPromptCallRequestJsonTemplateType0 | Unset:
+        def _parse_json_template(
+            data: object,
+        ) -> None | TestPromptCallRequestJsonTemplateType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -197,7 +213,9 @@ class TestPromptCallRequest:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                json_template_type_0 = TestPromptCallRequestJsonTemplateType0.from_dict(data)
+                json_template_type_0 = TestPromptCallRequestJsonTemplateType0.from_dict(
+                    data
+                )
 
                 return json_template_type_0
             except (TypeError, ValueError, AttributeError, KeyError):
@@ -206,7 +224,9 @@ class TestPromptCallRequest:
 
         json_template = _parse_json_template(d.pop("json_template", UNSET))
 
-        def _parse_manual_inputs(data: object) -> None | TestPromptCallRequestManualInputsType0 | Unset:
+        def _parse_manual_inputs(
+            data: object,
+        ) -> None | TestPromptCallRequestManualInputsType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -214,7 +234,9 @@ class TestPromptCallRequest:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                manual_inputs_type_0 = TestPromptCallRequestManualInputsType0.from_dict(data)
+                manual_inputs_type_0 = TestPromptCallRequestManualInputsType0.from_dict(
+                    data
+                )
 
                 return manual_inputs_type_0
             except (TypeError, ValueError, AttributeError, KeyError):

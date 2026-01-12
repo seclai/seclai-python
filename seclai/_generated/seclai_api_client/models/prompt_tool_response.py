@@ -9,7 +9,9 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.prompt_tool_response_headers_type_0 import PromptToolResponseHeadersType0
+    from ..models.prompt_tool_response_headers_type_0 import (
+        PromptToolResponseHeadersType0,
+    )
 
 
 T = TypeVar("T", bound="PromptToolResponse")
@@ -45,7 +47,9 @@ class PromptToolResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.prompt_tool_response_headers_type_0 import PromptToolResponseHeadersType0
+        from ..models.prompt_tool_response_headers_type_0 import (
+            PromptToolResponseHeadersType0,
+        )
 
         id = self.id
 
@@ -125,7 +129,9 @@ class PromptToolResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.prompt_tool_response_headers_type_0 import PromptToolResponseHeadersType0
+        from ..models.prompt_tool_response_headers_type_0 import (
+            PromptToolResponseHeadersType0,
+        )
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -161,7 +167,9 @@ class PromptToolResponse:
 
         example = _parse_example(d.pop("example", UNSET))
 
-        def _parse_headers(data: object) -> None | PromptToolResponseHeadersType0 | Unset:
+        def _parse_headers(
+            data: object,
+        ) -> None | PromptToolResponseHeadersType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):

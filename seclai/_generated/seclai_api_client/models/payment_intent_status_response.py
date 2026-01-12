@@ -43,7 +43,9 @@ class PaymentIntentStatusResponse:
         payment_intent: dict[str, Any] | None | Unset
         if isinstance(self.payment_intent, Unset):
             payment_intent = UNSET
-        elif isinstance(self.payment_intent, PaymentIntentStatusResponsePaymentIntentType0):
+        elif isinstance(
+            self.payment_intent, PaymentIntentStatusResponsePaymentIntentType0
+        ):
             payment_intent = self.payment_intent.to_dict()
         else:
             payment_intent = self.payment_intent
@@ -72,7 +74,9 @@ class PaymentIntentStatusResponse:
 
         success = d.pop("success")
 
-        def _parse_payment_intent(data: object) -> None | PaymentIntentStatusResponsePaymentIntentType0 | Unset:
+        def _parse_payment_intent(
+            data: object,
+        ) -> None | PaymentIntentStatusResponsePaymentIntentType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -80,12 +84,16 @@ class PaymentIntentStatusResponse:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                payment_intent_type_0 = PaymentIntentStatusResponsePaymentIntentType0.from_dict(data)
+                payment_intent_type_0 = (
+                    PaymentIntentStatusResponsePaymentIntentType0.from_dict(data)
+                )
 
                 return payment_intent_type_0
             except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(None | PaymentIntentStatusResponsePaymentIntentType0 | Unset, data)
+            return cast(
+                None | PaymentIntentStatusResponsePaymentIntentType0 | Unset, data
+            )
 
         payment_intent = _parse_payment_intent(d.pop("payment_intent", UNSET))
 

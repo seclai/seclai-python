@@ -10,7 +10,9 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.test_retrieval_request_metadata_filter_type_0 import TestRetrievalRequestMetadataFilterType0
+    from ..models.test_retrieval_request_metadata_filter_type_0 import (
+        TestRetrievalRequestMetadataFilterType0,
+    )
 
 
 T = TypeVar("T", bound="TestRetrievalRequest")
@@ -48,7 +50,9 @@ class TestRetrievalRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.test_retrieval_request_metadata_filter_type_0 import TestRetrievalRequestMetadataFilterType0
+        from ..models.test_retrieval_request_metadata_filter_type_0 import (
+            TestRetrievalRequestMetadataFilterType0,
+        )
 
         knowledge_base_id = str(self.knowledge_base_id)
 
@@ -127,7 +131,9 @@ class TestRetrievalRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.test_retrieval_request_metadata_filter_type_0 import TestRetrievalRequestMetadataFilterType0
+        from ..models.test_retrieval_request_metadata_filter_type_0 import (
+            TestRetrievalRequestMetadataFilterType0,
+        )
 
         d = dict(src_dict)
         knowledge_base_id = UUID(d.pop("knowledge_base_id"))
@@ -171,7 +177,9 @@ class TestRetrievalRequest:
 
         content_type = d.pop("content_type", UNSET)
 
-        def _parse_metadata_filter(data: object) -> None | TestRetrievalRequestMetadataFilterType0 | Unset:
+        def _parse_metadata_filter(
+            data: object,
+        ) -> None | TestRetrievalRequestMetadataFilterType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -179,7 +187,9 @@ class TestRetrievalRequest:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                metadata_filter_type_0 = TestRetrievalRequestMetadataFilterType0.from_dict(data)
+                metadata_filter_type_0 = (
+                    TestRetrievalRequestMetadataFilterType0.from_dict(data)
+                )
 
                 return metadata_filter_type_0
             except (TypeError, ValueError, AttributeError, KeyError):

@@ -6,7 +6,10 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalProperty")
+T = TypeVar(
+    "T",
+    bound="BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalProperty",
+)
 
 
 @_attrs_define
@@ -24,9 +27,13 @@ class BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalPro
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        branch_current_state_response_dependencies_type_0_additional_property_additional_property = cls()
+        branch_current_state_response_dependencies_type_0_additional_property_additional_property = (
+            cls()
+        )
 
-        branch_current_state_response_dependencies_type_0_additional_property_additional_property.additional_properties = d
+        branch_current_state_response_dependencies_type_0_additional_property_additional_property.additional_properties = (
+            d
+        )
         return branch_current_state_response_dependencies_type_0_additional_property_additional_property
 
     @property

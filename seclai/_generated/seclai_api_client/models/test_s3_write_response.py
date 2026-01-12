@@ -9,7 +9,9 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.test_s3_write_response_result_type_0 import TestS3WriteResponseResultType0
+    from ..models.test_s3_write_response_result_type_0 import (
+        TestS3WriteResponseResultType0,
+    )
 
 
 T = TypeVar("T", bound="TestS3WriteResponse")
@@ -32,7 +34,9 @@ class TestS3WriteResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.test_s3_write_response_result_type_0 import TestS3WriteResponseResultType0
+        from ..models.test_s3_write_response_result_type_0 import (
+            TestS3WriteResponseResultType0,
+        )
 
         success = self.success
 
@@ -66,7 +70,9 @@ class TestS3WriteResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.test_s3_write_response_result_type_0 import TestS3WriteResponseResultType0
+        from ..models.test_s3_write_response_result_type_0 import (
+            TestS3WriteResponseResultType0,
+        )
 
         d = dict(src_dict)
         success = d.pop("success")
@@ -80,7 +86,9 @@ class TestS3WriteResponse:
 
         error = _parse_error(d.pop("error", UNSET))
 
-        def _parse_result(data: object) -> None | TestS3WriteResponseResultType0 | Unset:
+        def _parse_result(
+            data: object,
+        ) -> None | TestS3WriteResponseResultType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):

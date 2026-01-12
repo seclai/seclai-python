@@ -7,7 +7,9 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.file_upload_config_response_supported_types import FileUploadConfigResponseSupportedTypes
+    from ..models.file_upload_config_response_supported_types import (
+        FileUploadConfigResponseSupportedTypes,
+    )
 
 
 T = TypeVar("T", bound="FileUploadConfigResponse")
@@ -45,12 +47,16 @@ class FileUploadConfigResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.file_upload_config_response_supported_types import FileUploadConfigResponseSupportedTypes
+        from ..models.file_upload_config_response_supported_types import (
+            FileUploadConfigResponseSupportedTypes,
+        )
 
         d = dict(src_dict)
         max_file_size = d.pop("max_file_size")
 
-        supported_types = FileUploadConfigResponseSupportedTypes.from_dict(d.pop("supported_types"))
+        supported_types = FileUploadConfigResponseSupportedTypes.from_dict(
+            d.pop("supported_types")
+        )
 
         file_upload_config_response = cls(
             max_file_size=max_file_size,

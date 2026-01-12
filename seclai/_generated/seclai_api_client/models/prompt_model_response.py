@@ -90,19 +90,25 @@ class PromptModelResponse:
         if isinstance(self.input_1h_cache_write_credits_per_1000_tokens, Unset):
             input_1h_cache_write_credits_per_1000_tokens = UNSET
         else:
-            input_1h_cache_write_credits_per_1000_tokens = self.input_1h_cache_write_credits_per_1000_tokens
+            input_1h_cache_write_credits_per_1000_tokens = (
+                self.input_1h_cache_write_credits_per_1000_tokens
+            )
 
         input_5m_cache_write_credits_per_1000_tokens: float | None | Unset
         if isinstance(self.input_5m_cache_write_credits_per_1000_tokens, Unset):
             input_5m_cache_write_credits_per_1000_tokens = UNSET
         else:
-            input_5m_cache_write_credits_per_1000_tokens = self.input_5m_cache_write_credits_per_1000_tokens
+            input_5m_cache_write_credits_per_1000_tokens = (
+                self.input_5m_cache_write_credits_per_1000_tokens
+            )
 
         input_cache_hit_credits_per_1000_tokens: float | None | Unset
         if isinstance(self.input_cache_hit_credits_per_1000_tokens, Unset):
             input_cache_hit_credits_per_1000_tokens = UNSET
         else:
-            input_cache_hit_credits_per_1000_tokens = self.input_cache_hit_credits_per_1000_tokens
+            input_cache_hit_credits_per_1000_tokens = (
+                self.input_cache_hit_credits_per_1000_tokens
+            )
 
         input_credits_per_1000_tokens: float | None | Unset
         if isinstance(self.input_credits_per_1000_tokens, Unset):
@@ -178,17 +184,25 @@ class PromptModelResponse:
             }
         )
         if input_1h_cache_write_credits_per_1000_tokens is not UNSET:
-            field_dict["input_1h_cache_write_credits_per_1000_tokens"] = input_1h_cache_write_credits_per_1000_tokens
+            field_dict["input_1h_cache_write_credits_per_1000_tokens"] = (
+                input_1h_cache_write_credits_per_1000_tokens
+            )
         if input_5m_cache_write_credits_per_1000_tokens is not UNSET:
-            field_dict["input_5m_cache_write_credits_per_1000_tokens"] = input_5m_cache_write_credits_per_1000_tokens
+            field_dict["input_5m_cache_write_credits_per_1000_tokens"] = (
+                input_5m_cache_write_credits_per_1000_tokens
+            )
         if input_cache_hit_credits_per_1000_tokens is not UNSET:
-            field_dict["input_cache_hit_credits_per_1000_tokens"] = input_cache_hit_credits_per_1000_tokens
+            field_dict["input_cache_hit_credits_per_1000_tokens"] = (
+                input_cache_hit_credits_per_1000_tokens
+            )
         if input_credits_per_1000_tokens is not UNSET:
             field_dict["input_credits_per_1000_tokens"] = input_credits_per_1000_tokens
         if last_used is not UNSET:
             field_dict["last_used"] = last_used
         if output_credits_per_1000_tokens is not UNSET:
-            field_dict["output_credits_per_1000_tokens"] = output_credits_per_1000_tokens
+            field_dict["output_credits_per_1000_tokens"] = (
+                output_credits_per_1000_tokens
+            )
         if schema_documentation_url is not UNSET:
             field_dict["schema_documentation_url"] = schema_documentation_url
         if schema_notes is not UNSET:
@@ -228,37 +242,49 @@ class PromptModelResponse:
 
         provider = d.pop("provider")
 
-        def _parse_input_1h_cache_write_credits_per_1000_tokens(data: object) -> float | None | Unset:
+        def _parse_input_1h_cache_write_credits_per_1000_tokens(
+            data: object,
+        ) -> float | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
             return cast(float | None | Unset, data)
 
-        input_1h_cache_write_credits_per_1000_tokens = _parse_input_1h_cache_write_credits_per_1000_tokens(
-            d.pop("input_1h_cache_write_credits_per_1000_tokens", UNSET)
+        input_1h_cache_write_credits_per_1000_tokens = (
+            _parse_input_1h_cache_write_credits_per_1000_tokens(
+                d.pop("input_1h_cache_write_credits_per_1000_tokens", UNSET)
+            )
         )
 
-        def _parse_input_5m_cache_write_credits_per_1000_tokens(data: object) -> float | None | Unset:
+        def _parse_input_5m_cache_write_credits_per_1000_tokens(
+            data: object,
+        ) -> float | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
             return cast(float | None | Unset, data)
 
-        input_5m_cache_write_credits_per_1000_tokens = _parse_input_5m_cache_write_credits_per_1000_tokens(
-            d.pop("input_5m_cache_write_credits_per_1000_tokens", UNSET)
+        input_5m_cache_write_credits_per_1000_tokens = (
+            _parse_input_5m_cache_write_credits_per_1000_tokens(
+                d.pop("input_5m_cache_write_credits_per_1000_tokens", UNSET)
+            )
         )
 
-        def _parse_input_cache_hit_credits_per_1000_tokens(data: object) -> float | None | Unset:
+        def _parse_input_cache_hit_credits_per_1000_tokens(
+            data: object,
+        ) -> float | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
             return cast(float | None | Unset, data)
 
-        input_cache_hit_credits_per_1000_tokens = _parse_input_cache_hit_credits_per_1000_tokens(
-            d.pop("input_cache_hit_credits_per_1000_tokens", UNSET)
+        input_cache_hit_credits_per_1000_tokens = (
+            _parse_input_cache_hit_credits_per_1000_tokens(
+                d.pop("input_cache_hit_credits_per_1000_tokens", UNSET)
+            )
         )
 
         def _parse_input_credits_per_1000_tokens(data: object) -> float | None | Unset:
@@ -292,7 +318,9 @@ class PromptModelResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        schema_documentation_url = _parse_schema_documentation_url(d.pop("schema_documentation_url", UNSET))
+        schema_documentation_url = _parse_schema_documentation_url(
+            d.pop("schema_documentation_url", UNSET)
+        )
 
         def _parse_schema_notes(data: object) -> None | str | Unset:
             if data is None:
@@ -308,7 +336,9 @@ class PromptModelResponse:
         if _tools_disabled is not UNSET:
             tools_disabled = []
             for tools_disabled_item_data in _tools_disabled:
-                tools_disabled_item = PromptToolResponse.from_dict(tools_disabled_item_data)
+                tools_disabled_item = PromptToolResponse.from_dict(
+                    tools_disabled_item_data
+                )
 
                 tools_disabled.append(tools_disabled_item)
 
@@ -317,7 +347,9 @@ class PromptModelResponse:
         if _tools_enabled is not UNSET:
             tools_enabled = []
             for tools_enabled_item_data in _tools_enabled:
-                tools_enabled_item = PromptToolResponse.from_dict(tools_enabled_item_data)
+                tools_enabled_item = PromptToolResponse.from_dict(
+                    tools_enabled_item_data
+                )
 
                 tools_enabled.append(tools_enabled_item)
 
@@ -330,7 +362,9 @@ class PromptModelResponse:
 
         url = _parse_url(d.pop("url", UNSET))
 
-        def _parse_variants(data: object) -> list[VariantCategoryResponse] | None | Unset:
+        def _parse_variants(
+            data: object,
+        ) -> list[VariantCategoryResponse] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -341,7 +375,9 @@ class PromptModelResponse:
                 variants_type_0 = []
                 _variants_type_0 = data
                 for variants_type_0_item_data in _variants_type_0:
-                    variants_type_0_item = VariantCategoryResponse.from_dict(variants_type_0_item_data)
+                    variants_type_0_item = VariantCategoryResponse.from_dict(
+                        variants_type_0_item_data
+                    )
 
                     variants_type_0.append(variants_type_0_item)
 

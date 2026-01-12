@@ -98,7 +98,9 @@ class OrganizationResponse:
                 return data
             return cast(int | None, data)
 
-        monthly_credit_limit = _parse_monthly_credit_limit(d.pop("monthly_credit_limit"))
+        monthly_credit_limit = _parse_monthly_credit_limit(
+            d.pop("monthly_credit_limit")
+        )
 
         name = d.pop("name")
 

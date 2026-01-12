@@ -8,7 +8,9 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.agent_run_details_response_metadata_type_0 import AgentRunDetailsResponseMetadataType0
+    from ..models.agent_run_details_response_metadata_type_0 import (
+        AgentRunDetailsResponseMetadataType0,
+    )
     from ..models.agent_run_step_details_response import AgentRunStepDetailsResponse
 
 
@@ -39,7 +41,9 @@ class AgentRunDetailsResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.agent_run_details_response_metadata_type_0 import AgentRunDetailsResponseMetadataType0
+        from ..models.agent_run_details_response_metadata_type_0 import (
+            AgentRunDetailsResponseMetadataType0,
+        )
 
         agent_id = str(self.agent_id)
 
@@ -81,7 +85,9 @@ class AgentRunDetailsResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.agent_run_details_response_metadata_type_0 import AgentRunDetailsResponseMetadataType0
+        from ..models.agent_run_details_response_metadata_type_0 import (
+            AgentRunDetailsResponseMetadataType0,
+        )
         from ..models.agent_run_step_details_response import AgentRunStepDetailsResponse
 
         d = dict(src_dict)
@@ -94,7 +100,9 @@ class AgentRunDetailsResponse:
 
         input_ = _parse_input_(d.pop("input"))
 
-        def _parse_metadata(data: object) -> AgentRunDetailsResponseMetadataType0 | None:
+        def _parse_metadata(
+            data: object,
+        ) -> AgentRunDetailsResponseMetadataType0 | None:
             if data is None:
                 return data
             try:

@@ -35,7 +35,9 @@ class RunAgentRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.run_agent_request_metadata_type_0 import RunAgentRequestMetadataType0
+        from ..models.run_agent_request_metadata_type_0 import (
+            RunAgentRequestMetadataType0,
+        )
 
         content_version_id: None | str | Unset
         if isinstance(self.content_version_id, Unset):
@@ -77,7 +79,9 @@ class RunAgentRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.run_agent_request_metadata_type_0 import RunAgentRequestMetadataType0
+        from ..models.run_agent_request_metadata_type_0 import (
+            RunAgentRequestMetadataType0,
+        )
 
         d = dict(src_dict)
 
@@ -96,7 +100,9 @@ class RunAgentRequest:
                 pass
             return cast(None | Unset | UUID, data)
 
-        content_version_id = _parse_content_version_id(d.pop("content_version_id", UNSET))
+        content_version_id = _parse_content_version_id(
+            d.pop("content_version_id", UNSET)
+        )
 
         def _parse_input_(data: object) -> None | str | Unset:
             if data is None:
@@ -107,7 +113,9 @@ class RunAgentRequest:
 
         input_ = _parse_input_(d.pop("input", UNSET))
 
-        def _parse_metadata(data: object) -> None | RunAgentRequestMetadataType0 | Unset:
+        def _parse_metadata(
+            data: object,
+        ) -> None | RunAgentRequestMetadataType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):

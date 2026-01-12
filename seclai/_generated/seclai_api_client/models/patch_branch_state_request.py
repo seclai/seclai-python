@@ -10,7 +10,9 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.patch_branch_state_request_data_type_0 import PatchBranchStateRequestDataType0
+    from ..models.patch_branch_state_request_data_type_0 import (
+        PatchBranchStateRequestDataType0,
+    )
 
 
 T = TypeVar("T", bound="PatchBranchStateRequest")
@@ -36,7 +38,9 @@ class PatchBranchStateRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.patch_branch_state_request_data_type_0 import PatchBranchStateRequestDataType0
+        from ..models.patch_branch_state_request_data_type_0 import (
+            PatchBranchStateRequestDataType0,
+        )
 
         action = self.action
 
@@ -68,7 +72,9 @@ class PatchBranchStateRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.patch_branch_state_request_data_type_0 import PatchBranchStateRequestDataType0
+        from ..models.patch_branch_state_request_data_type_0 import (
+            PatchBranchStateRequestDataType0,
+        )
 
         d = dict(src_dict)
         action = d.pop("action")
@@ -77,7 +83,9 @@ class PatchBranchStateRequest:
 
         step_path = d.pop("step_path")
 
-        def _parse_data(data: object) -> None | PatchBranchStateRequestDataType0 | Unset:
+        def _parse_data(
+            data: object,
+        ) -> None | PatchBranchStateRequestDataType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):

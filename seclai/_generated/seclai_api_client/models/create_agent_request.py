@@ -11,7 +11,9 @@ from ..models.agent_trigger_type import AgentTriggerType
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.create_agent_request_metadata_type_0 import CreateAgentRequestMetadataType0
+    from ..models.create_agent_request_metadata_type_0 import (
+        CreateAgentRequestMetadataType0,
+    )
 
 
 T = TypeVar("T", bound="CreateAgentRequest")
@@ -45,7 +47,9 @@ class CreateAgentRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.create_agent_request_metadata_type_0 import CreateAgentRequestMetadataType0
+        from ..models.create_agent_request_metadata_type_0 import (
+            CreateAgentRequestMetadataType0,
+        )
 
         name = self.name
 
@@ -115,7 +119,9 @@ class CreateAgentRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.create_agent_request_metadata_type_0 import CreateAgentRequestMetadataType0
+        from ..models.create_agent_request_metadata_type_0 import (
+            CreateAgentRequestMetadataType0,
+        )
 
         d = dict(src_dict)
         name = d.pop("name")
@@ -164,7 +170,9 @@ class CreateAgentRequest:
 
         knowledge_base_id = _parse_knowledge_base_id(d.pop("knowledge_base_id", UNSET))
 
-        def _parse_metadata(data: object) -> CreateAgentRequestMetadataType0 | None | Unset:
+        def _parse_metadata(
+            data: object,
+        ) -> CreateAgentRequestMetadataType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):

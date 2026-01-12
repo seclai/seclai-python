@@ -74,7 +74,9 @@ class AccountBudgetResponse:
         activity_budgets = []
         _activity_budgets = d.pop("activity_budgets")
         for activity_budgets_item_data in _activity_budgets:
-            activity_budgets_item = ActivityBudgetResponse.from_dict(activity_budgets_item_data)
+            activity_budgets_item = ActivityBudgetResponse.from_dict(
+                activity_budgets_item_data
+            )
 
             activity_budgets.append(activity_budgets_item)
 

@@ -127,7 +127,9 @@ class EmbeddingModelInfo:
                 return data
             return cast(float | None | Unset, data)
 
-        mteb_retrieval_score = _parse_mteb_retrieval_score(d.pop("mteb_retrieval_score", UNSET))
+        mteb_retrieval_score = _parse_mteb_retrieval_score(
+            d.pop("mteb_retrieval_score", UNSET)
+        )
 
         def _parse_name(data: object) -> None | str | Unset:
             if data is None:

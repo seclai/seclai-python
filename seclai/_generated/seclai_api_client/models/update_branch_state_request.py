@@ -8,7 +8,9 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.update_branch_state_request_definition import UpdateBranchStateRequestDefinition
+    from ..models.update_branch_state_request_definition import (
+        UpdateBranchStateRequestDefinition,
+    )
 
 
 T = TypeVar("T", bound="UpdateBranchStateRequest")
@@ -45,7 +47,9 @@ class UpdateBranchStateRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.update_branch_state_request_definition import UpdateBranchStateRequestDefinition
+        from ..models.update_branch_state_request_definition import (
+            UpdateBranchStateRequestDefinition,
+        )
 
         d = dict(src_dict)
         change_id = UUID(d.pop("change_id"))

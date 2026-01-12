@@ -9,7 +9,9 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.test_webhook_call_request_headers_type_0 import TestWebhookCallRequestHeadersType0
+    from ..models.test_webhook_call_request_headers_type_0 import (
+        TestWebhookCallRequestHeadersType0,
+    )
 
 
 T = TypeVar("T", bound="TestWebhookCallRequest")
@@ -37,7 +39,9 @@ class TestWebhookCallRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.test_webhook_call_request_headers_type_0 import TestWebhookCallRequestHeadersType0
+        from ..models.test_webhook_call_request_headers_type_0 import (
+            TestWebhookCallRequestHeadersType0,
+        )
 
         test_input = self.test_input
 
@@ -82,7 +86,9 @@ class TestWebhookCallRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.test_webhook_call_request_headers_type_0 import TestWebhookCallRequestHeadersType0
+        from ..models.test_webhook_call_request_headers_type_0 import (
+            TestWebhookCallRequestHeadersType0,
+        )
 
         d = dict(src_dict)
         test_input = d.pop("test_input")
@@ -91,7 +97,9 @@ class TestWebhookCallRequest:
 
         content_type = d.pop("content_type", UNSET)
 
-        def _parse_headers(data: object) -> None | TestWebhookCallRequestHeadersType0 | Unset:
+        def _parse_headers(
+            data: object,
+        ) -> None | TestWebhookCallRequestHeadersType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):

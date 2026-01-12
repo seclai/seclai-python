@@ -68,8 +68,10 @@ class FileUploadResponse:
                 return data
             return cast(None | str, data)
 
-        source_connection_content_version_id = _parse_source_connection_content_version_id(
-            d.pop("source_connection_content_version_id")
+        source_connection_content_version_id = (
+            _parse_source_connection_content_version_id(
+                d.pop("source_connection_content_version_id")
+            )
         )
 
         status = d.pop("status")

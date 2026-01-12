@@ -44,7 +44,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, BinaryIO, Self
+from typing import Any, BinaryIO, Self, cast
 
 import httpx
 
@@ -149,6 +149,7 @@ def _resolve_api_key(api_key: str | None) -> str:
 @dataclass(frozen=True, slots=True)
 class ClientOptions:
     """Resolved client configuration options."""
+
     api_key: str
     timeout: float
     api_key_header: str
@@ -432,14 +433,16 @@ class Seclai(_SeclaiBase):
             path,
             params=params,
             json=json,
-            headers=_merge_request_headers(options=self._options, request_headers=headers),
+            headers=_merge_request_headers(
+                options=self._options, request_headers=headers
+            ),
         )
         _raise_for_status(response)
         if not response.content:
             return None
         content_type = response.headers.get("content-type", "")
         if "application/json" in content_type:
-            return response.json()
+            return cast(JSONValue, response.json())
         return response.text
 
     def run_agent(self, agent_id: str, body: AgentRunRequest) -> AgentRunResponse:
@@ -463,7 +466,9 @@ class Seclai(_SeclaiBase):
         )
 
         path = f"/api/agents/{agent_id}/runs"
-        response = sync_detailed(agent_id=agent_id, client=self._generated_client(), body=body)
+        response = sync_detailed(
+            agent_id=agent_id, client=self._generated_client(), body=body
+        )
         self._raise_for_openapi_response(
             method="POST",
             path=path,
@@ -478,7 +483,17 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="POST",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -524,7 +539,17 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     def get_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
         """Get details of a specific agent run.
@@ -547,7 +572,9 @@ class Seclai(_SeclaiBase):
         )
 
         path = f"/api/agents/{agent_id}/runs/{run_id}"
-        response = sync_detailed(agent_id=agent_id, run_id=run_id, client=self._generated_client())
+        response = sync_detailed(
+            agent_id=agent_id, run_id=run_id, client=self._generated_client()
+        )
         self._raise_for_openapi_response(
             method="GET",
             path=path,
@@ -562,7 +589,17 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     def delete_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
         """Cancel an agent run.
@@ -585,7 +622,9 @@ class Seclai(_SeclaiBase):
         )
 
         path = f"/api/agents/{agent_id}/runs/{run_id}"
-        response = sync_detailed(agent_id=agent_id, run_id=run_id, client=self._generated_client())
+        response = sync_detailed(
+            agent_id=agent_id, run_id=run_id, client=self._generated_client()
+        )
         self._raise_for_openapi_response(
             method="DELETE",
             path=path,
@@ -600,7 +639,17 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="DELETE",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     def get_content_detail(
         self,
@@ -650,7 +699,17 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     def delete_content(self, source_connection_content_version: str) -> None:
         """Delete a specific content version.
@@ -729,7 +788,17 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     def list_sources(
         self,
@@ -785,7 +854,17 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     def upload_file_to_source(
         self,
@@ -833,24 +912,28 @@ class Seclai(_SeclaiBase):
             if isinstance(file, File):
                 upload_file = file
             elif isinstance(file, (str, os.PathLike)):
-                path = Path(file)
-                created_payload = path.open("rb")
+                file_path = Path(file)
+                created_payload = file_path.open("rb")
                 upload_file = File(
                     payload=created_payload,
-                    file_name=file_name or path.name,
+                    file_name=file_name or file_path.name,
                     mime_type=mime_type,
                 )
             elif isinstance(file, bytes):
                 created_payload = BytesIO(file)
-                upload_file = File(payload=created_payload, file_name=file_name, mime_type=mime_type)
+                upload_file = File(
+                    payload=created_payload, file_name=file_name, mime_type=mime_type
+                )
             else:
-                upload_file = File(payload=file, file_name=file_name, mime_type=mime_type)
+                upload_file = File(
+                    payload=file, file_name=file_name, mime_type=mime_type
+                )
 
             body = BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost(
                 file=upload_file,
                 title=UNSET if title is None else title,
             )
-            path = f"/api/sources/{source_connection_id}/upload"
+            endpoint_path = f"/api/sources/{source_connection_id}/upload"
             response = sync_detailed(
                 source_connection_id=source_connection_id,
                 client=self._generated_client(),
@@ -858,7 +941,7 @@ class Seclai(_SeclaiBase):
             )
             self._raise_for_openapi_response(
                 method="POST",
-                path=path,
+                path=endpoint_path,
                 response=response,
                 ok_statuses={HTTPStatus.OK},
             )
@@ -867,10 +950,20 @@ class Seclai(_SeclaiBase):
                     message="Empty response",
                     status_code=int(response.status_code),
                     method="POST",
-                    url=self._build_url(path),
+                    url=self._build_url(endpoint_path),
                     response_text=None,
                 )
-            return response.parsed
+            parsed = response.parsed
+            if isinstance(parsed, HTTPValidationError):
+                raise SeclaiAPIValidationError(
+                    message="Validation error",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                    validation_error=parsed,
+                )
+            return parsed
         finally:
             if created_payload is not None:
                 created_payload.close()
@@ -975,19 +1068,19 @@ class AsyncSeclai(_SeclaiBase):
             path,
             params=params,
             json=json,
-            headers=_merge_request_headers(options=self._options, request_headers=headers),
+            headers=_merge_request_headers(
+                options=self._options, request_headers=headers
+            ),
         )
         _raise_for_status(response)
         if not response.content:
             return None
         content_type = response.headers.get("content-type", "")
         if "application/json" in content_type:
-            return response.json()
+            return cast(JSONValue, response.json())
         return response.text
 
-    async def run_agent(
-        self, agent_id: str, body: AgentRunRequest
-    ) -> AgentRunResponse:
+    async def run_agent(self, agent_id: str, body: AgentRunRequest) -> AgentRunResponse:
         """Run an agent.
 
         Starts a new agent run for the given agent and returns the run record.
@@ -1008,7 +1101,9 @@ class AsyncSeclai(_SeclaiBase):
         )
 
         path = f"/api/agents/{agent_id}/runs"
-        response = await asyncio_detailed(agent_id=agent_id, client=self._generated_client(), body=body)
+        response = await asyncio_detailed(
+            agent_id=agent_id, client=self._generated_client(), body=body
+        )
         self._raise_for_openapi_response(
             method="POST",
             path=path,
@@ -1023,7 +1118,17 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="POST",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     async def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -1069,11 +1174,19 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
-    async def get_agent_run(
-        self, agent_id: str, run_id: str
-    ) -> AgentRunResponse:
+    async def get_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
         """Get details of a specific agent run.
 
         Fetches the current state and details for a previously created run.
@@ -1113,11 +1226,19 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
-    async def delete_agent_run(
-        self, agent_id: str, run_id: str
-    ) -> AgentRunResponse:
+    async def delete_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
         """Cancel an agent run.
 
         Requests cancellation of a run and returns the updated run record.
@@ -1157,7 +1278,17 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="DELETE",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     async def get_content_detail(
         self,
@@ -1207,7 +1338,17 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     async def delete_content(self, source_connection_content_version: str) -> None:
         """Delete a specific content version.
@@ -1286,7 +1427,17 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     async def list_sources(
         self,
@@ -1342,7 +1493,17 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
             )
-        return response.parsed
+        parsed = response.parsed
+        if isinstance(parsed, HTTPValidationError):
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=int(response.status_code),
+                method="GET",
+                url=self._build_url(path),
+                response_text=None,
+                validation_error=parsed,
+            )
+        return parsed
 
     async def upload_file_to_source(
         self,
@@ -1390,24 +1551,28 @@ class AsyncSeclai(_SeclaiBase):
             if isinstance(file, File):
                 upload_file = file
             elif isinstance(file, (str, os.PathLike)):
-                path = Path(file)
-                created_payload = path.open("rb")
+                file_path = Path(file)
+                created_payload = file_path.open("rb")
                 upload_file = File(
                     payload=created_payload,
-                    file_name=file_name or path.name,
+                    file_name=file_name or file_path.name,
                     mime_type=mime_type,
                 )
             elif isinstance(file, bytes):
                 created_payload = BytesIO(file)
-                upload_file = File(payload=created_payload, file_name=file_name, mime_type=mime_type)
+                upload_file = File(
+                    payload=created_payload, file_name=file_name, mime_type=mime_type
+                )
             else:
-                upload_file = File(payload=file, file_name=file_name, mime_type=mime_type)
+                upload_file = File(
+                    payload=file, file_name=file_name, mime_type=mime_type
+                )
 
             body = BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost(
                 file=upload_file,
                 title=UNSET if title is None else title,
             )
-            path = f"/api/sources/{source_connection_id}/upload"
+            endpoint_path = f"/api/sources/{source_connection_id}/upload"
             response = await asyncio_detailed(
                 source_connection_id=source_connection_id,
                 client=self._generated_client(),
@@ -1415,7 +1580,7 @@ class AsyncSeclai(_SeclaiBase):
             )
             self._raise_for_openapi_response(
                 method="POST",
-                path=path,
+                path=endpoint_path,
                 response=response,
                 ok_statuses={HTTPStatus.OK},
             )
@@ -1424,10 +1589,20 @@ class AsyncSeclai(_SeclaiBase):
                     message="Empty response",
                     status_code=int(response.status_code),
                     method="POST",
-                    url=self._build_url(path),
+                    url=self._build_url(endpoint_path),
                     response_text=None,
                 )
-            return response.parsed
+            parsed = response.parsed
+            if isinstance(parsed, HTTPValidationError):
+                raise SeclaiAPIValidationError(
+                    message="Validation error",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                    validation_error=parsed,
+                )
+            return parsed
         finally:
             if created_payload is not None:
                 created_payload.close()

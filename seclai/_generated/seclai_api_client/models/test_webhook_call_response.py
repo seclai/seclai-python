@@ -9,8 +9,12 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.test_webhook_call_response_request_type_0 import TestWebhookCallResponseRequestType0
-    from ..models.test_webhook_call_response_response_type_0 import TestWebhookCallResponseResponseType0
+    from ..models.test_webhook_call_response_request_type_0 import (
+        TestWebhookCallResponseRequestType0,
+    )
+    from ..models.test_webhook_call_response_response_type_0 import (
+        TestWebhookCallResponseResponseType0,
+    )
 
 
 T = TypeVar("T", bound="TestWebhookCallResponse")
@@ -34,8 +38,12 @@ class TestWebhookCallResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.test_webhook_call_response_request_type_0 import TestWebhookCallResponseRequestType0
-        from ..models.test_webhook_call_response_response_type_0 import TestWebhookCallResponseResponseType0
+        from ..models.test_webhook_call_response_request_type_0 import (
+            TestWebhookCallResponseRequestType0,
+        )
+        from ..models.test_webhook_call_response_response_type_0 import (
+            TestWebhookCallResponseResponseType0,
+        )
 
         success = self.success
 
@@ -79,8 +87,12 @@ class TestWebhookCallResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.test_webhook_call_response_request_type_0 import TestWebhookCallResponseRequestType0
-        from ..models.test_webhook_call_response_response_type_0 import TestWebhookCallResponseResponseType0
+        from ..models.test_webhook_call_response_request_type_0 import (
+            TestWebhookCallResponseRequestType0,
+        )
+        from ..models.test_webhook_call_response_response_type_0 import (
+            TestWebhookCallResponseResponseType0,
+        )
 
         d = dict(src_dict)
         success = d.pop("success")
@@ -94,7 +106,9 @@ class TestWebhookCallResponse:
 
         error = _parse_error(d.pop("error", UNSET))
 
-        def _parse_request(data: object) -> None | TestWebhookCallResponseRequestType0 | Unset:
+        def _parse_request(
+            data: object,
+        ) -> None | TestWebhookCallResponseRequestType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -111,7 +125,9 @@ class TestWebhookCallResponse:
 
         request = _parse_request(d.pop("request", UNSET))
 
-        def _parse_response(data: object) -> None | TestWebhookCallResponseResponseType0 | Unset:
+        def _parse_response(
+            data: object,
+        ) -> None | TestWebhookCallResponseResponseType0 | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):

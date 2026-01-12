@@ -11,8 +11,12 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.agent_warning_model import AgentWarningModel
-    from ..models.branch_current_state_response_definition import BranchCurrentStateResponseDefinition
-    from ..models.branch_current_state_response_dependencies_type_0 import BranchCurrentStateResponseDependenciesType0
+    from ..models.branch_current_state_response_definition import (
+        BranchCurrentStateResponseDefinition,
+    )
+    from ..models.branch_current_state_response_dependencies_type_0 import (
+        BranchCurrentStateResponseDependenciesType0,
+    )
 
 
 T = TypeVar("T", bound="BranchCurrentStateResponse")
@@ -129,7 +133,9 @@ class BranchCurrentStateResponse:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_warning_model import AgentWarningModel
-        from ..models.branch_current_state_response_definition import BranchCurrentStateResponseDefinition
+        from ..models.branch_current_state_response_definition import (
+            BranchCurrentStateResponseDefinition,
+        )
         from ..models.branch_current_state_response_dependencies_type_0 import (
             BranchCurrentStateResponseDependenciesType0,
         )
@@ -156,7 +162,9 @@ class BranchCurrentStateResponse:
 
         user_name = _parse_user_name(d.pop("user_name"))
 
-        def _parse_dependencies(data: object) -> BranchCurrentStateResponseDependenciesType0 | None | Unset:
+        def _parse_dependencies(
+            data: object,
+        ) -> BranchCurrentStateResponseDependenciesType0 | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -164,12 +172,16 @@ class BranchCurrentStateResponse:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                dependencies_type_0 = BranchCurrentStateResponseDependenciesType0.from_dict(data)
+                dependencies_type_0 = (
+                    BranchCurrentStateResponseDependenciesType0.from_dict(data)
+                )
 
                 return dependencies_type_0
             except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(BranchCurrentStateResponseDependenciesType0 | None | Unset, data)
+            return cast(
+                BranchCurrentStateResponseDependenciesType0 | None | Unset, data
+            )
 
         dependencies = _parse_dependencies(d.pop("dependencies", UNSET))
 
@@ -195,7 +207,9 @@ class BranchCurrentStateResponse:
                 warnings_type_0 = []
                 _warnings_type_0 = data
                 for warnings_type_0_item_data in _warnings_type_0:
-                    warnings_type_0_item = AgentWarningModel.from_dict(warnings_type_0_item_data)
+                    warnings_type_0_item = AgentWarningModel.from_dict(
+                        warnings_type_0_item_data
+                    )
 
                     warnings_type_0.append(warnings_type_0_item)
 

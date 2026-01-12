@@ -48,7 +48,9 @@ class TriggerResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.trigger_response_metadata_type_0 import TriggerResponseMetadataType0
+        from ..models.trigger_response_metadata_type_0 import (
+            TriggerResponseMetadataType0,
+        )
 
         agent_id = str(self.agent_id)
 
@@ -112,7 +114,9 @@ class TriggerResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.trigger_response_metadata_type_0 import TriggerResponseMetadataType0
+        from ..models.trigger_response_metadata_type_0 import (
+            TriggerResponseMetadataType0,
+        )
 
         d = dict(src_dict)
         agent_id = UUID(d.pop("agent_id"))

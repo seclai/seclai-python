@@ -28,7 +28,9 @@ def _get_kwargs(
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/api/contents/{source_connection_content_version}/embeddings".format(
-            source_connection_content_version=quote(str(source_connection_content_version), safe=""),
+            source_connection_content_version=quote(
+                str(source_connection_content_version), safe=""
+            ),
         ),
         "params": params,
     }

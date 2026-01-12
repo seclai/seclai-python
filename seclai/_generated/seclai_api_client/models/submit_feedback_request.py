@@ -125,7 +125,9 @@ class SubmitFeedbackRequest:
                 return data
             return cast(None | str | Unset, data)
 
-        desired_content_source_type = _parse_desired_content_source_type(d.pop("desired_content_source_type", UNSET))
+        desired_content_source_type = _parse_desired_content_source_type(
+            d.pop("desired_content_source_type", UNSET)
+        )
 
         def _parse_other(data: object) -> None | str | Unset:
             if data is None:

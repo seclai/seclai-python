@@ -152,7 +152,9 @@ class DetectSourceResponse:
         elif isinstance(self.rss_content_options, list):
             rss_content_options = []
             for rss_content_options_type_0_item_data in self.rss_content_options:
-                rss_content_options_type_0_item = rss_content_options_type_0_item_data.to_dict()
+                rss_content_options_type_0_item = (
+                    rss_content_options_type_0_item_data.to_dict()
+                )
                 rss_content_options.append(rss_content_options_type_0_item)
 
         else:
@@ -228,7 +230,9 @@ class DetectSourceResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        avg_episodes_per_month = _parse_avg_episodes_per_month(d.pop("avg_episodes_per_month", UNSET))
+        avg_episodes_per_month = _parse_avg_episodes_per_month(
+            d.pop("avg_episodes_per_month", UNSET)
+        )
 
         def _parse_avg_words_per_episode(data: object) -> int | None | Unset:
             if data is None:
@@ -237,7 +241,9 @@ class DetectSourceResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        avg_words_per_episode = _parse_avg_words_per_episode(d.pop("avg_words_per_episode", UNSET))
+        avg_words_per_episode = _parse_avg_words_per_episode(
+            d.pop("avg_words_per_episode", UNSET)
+        )
 
         def _parse_content_type(data: object) -> None | str | Unset:
             if data is None:
@@ -264,7 +270,9 @@ class DetectSourceResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        estimated_episodes_per_day = _parse_estimated_episodes_per_day(d.pop("estimated_episodes_per_day", UNSET))
+        estimated_episodes_per_day = _parse_estimated_episodes_per_day(
+            d.pop("estimated_episodes_per_day", UNSET)
+        )
 
         example_words_per_episode = d.pop("example_words_per_episode", UNSET)
 
@@ -275,7 +283,9 @@ class DetectSourceResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        existing_source_name = _parse_existing_source_name(d.pop("existing_source_name", UNSET))
+        existing_source_name = _parse_existing_source_name(
+            d.pop("existing_source_name", UNSET)
+        )
 
         def _parse_feed_items(data: object) -> list[FeedItem] | None | Unset:
             if data is None:
@@ -288,7 +298,9 @@ class DetectSourceResponse:
                 feed_items_type_0 = []
                 _feed_items_type_0 = data
                 for feed_items_type_0_item_data in _feed_items_type_0:
-                    feed_items_type_0_item = FeedItem.from_dict(feed_items_type_0_item_data)
+                    feed_items_type_0_item = FeedItem.from_dict(
+                        feed_items_type_0_item_data
+                    )
 
                     feed_items_type_0.append(feed_items_type_0_item)
 
@@ -330,7 +342,9 @@ class DetectSourceResponse:
                 page_links_type_0 = []
                 _page_links_type_0 = data
                 for page_links_type_0_item_data in _page_links_type_0:
-                    page_links_type_0_item = PageLink.from_dict(page_links_type_0_item_data)
+                    page_links_type_0_item = PageLink.from_dict(
+                        page_links_type_0_item_data
+                    )
 
                     page_links_type_0.append(page_links_type_0_item)
 
@@ -348,9 +362,13 @@ class DetectSourceResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        rss_content_default = _parse_rss_content_default(d.pop("rss_content_default", UNSET))
+        rss_content_default = _parse_rss_content_default(
+            d.pop("rss_content_default", UNSET)
+        )
 
-        def _parse_rss_content_options(data: object) -> list[RSSContentOption] | None | Unset:
+        def _parse_rss_content_options(
+            data: object,
+        ) -> list[RSSContentOption] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -361,7 +379,9 @@ class DetectSourceResponse:
                 rss_content_options_type_0 = []
                 _rss_content_options_type_0 = data
                 for rss_content_options_type_0_item_data in _rss_content_options_type_0:
-                    rss_content_options_type_0_item = RSSContentOption.from_dict(rss_content_options_type_0_item_data)
+                    rss_content_options_type_0_item = RSSContentOption.from_dict(
+                        rss_content_options_type_0_item_data
+                    )
 
                     rss_content_options_type_0.append(rss_content_options_type_0_item)
 
@@ -370,7 +390,9 @@ class DetectSourceResponse:
                 pass
             return cast(list[RSSContentOption] | None | Unset, data)
 
-        rss_content_options = _parse_rss_content_options(d.pop("rss_content_options", UNSET))
+        rss_content_options = _parse_rss_content_options(
+            d.pop("rss_content_options", UNSET)
+        )
 
         def _parse_title(data: object) -> None | str | Unset:
             if data is None:
