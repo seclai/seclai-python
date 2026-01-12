@@ -42,10 +42,26 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-root
 
+    - name: Update package metadata docs link for PyPI (versioned)
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: python scripts/set-doc-url-version.py apply
+
+    - name: Update README docs link for PyPI (versioned)
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: python scripts/set-readme-version.py apply
+
     - name: Build package
       env:
         VERSION: ${{ steps.next-tag.outputs.new_tag }}
       run: make build
+
+    - name: Restore README after build
+      run: python scripts/set-readme-version.py restore
+
+    - name: Restore pyproject.toml after build
+      run: python scripts/set-doc-url-version.py restore
 
     - name: Lint checks
       env:

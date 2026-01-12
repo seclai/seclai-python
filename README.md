@@ -183,6 +183,10 @@ make lint
 
 ## API documentation
 
+Online API documentation (latest):
+
+https://seclai.github.io/seclai-python/latest/
+
 Generate HTML docs into `build/docs/`:
 
 ```bash

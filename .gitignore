@@ -17,3 +17,7 @@ dist/
 
 # macOS
 .DS_Store
+
+# Release helpers
+.README.md.bak
+.pyproject.toml.bak

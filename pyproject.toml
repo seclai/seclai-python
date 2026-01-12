@@ -31,7 +31,7 @@ classifiers = [
 [project.urls]
 homepage = "https://seclai.com"
 repository = "https://github.com/seclai/seclai-python"
-documentation = "https://seclai.com/docs"
+documentation = "https://seclai.github.io/seclai-python/latest/"
 
 [build-system]
 requires = ["poetry-core"]
