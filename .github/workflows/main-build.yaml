@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build, Test, and Publish
+  pypi:
+    name: Build, Test, and Publish to PyPI
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -63,9 +63,51 @@ jobs:
         packages-dir: dist
         skip-existing: true
 
+    - name: Push tag
+      run: |
+        git tag ${{ steps.next-tag.outputs.new_tag }}
+        git push origin ${{ steps.next-tag.outputs.new_tag }}
+
+    - name: Create release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ steps.next-tag.outputs.new_tag }} \
+          --title "Release ${{ steps.next-tag.outputs.new_tag }}" \
+          --generate-notes
+
+  pages:
+    name: Publish Docs to GitHub Pages
+    needs: pypi
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+    permissions:
+      id-token: write
+      contents: write
+      pages: write
+    steps:
+    - name: Checkout files
+      uses: actions/checkout@v5
+      with:
+        ref: ${{ needs.pypi.outputs.version }}
+        fetch-depth: '0'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install Poetry
+      run: pipx install poetry
+
+    - name: Install dependencies
+      run: poetry install --no-root
+
     - name: Generate SDK documentation
       env:
-        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+        VERSION: ${{ needs.pypi.outputs.version }}
       run: make docs
 
     - name: Checkout gh-pages branch
@@ -77,7 +119,7 @@ jobs:
 
     - name: Publish SDK docs to GitHub Pages (versioned)
       env:
-        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+        VERSION: ${{ needs.pypi.outputs.version }}
       run: |
         set -euo pipefail
 
@@ -101,15 +143,14 @@ jobs:
         git commit -m "Docs: ${VERSION}"
         git push origin gh-pages
 
-    - name: Push tag
-      run: |
-        git tag ${{ steps.next-tag.outputs.new_tag }}
-        git push origin ${{ steps.next-tag.outputs.new_tag }}
+    - name: Configure GitHub Pages
+      uses: actions/configure-pages@v5
 
-    - name: Create release
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        gh release create ${{ steps.next-tag.outputs.new_tag }} \
-          --title "Release ${{ steps.next-tag.outputs.new_tag }}" \
-          --generate-notes
+    - name: Upload GitHub Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: gh-pages
+
+    - name: Deploy GitHub Pages
+      id: deploy-pages
+      uses: actions/deploy-pages@v4
