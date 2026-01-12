@@ -1,0 +1,108 @@
+name: Release Build
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, Test, and Publish
+    permissions:
+      id-token: write
+      contents: write
+    outputs:
+      version: ${{ steps.next-tag.outputs.new_tag }}
+    steps:
+    - name: Checkout files
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: '0'
+
+    - name: Determine next version tag
+      id: next-tag
+      uses: seclai/github-tag-action@1.75.0
+      env:
+        DEFAULT_BUMP: patch
+        DRY_RUN: 'true'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install Poetry
+      run: pipx install poetry
+
+    - name: Install dependencies
+      run: poetry install --no-root
+
+    - name: Build package
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make build
+
+    - name: Lint checks
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make lint
+
+    - name: Run tests
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make test
+
+    - name: Generate SDK documentation
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make docs
+
+    - name: Checkout gh-pages branch
+      uses: actions/checkout@v5
+      with:
+        ref: gh-pages
+        path: gh-pages
+        fetch-depth: 0
+
+    - name: Publish SDK docs to GitHub Pages (versioned)
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: |
+        set -euo pipefail
+
+        # Ensure Pages serves raw HTML (no Jekyll processing)
+        touch gh-pages/.nojekyll
+
+        # Replace latest + this version, keep older versions
+        rm -rf "gh-pages/latest" "gh-pages/${VERSION}" "gh-pages/index.html"
+        cp -R "build/docs/latest" "gh-pages/latest"
+        cp -R "build/docs/${VERSION}" "gh-pages/${VERSION}"
+        cp "build/docs/index.html" "gh-pages/index.html"
+
+        cd gh-pages
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add -A
+        if git diff --cached --quiet; then
+          echo "No doc changes to publish."
+          exit 0
+        fi
+        git commit -m "Docs: ${VERSION}"
+        git push origin gh-pages
+
+    - name: Push tag
+      run: |
+        git tag ${{ steps.next-tag.outputs.new_tag }}
+        git push origin ${{ steps.next-tag.outputs.new_tag }}
+
+    - name: Create release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ steps.next-tag.outputs.new_tag }} \
+          --title "Release ${{ steps.next-tag.outputs.new_tag }}" \
+          --generate-notes
