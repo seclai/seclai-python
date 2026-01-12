@@ -1,0 +1,53 @@
+name: Pull Request Build
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+    - name: Checkout files
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: '0'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install Poetry
+      run: pipx install poetry
+
+    - name: Install dependencies
+      run: poetry install --no-root
+
+    - name: Build package
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make build
+
+    - name: Lint checks
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make lint
+
+    - name: Run tests
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make test
+
+    - name: Generate SDK documentation
+      env:
+        VERSION: ${{ steps.next-tag.outputs.new_tag }}
+      run: make docs
