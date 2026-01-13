@@ -70,7 +70,7 @@ JSONValue = dict[str, "JSONValue"] | list["JSONValue"] | str | int | float | boo
 class AgentRunStreamRequest(TypedDict):
     """Request body for streaming agent runs.
 
-    This matches the API schema for POST /api/agents/{agent_id}/runs/stream.
+    This matches the API schema for POST /agents/{agent_id}/runs/stream.
     """
 
     input: str | None
@@ -308,7 +308,7 @@ class _SeclaiBase:
 
         Args:
             method: HTTP method used (e.g. `"GET"`).
-            path: API path used (e.g. `"/api/sources/"`).
+            path: API path used (e.g. `"/sources/"`).
             response: The generated client's detailed response object.
             ok_statuses: Acceptable HTTP status codes for this operation.
 
@@ -427,7 +427,7 @@ class Seclai(_SeclaiBase):
 
         Args:
             method: HTTP method (e.g. `"GET"`, `"POST"`).
-            path: Request path relative to `SECLAI_API_URL` (e.g. `"/api/sources/"`).
+            path: Request path relative to `SECLAI_API_URL` (e.g. `"/sources/"`).
             params: Query parameters.
             json: JSON body to send.
             headers: Per-request header overrides.
@@ -475,7 +475,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs"
+        path = f"/agents/{agent_id}/runs"
         response = sync_detailed(
             agent_id=agent_id, client=self._generated_client(), body=body
         )
@@ -515,7 +515,7 @@ class Seclai(_SeclaiBase):
     ) -> AgentRunResponse:
         """Run an agent via SSE streaming and block until completion.
 
-        This uses POST /api/agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
+        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
         The method returns when an `event: done` message is received.
 
         Args:
@@ -536,7 +536,7 @@ class Seclai(_SeclaiBase):
         import json as _json
         import time as _time
 
-        path = f"/api/agents/{agent_id}/runs/stream"
+        path = f"/agents/{agent_id}/runs/stream"
 
         merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
         merged_headers.setdefault("accept", "text/event-stream")
@@ -644,7 +644,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs"
+        path = f"/agents/{agent_id}/runs"
         response = sync_detailed(
             agent_id=agent_id,
             client=self._generated_client(),
@@ -697,7 +697,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs/{run_id}"
+        path = f"/agents/{agent_id}/runs/{run_id}"
         response = sync_detailed(
             agent_id=agent_id, run_id=run_id, client=self._generated_client()
         )
@@ -747,7 +747,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs/{run_id}"
+        path = f"/agents/{agent_id}/runs/{run_id}"
         response = sync_detailed(
             agent_id=agent_id, run_id=run_id, client=self._generated_client()
         )
@@ -804,7 +804,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = f"/api/contents/{source_connection_content_version}"
+        path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
             client=self._generated_client(),
@@ -853,7 +853,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = f"/api/contents/{source_connection_content_version}"
+        path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
             client=self._generated_client(),
@@ -893,7 +893,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = f"/api/contents/{source_connection_content_version}/embeddings"
+        path = f"/contents/{source_connection_content_version}/embeddings"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
             client=self._generated_client(),
@@ -957,7 +957,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = "/api/sources/"
+        path = "/sources/"
         response = sync_detailed(
             client=self._generated_client(),
             page=page,
@@ -1059,7 +1059,7 @@ class Seclai(_SeclaiBase):
                 file=upload_file,
                 title=UNSET if title is None else title,
             )
-            endpoint_path = f"/api/sources/{source_connection_id}/upload"
+            endpoint_path = f"/sources/{source_connection_id}/upload"
             response = sync_detailed(
                 source_connection_id=source_connection_id,
                 client=self._generated_client(),
@@ -1178,7 +1178,7 @@ class AsyncSeclai(_SeclaiBase):
 
         Args:
             method: HTTP method (e.g. `"GET"`, `"POST"`).
-            path: Request path relative to `SECLAI_API_URL` (e.g. `"/api/sources/"`).
+            path: Request path relative to `SECLAI_API_URL` (e.g. `"/sources/"`).
             params: Query parameters.
             json: JSON body to send.
             headers: Per-request header overrides.
@@ -1226,7 +1226,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs"
+        path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
             agent_id=agent_id, client=self._generated_client(), body=body
         )
@@ -1266,13 +1266,13 @@ class AsyncSeclai(_SeclaiBase):
     ) -> AgentRunResponse:
         """Run an agent via SSE streaming and block until completion (async).
 
-        This uses POST /api/agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
+        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
         The method returns when an `event: done` message is received.
         """
         import json as _json
         import time as _time
 
-        path = f"/api/agents/{agent_id}/runs/stream"
+        path = f"/agents/{agent_id}/runs/stream"
 
         merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
         merged_headers.setdefault("accept", "text/event-stream")
@@ -1380,7 +1380,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs"
+        path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
             agent_id=agent_id,
             client=self._generated_client(),
@@ -1433,7 +1433,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs/{run_id}"
+        path = f"/agents/{agent_id}/runs/{run_id}"
         response = await asyncio_detailed(
             agent_id=agent_id,
             run_id=run_id,
@@ -1485,7 +1485,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = f"/api/agents/{agent_id}/runs/{run_id}"
+        path = f"/agents/{agent_id}/runs/{run_id}"
         response = await asyncio_detailed(
             agent_id=agent_id,
             run_id=run_id,
@@ -1544,7 +1544,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = f"/api/contents/{source_connection_content_version}"
+        path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
             client=self._generated_client(),
@@ -1593,7 +1593,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = f"/api/contents/{source_connection_content_version}"
+        path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
             client=self._generated_client(),
@@ -1633,7 +1633,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = f"/api/contents/{source_connection_content_version}/embeddings"
+        path = f"/contents/{source_connection_content_version}/embeddings"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
             client=self._generated_client(),
@@ -1697,7 +1697,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = "/api/sources/"
+        path = "/sources/"
         response = await asyncio_detailed(
             client=self._generated_client(),
             page=page,
@@ -1799,7 +1799,7 @@ class AsyncSeclai(_SeclaiBase):
                 file=upload_file,
                 title=UNSET if title is None else title,
             )
-            endpoint_path = f"/api/sources/{source_connection_id}/upload"
+            endpoint_path = f"/sources/{source_connection_id}/upload"
             response = await asyncio_detailed(
                 source_connection_id=source_connection_id,
                 client=self._generated_client(),

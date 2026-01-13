@@ -199,9 +199,7 @@ class TestPromptCallRequest:
                 return data
             return cast(None | str | Unset, data)
 
-        current_step_input = _parse_current_step_input(
-            d.pop("current_step_input", UNSET)
-        )
+        current_step_input = _parse_current_step_input(d.pop("current_step_input", UNSET))
 
         def _parse_json_template(
             data: object,
@@ -213,9 +211,7 @@ class TestPromptCallRequest:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                json_template_type_0 = TestPromptCallRequestJsonTemplateType0.from_dict(
-                    data
-                )
+                json_template_type_0 = TestPromptCallRequestJsonTemplateType0.from_dict(data)
 
                 return json_template_type_0
             except (TypeError, ValueError, AttributeError, KeyError):
@@ -234,9 +230,7 @@ class TestPromptCallRequest:
             try:
                 if not isinstance(data, dict):
                     raise TypeError()
-                manual_inputs_type_0 = TestPromptCallRequestManualInputsType0.from_dict(
-                    data
-                )
+                manual_inputs_type_0 = TestPromptCallRequestManualInputsType0.from_dict(data)
 
                 return manual_inputs_type_0
             except (TypeError, ValueError, AttributeError, KeyError):

@@ -42,8 +42,8 @@ class BranchCurrentStateResponseDependenciesType0AdditionalProperty:
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
-            additional_property = BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalProperty.from_dict(
-                prop_dict
+            additional_property = (
+                BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalProperty.from_dict(prop_dict)
             )
 
             additional_properties[prop_name] = additional_property
@@ -57,11 +57,7 @@ class BranchCurrentStateResponseDependenciesType0AdditionalProperty:
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(
-        self, key: str
-    ) -> (
-        BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalProperty
-    ):
+    def __getitem__(self, key: str) -> BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalProperty:
         return self.additional_properties[key]
 
     def __setitem__(

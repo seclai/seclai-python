@@ -81,9 +81,7 @@ class TestTransformRequest:
         if isinstance(_placeholder_values, Unset):
             placeholder_values = UNSET
         else:
-            placeholder_values = TestTransformRequestPlaceholderValues.from_dict(
-                _placeholder_values
-            )
+            placeholder_values = TestTransformRequestPlaceholderValues.from_dict(_placeholder_values)
 
         test_transform_request = cls(
             rules=rules,

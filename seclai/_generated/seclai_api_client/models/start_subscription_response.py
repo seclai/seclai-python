@@ -62,9 +62,7 @@ class StartSubscriptionResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        stripe_client_secret = _parse_stripe_client_secret(
-            d.pop("stripe_client_secret", UNSET)
-        )
+        stripe_client_secret = _parse_stripe_client_secret(d.pop("stripe_client_secret", UNSET))
 
         success = d.pop("success", UNSET)
 

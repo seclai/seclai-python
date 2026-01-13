@@ -127,9 +127,7 @@ class PlanResponse:
                 return data
             return cast(int | None, data)
 
-        crawl_session_page_limit = _parse_crawl_session_page_limit(
-            d.pop("crawl_session_page_limit")
-        )
+        crawl_session_page_limit = _parse_crawl_session_page_limit(d.pop("crawl_session_page_limit"))
 
         default = d.pop("default")
 
@@ -154,9 +152,7 @@ class PlanResponse:
                 return data
             return cast(int | None, data)
 
-        max_organization_members = _parse_max_organization_members(
-            d.pop("max_organization_members")
-        )
+        max_organization_members = _parse_max_organization_members(d.pop("max_organization_members"))
 
         def _parse_max_organizations(data: object) -> int | None:
             if data is None:

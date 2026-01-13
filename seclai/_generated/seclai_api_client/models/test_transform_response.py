@@ -129,9 +129,7 @@ class TestTransformResponse:
                 pass
             return cast(list[str] | None | Unset, data)
 
-        intermediate_outputs = _parse_intermediate_outputs(
-            d.pop("intermediate_outputs", UNSET)
-        )
+        intermediate_outputs = _parse_intermediate_outputs(d.pop("intermediate_outputs", UNSET))
 
         def _parse_matched(data: object) -> bool | None | Unset:
             if data is None:

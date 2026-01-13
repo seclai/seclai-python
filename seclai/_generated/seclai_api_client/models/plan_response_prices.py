@@ -17,9 +17,7 @@ T = TypeVar("T", bound="PlanResponsePrices")
 class PlanResponsePrices:
     """ """
 
-    additional_properties: dict[str, PlanPriceResponse] = _attrs_field(
-        init=False, factory=dict
-    )
+    additional_properties: dict[str, PlanPriceResponse] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         field_dict: dict[str, Any] = {}

@@ -7,9 +7,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.content_detail_response_metadata_type_0_item import (
-        ContentDetailResponseMetadataType0Item,
-    )
+    from ..models.content_detail_response_metadata_type_0_item import ContentDetailResponseMetadataType0Item
 
 
 T = TypeVar("T", bound="ContentDetailResponse")
@@ -162,9 +160,7 @@ class ContentDetailResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.content_detail_response_metadata_type_0_item import (
-            ContentDetailResponseMetadataType0Item,
-        )
+        from ..models.content_detail_response_metadata_type_0_item import ContentDetailResponseMetadataType0Item
 
         d = dict(src_dict)
 
@@ -180,9 +176,7 @@ class ContentDetailResponse:
                 return data
             return cast(None | str, data)
 
-        content_duration_display = _parse_content_duration_display(
-            d.pop("content_duration_display")
-        )
+        content_duration_display = _parse_content_duration_display(d.pop("content_duration_display"))
 
         content_status = d.pop("content_status")
 
@@ -215,9 +209,7 @@ class ContentDetailResponse:
 
         id = d.pop("id")
 
-        def _parse_metadata(
-            data: object,
-        ) -> list[ContentDetailResponseMetadataType0Item] | None:
+        def _parse_metadata(data: object) -> list[ContentDetailResponseMetadataType0Item] | None:
             if data is None:
                 return data
             try:
@@ -226,11 +218,7 @@ class ContentDetailResponse:
                 metadata_type_0 = []
                 _metadata_type_0 = data
                 for metadata_type_0_item_data in _metadata_type_0:
-                    metadata_type_0_item = (
-                        ContentDetailResponseMetadataType0Item.from_dict(
-                            metadata_type_0_item_data
-                        )
-                    )
+                    metadata_type_0_item = ContentDetailResponseMetadataType0Item.from_dict(metadata_type_0_item_data)
 
                     metadata_type_0.append(metadata_type_0_item)
 
@@ -250,9 +238,7 @@ class ContentDetailResponse:
 
         pulled_at = d.pop("pulled_at")
 
-        source_connection_content_version_id = d.pop(
-            "source_connection_content_version_id"
-        )
+        source_connection_content_version_id = d.pop("source_connection_content_version_id")
 
         source_connection_id = d.pop("source_connection_id")
 

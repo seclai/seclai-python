@@ -77,9 +77,7 @@ class PaymentIntentHistoryResponse:
         payment_intents = []
         _payment_intents = d.pop("payment_intents")
         for payment_intents_item_data in _payment_intents:
-            payment_intents_item = PaymentIntentHistoryItem.from_dict(
-                payment_intents_item_data
-            )
+            payment_intents_item = PaymentIntentHistoryItem.from_dict(payment_intents_item_data)
 
             payment_intents.append(payment_intents_item)
 

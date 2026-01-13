@@ -129,9 +129,7 @@ class SubscriptionResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        billing_cycle_anchor = _parse_billing_cycle_anchor(
-            d.pop("billing_cycle_anchor", UNSET)
-        )
+        billing_cycle_anchor = _parse_billing_cycle_anchor(d.pop("billing_cycle_anchor", UNSET))
 
         def _parse_current_period_end(data: object) -> None | str | Unset:
             if data is None:
@@ -140,9 +138,7 @@ class SubscriptionResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        current_period_end = _parse_current_period_end(
-            d.pop("current_period_end", UNSET)
-        )
+        current_period_end = _parse_current_period_end(d.pop("current_period_end", UNSET))
 
         def _parse_current_period_start(data: object) -> None | str | Unset:
             if data is None:
@@ -151,9 +147,7 @@ class SubscriptionResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        current_period_start = _parse_current_period_start(
-            d.pop("current_period_start", UNSET)
-        )
+        current_period_start = _parse_current_period_start(d.pop("current_period_start", UNSET))
 
         def _parse_trial_end_date(data: object) -> None | str | Unset:
             if data is None:

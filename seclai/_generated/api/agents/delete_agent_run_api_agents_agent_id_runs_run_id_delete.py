@@ -17,7 +17,7 @@ def _get_kwargs(
 ) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": "/api/agents/{agent_id}/runs/{run_id}".format(
+        "url": "/agents/{agent_id}/runs/{run_id}".format(
             agent_id=quote(str(agent_id), safe=""),
             run_id=quote(str(run_id), safe=""),
         ),

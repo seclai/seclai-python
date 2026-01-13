@@ -261,9 +261,7 @@ class CreateSourceRequest:
                 return data
             return cast(bool | None | Unset, data)
 
-        chunk_regex_separators = _parse_chunk_regex_separators(
-            d.pop("chunk_regex_separators", UNSET)
-        )
+        chunk_regex_separators = _parse_chunk_regex_separators(d.pop("chunk_regex_separators", UNSET))
 
         def _parse_chunk_separators(data: object) -> None | str | Unset:
             if data is None:

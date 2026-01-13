@@ -54,9 +54,7 @@ class FileUploadConfigResponse:
         d = dict(src_dict)
         max_file_size = d.pop("max_file_size")
 
-        supported_types = FileUploadConfigResponseSupportedTypes.from_dict(
-            d.pop("supported_types")
-        )
+        supported_types = FileUploadConfigResponseSupportedTypes.from_dict(d.pop("supported_types"))
 
         file_upload_config_response = cls(
             max_file_size=max_file_size,

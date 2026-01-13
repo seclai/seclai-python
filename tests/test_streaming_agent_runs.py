@@ -27,7 +27,7 @@ def _agent_run_payload(status: str, *, output: str | None = None) -> dict:
 def test_run_streaming_agent_and_wait_parses_done() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.method == "POST"
-        assert request.url.path == "/api/agents/agent_1/runs/stream"
+        assert request.url.path == "/agents/agent_1/runs/stream"
         assert "text/event-stream" in (request.headers.get("accept") or "")
 
         init_data = json.dumps(_agent_run_payload("processing"))
@@ -60,7 +60,7 @@ def test_run_streaming_agent_and_wait_parses_done() -> None:
 async def test_async_run_streaming_agent_and_wait_parses_done() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         assert request.method == "POST"
-        assert request.url.path == "/api/agents/agent_1/runs/stream"
+        assert request.url.path == "/agents/agent_1/runs/stream"
         assert "text/event-stream" in (request.headers.get("accept") or "")
 
         init_data = json.dumps(_agent_run_payload("processing"))
@@ -94,7 +94,7 @@ def test_run_streaming_agent_and_wait_times_out() -> None:
         protocol_version = "HTTP/1.1"
 
         def do_POST(self) -> None:  # noqa: N802
-            if self.path != "/api/agents/agent_1/runs/stream":
+            if self.path != "/agents/agent_1/runs/stream":
                 self.send_response(404)
                 self.end_headers()
                 return

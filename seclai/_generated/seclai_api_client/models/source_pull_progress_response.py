@@ -90,9 +90,7 @@ class SourcePullProgressResponse:
                 phases_type_0 = []
                 _phases_type_0 = data
                 for phases_type_0_item_data in _phases_type_0:
-                    phases_type_0_item = ProcessingPhaseResponse.from_dict(
-                        phases_type_0_item_data
-                    )
+                    phases_type_0_item = ProcessingPhaseResponse.from_dict(phases_type_0_item_data)
 
                     phases_type_0.append(phases_type_0_item)
 

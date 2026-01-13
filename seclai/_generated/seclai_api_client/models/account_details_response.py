@@ -223,9 +223,7 @@ class AccountDetailsResponse:
         if isinstance(self.subscription_period_initial_credits, Unset):
             subscription_period_initial_credits = UNSET
         else:
-            subscription_period_initial_credits = (
-                self.subscription_period_initial_credits
-            )
+            subscription_period_initial_credits = self.subscription_period_initial_credits
 
         subscription_period_start: None | str | Unset
         if isinstance(self.subscription_period_start, Unset):
@@ -261,9 +259,7 @@ class AccountDetailsResponse:
         if pending_plan_name is not UNSET:
             field_dict["pending_plan_name"] = pending_plan_name
         if pending_subscription_start_date is not UNSET:
-            field_dict["pending_subscription_start_date"] = (
-                pending_subscription_start_date
-            )
+            field_dict["pending_subscription_start_date"] = pending_subscription_start_date
         if plan_agent_version_control is not UNSET:
             field_dict["plan_agent_version_control"] = plan_agent_version_control
         if plan_api_access is not UNSET:
@@ -293,9 +289,7 @@ class AccountDetailsResponse:
         if subscription_period_end is not UNSET:
             field_dict["subscription_period_end"] = subscription_period_end
         if subscription_period_initial_credits is not UNSET:
-            field_dict["subscription_period_initial_credits"] = (
-                subscription_period_initial_credits
-            )
+            field_dict["subscription_period_initial_credits"] = subscription_period_initial_credits
         if subscription_period_start is not UNSET:
             field_dict["subscription_period_start"] = subscription_period_start
         if trial_days_available is not UNSET:
@@ -334,9 +328,7 @@ class AccountDetailsResponse:
                 return data
             return cast(bool | None | Unset, data)
 
-        auto_purchase_overages = _parse_auto_purchase_overages(
-            d.pop("auto_purchase_overages", UNSET)
-        )
+        auto_purchase_overages = _parse_auto_purchase_overages(d.pop("auto_purchase_overages", UNSET))
 
         def _parse_days_until_content_deletion(data: object) -> int | None | Unset:
             if data is None:
@@ -345,9 +337,7 @@ class AccountDetailsResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        days_until_content_deletion = _parse_days_until_content_deletion(
-            d.pop("days_until_content_deletion", UNSET)
-        )
+        days_until_content_deletion = _parse_days_until_content_deletion(d.pop("days_until_content_deletion", UNSET))
 
         def _parse_id(data: object) -> None | str | Unset:
             if data is None:
@@ -383,9 +373,7 @@ class AccountDetailsResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        pending_plan_monthly_credits = _parse_pending_plan_monthly_credits(
-            d.pop("pending_plan_monthly_credits", UNSET)
-        )
+        pending_plan_monthly_credits = _parse_pending_plan_monthly_credits(d.pop("pending_plan_monthly_credits", UNSET))
 
         def _parse_pending_plan_name(data: object) -> None | str | Unset:
             if data is None:
@@ -414,9 +402,7 @@ class AccountDetailsResponse:
                 return data
             return cast(bool | None | Unset, data)
 
-        plan_agent_version_control = _parse_plan_agent_version_control(
-            d.pop("plan_agent_version_control", UNSET)
-        )
+        plan_agent_version_control = _parse_plan_agent_version_control(d.pop("plan_agent_version_control", UNSET))
 
         def _parse_plan_api_access(data: object) -> bool | None | Unset:
             if data is None:
@@ -465,9 +451,7 @@ class AccountDetailsResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        plan_max_organizations = _parse_plan_max_organizations(
-            d.pop("plan_max_organizations", UNSET)
-        )
+        plan_max_organizations = _parse_plan_max_organizations(d.pop("plan_max_organizations", UNSET))
 
         def _parse_plan_monthly_credits(data: object) -> int | None | Unset:
             if data is None:
@@ -476,9 +460,7 @@ class AccountDetailsResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        plan_monthly_credits = _parse_plan_monthly_credits(
-            d.pop("plan_monthly_credits", UNSET)
-        )
+        plan_monthly_credits = _parse_plan_monthly_credits(d.pop("plan_monthly_credits", UNSET))
 
         def _parse_plan_name(data: object) -> None | str | Unset:
             if data is None:
@@ -525,9 +507,7 @@ class AccountDetailsResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        subscription_period_credits = _parse_subscription_period_credits(
-            d.pop("subscription_period_credits", UNSET)
-        )
+        subscription_period_credits = _parse_subscription_period_credits(d.pop("subscription_period_credits", UNSET))
 
         def _parse_subscription_period_end(data: object) -> None | str | Unset:
             if data is None:
@@ -536,9 +516,7 @@ class AccountDetailsResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        subscription_period_end = _parse_subscription_period_end(
-            d.pop("subscription_period_end", UNSET)
-        )
+        subscription_period_end = _parse_subscription_period_end(d.pop("subscription_period_end", UNSET))
 
         def _parse_subscription_period_initial_credits(
             data: object,
@@ -549,10 +527,8 @@ class AccountDetailsResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        subscription_period_initial_credits = (
-            _parse_subscription_period_initial_credits(
-                d.pop("subscription_period_initial_credits", UNSET)
-            )
+        subscription_period_initial_credits = _parse_subscription_period_initial_credits(
+            d.pop("subscription_period_initial_credits", UNSET)
         )
 
         def _parse_subscription_period_start(data: object) -> None | str | Unset:
@@ -562,9 +538,7 @@ class AccountDetailsResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        subscription_period_start = _parse_subscription_period_start(
-            d.pop("subscription_period_start", UNSET)
-        )
+        subscription_period_start = _parse_subscription_period_start(d.pop("subscription_period_start", UNSET))
 
         def _parse_trial_days_available(data: object) -> int | None | Unset:
             if data is None:
@@ -573,9 +547,7 @@ class AccountDetailsResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        trial_days_available = _parse_trial_days_available(
-            d.pop("trial_days_available", UNSET)
-        )
+        trial_days_available = _parse_trial_days_available(d.pop("trial_days_available", UNSET))
 
         account_details_response = cls(
             account_credits=account_credits,

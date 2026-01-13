@@ -100,9 +100,7 @@ class RunAgentRequest:
                 pass
             return cast(None | Unset | UUID, data)
 
-        content_version_id = _parse_content_version_id(
-            d.pop("content_version_id", UNSET)
-        )
+        content_version_id = _parse_content_version_id(d.pop("content_version_id", UNSET))
 
         def _parse_input_(data: object) -> None | str | Unset:
             if data is None:

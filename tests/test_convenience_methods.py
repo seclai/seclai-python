@@ -21,7 +21,7 @@ def test_convenience_delete_content_uses_generated_client_transport() -> None:
     )
 
     client.delete_content("sc_cv_123")
-    assert seen == {"method": "DELETE", "path": "/api/contents/sc_cv_123"}
+    assert seen == {"method": "DELETE", "path": "/contents/sc_cv_123"}
 
 
 @pytest.mark.asyncio
@@ -42,4 +42,4 @@ async def test_async_convenience_delete_content_uses_generated_client_transport(
     )
 
     await client.delete_content("sc_cv_123")
-    assert seen == {"method": "DELETE", "path": "/api/contents/sc_cv_123"}
+    assert seen == {"method": "DELETE", "path": "/contents/sc_cv_123"}

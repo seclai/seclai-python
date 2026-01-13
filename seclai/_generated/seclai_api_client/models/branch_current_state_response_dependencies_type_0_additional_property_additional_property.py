@@ -27,13 +27,9 @@ class BranchCurrentStateResponseDependenciesType0AdditionalPropertyAdditionalPro
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        branch_current_state_response_dependencies_type_0_additional_property_additional_property = (
-            cls()
-        )
+        branch_current_state_response_dependencies_type_0_additional_property_additional_property = cls()
 
-        branch_current_state_response_dependencies_type_0_additional_property_additional_property.additional_properties = (
-            d
-        )
+        branch_current_state_response_dependencies_type_0_additional_property_additional_property.additional_properties = d
         return branch_current_state_response_dependencies_type_0_additional_property_additional_property
 
     @property

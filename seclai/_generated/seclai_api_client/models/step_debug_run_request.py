@@ -120,9 +120,7 @@ class StepDebugRunRequest:
         if isinstance(_manual_metadata, Unset):
             manual_metadata = UNSET
         else:
-            manual_metadata = StepDebugRunRequestManualMetadata.from_dict(
-                _manual_metadata
-            )
+            manual_metadata = StepDebugRunRequestManualMetadata.from_dict(_manual_metadata)
 
         _manual_outputs = d.pop("manual_outputs", UNSET)
         manual_outputs: StepDebugRunRequestManualOutputs | Unset
@@ -146,9 +144,7 @@ class StepDebugRunRequest:
                 pass
             return cast(None | Unset | UUID, data)
 
-        source_agent_run_id = _parse_source_agent_run_id(
-            d.pop("source_agent_run_id", UNSET)
-        )
+        source_agent_run_id = _parse_source_agent_run_id(d.pop("source_agent_run_id", UNSET))
 
         step_debug_run_request = cls(
             agent_input=agent_input,

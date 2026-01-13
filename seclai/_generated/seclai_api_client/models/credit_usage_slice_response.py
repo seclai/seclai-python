@@ -57,9 +57,7 @@ class CreditUsageSliceResponse:
         activities = []
         _activities = d.pop("activities")
         for activities_item_data in _activities:
-            activities_item = ActivityCreditUsageResponse.from_dict(
-                activities_item_data
-            )
+            activities_item = ActivityCreditUsageResponse.from_dict(activities_item_data)
 
             activities.append(activities_item)
 

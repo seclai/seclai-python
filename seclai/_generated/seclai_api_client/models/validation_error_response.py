@@ -63,9 +63,7 @@ class ValidationErrorResponse:
         validation_errors = []
         _validation_errors = d.pop("validation_errors")
         for validation_errors_item_data in _validation_errors:
-            validation_errors_item = ValidationFieldError.from_dict(
-                validation_errors_item_data
-            )
+            validation_errors_item = ValidationFieldError.from_dict(validation_errors_item_data)
 
             validation_errors.append(validation_errors_item)
 

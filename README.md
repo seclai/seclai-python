@@ -25,7 +25,7 @@ from seclai import Seclai
 client = Seclai(api_key="...")
 
 # Low-level request (escape hatch)
-sources = client.request("GET", "/api/sources/")
+sources = client.request("GET", "/sources/")
 print(sources)
 ```
 
@@ -39,7 +39,7 @@ from seclai import AsyncSeclai
 
 async def main() -> None:
 	async with AsyncSeclai(api_key="...") as client:
-		sources = await client.request("GET", "/api/sources/")
+		sources = await client.request("GET", "/sources/")
 		print(sources)
 
 
@@ -67,6 +67,48 @@ run = client.run_agent(
 )
 
 print(run)
+```
+
+### Run an agent with SSE streaming (wait for final result)
+
+This helper returns when the stream emits the final `done` event. It raises if the stream ends early or `timeout` is reached.
+
+```python
+from seclai import Seclai
+
+client = Seclai(api_key="...")
+
+run = client.run_streaming_agent_and_wait(
+	"11111111-1111-4111-8111-111111111111",
+	body={
+		"input": "Hello from streaming",
+		"metadata": {"app": "My App"},
+	},
+	timeout=60.0,
+)
+
+print(run)
+```
+
+Async:
+
+```python
+import asyncio
+
+from seclai import AsyncSeclai
+
+
+async def main() -> None:
+	async with AsyncSeclai(api_key="...") as client:
+		run = await client.run_streaming_agent_and_wait(
+			"11111111-1111-4111-8111-111111111111",
+			body={"input": "Hello from streaming"},
+			timeout=60.0,
+		)
+		print(run)
+
+
+asyncio.run(main())
 ```
 
 ### List sources

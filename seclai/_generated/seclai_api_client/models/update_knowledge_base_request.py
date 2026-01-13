@@ -134,9 +134,7 @@ class UpdateKnowledgeBaseRequest:
                 return data
             return cast(bool | None | Unset, data)
 
-        keyword_search_enabled = _parse_keyword_search_enabled(
-            d.pop("keyword_search_enabled", UNSET)
-        )
+        keyword_search_enabled = _parse_keyword_search_enabled(d.pop("keyword_search_enabled", UNSET))
 
         def _parse_knowledge_base_enabled(data: object) -> bool | None | Unset:
             if data is None:
@@ -145,9 +143,7 @@ class UpdateKnowledgeBaseRequest:
                 return data
             return cast(bool | None | Unset, data)
 
-        knowledge_base_enabled = _parse_knowledge_base_enabled(
-            d.pop("knowledge_base_enabled", UNSET)
-        )
+        knowledge_base_enabled = _parse_knowledge_base_enabled(d.pop("knowledge_base_enabled", UNSET))
 
         def _parse_mcp_server_enabled(data: object) -> bool | None | Unset:
             if data is None:
@@ -156,9 +152,7 @@ class UpdateKnowledgeBaseRequest:
                 return data
             return cast(bool | None | Unset, data)
 
-        mcp_server_enabled = _parse_mcp_server_enabled(
-            d.pop("mcp_server_enabled", UNSET)
-        )
+        mcp_server_enabled = _parse_mcp_server_enabled(d.pop("mcp_server_enabled", UNSET))
 
         def _parse_name(data: object) -> None | str | Unset:
             if data is None:
@@ -185,9 +179,7 @@ class UpdateKnowledgeBaseRequest:
                 return data
             return cast(bool | None | Unset, data)
 
-        semantic_search_enabled = _parse_semantic_search_enabled(
-            d.pop("semantic_search_enabled", UNSET)
-        )
+        semantic_search_enabled = _parse_semantic_search_enabled(d.pop("semantic_search_enabled", UNSET))
 
         def _parse_source_ids(data: object) -> list[UUID] | None | Unset:
             if data is None:

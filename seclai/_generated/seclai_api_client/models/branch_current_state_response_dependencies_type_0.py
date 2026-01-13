@@ -19,9 +19,9 @@ T = TypeVar("T", bound="BranchCurrentStateResponseDependenciesType0")
 class BranchCurrentStateResponseDependenciesType0:
     """ """
 
-    additional_properties: dict[
-        str, BranchCurrentStateResponseDependenciesType0AdditionalProperty
-    ] = _attrs_field(init=False, factory=dict)
+    additional_properties: dict[str, BranchCurrentStateResponseDependenciesType0AdditionalProperty] = _attrs_field(
+        init=False, factory=dict
+    )
 
     def to_dict(self) -> dict[str, Any]:
         field_dict: dict[str, Any] = {}
@@ -41,26 +41,18 @@ class BranchCurrentStateResponseDependenciesType0:
 
         additional_properties = {}
         for prop_name, prop_dict in d.items():
-            additional_property = (
-                BranchCurrentStateResponseDependenciesType0AdditionalProperty.from_dict(
-                    prop_dict
-                )
-            )
+            additional_property = BranchCurrentStateResponseDependenciesType0AdditionalProperty.from_dict(prop_dict)
 
             additional_properties[prop_name] = additional_property
 
-        branch_current_state_response_dependencies_type_0.additional_properties = (
-            additional_properties
-        )
+        branch_current_state_response_dependencies_type_0.additional_properties = additional_properties
         return branch_current_state_response_dependencies_type_0
 
     @property
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(
-        self, key: str
-    ) -> BranchCurrentStateResponseDependenciesType0AdditionalProperty:
+    def __getitem__(self, key: str) -> BranchCurrentStateResponseDependenciesType0AdditionalProperty:
         return self.additional_properties[key]
 
     def __setitem__(

@@ -120,9 +120,7 @@ class EmbeddingModelsResponse:
         storage_credits = []
         _storage_credits = d.pop("storage_credits")
         for storage_credits_item_data in _storage_credits:
-            storage_credits_item = EmbeddingStorageCredits.from_dict(
-                storage_credits_item_data
-            )
+            storage_credits_item = EmbeddingStorageCredits.from_dict(storage_credits_item_data)
 
             storage_credits.append(storage_credits_item)
 
@@ -142,9 +140,7 @@ class EmbeddingModelsResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        default_model_type = _parse_default_model_type(
-            d.pop("default_model_type", UNSET)
-        )
+        default_model_type = _parse_default_model_type(d.pop("default_model_type", UNSET))
 
         embedding_models_response = cls(
             default_chunking=default_chunking,

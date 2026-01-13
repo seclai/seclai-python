@@ -61,18 +61,14 @@ class BranchSummaryResponse:
                 return data
             return cast(None | str, data)
 
-        most_recent_change_at = _parse_most_recent_change_at(
-            d.pop("most_recent_change_at")
-        )
+        most_recent_change_at = _parse_most_recent_change_at(d.pop("most_recent_change_at"))
 
         def _parse_most_recent_commit_at(data: object) -> None | str:
             if data is None:
                 return data
             return cast(None | str, data)
 
-        most_recent_commit_at = _parse_most_recent_commit_at(
-            d.pop("most_recent_commit_at")
-        )
+        most_recent_commit_at = _parse_most_recent_commit_at(d.pop("most_recent_commit_at"))
 
         name = d.pop("name")
 

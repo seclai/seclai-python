@@ -299,9 +299,7 @@ class SourceResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        avg_episodes_per_month = _parse_avg_episodes_per_month(
-            d.pop("avg_episodes_per_month", UNSET)
-        )
+        avg_episodes_per_month = _parse_avg_episodes_per_month(d.pop("avg_episodes_per_month", UNSET))
 
         def _parse_avg_words_per_episode(data: object) -> int | None | Unset:
             if data is None:
@@ -310,9 +308,7 @@ class SourceResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        avg_words_per_episode = _parse_avg_words_per_episode(
-            d.pop("avg_words_per_episode", UNSET)
-        )
+        avg_words_per_episode = _parse_avg_words_per_episode(d.pop("avg_words_per_episode", UNSET))
 
         def _parse_chunk_language(data: object) -> None | str | Unset:
             if data is None:
@@ -339,9 +335,7 @@ class SourceResponse:
                 return data
             return cast(bool | None | Unset, data)
 
-        chunk_regex_separators = _parse_chunk_regex_separators(
-            d.pop("chunk_regex_separators", UNSET)
-        )
+        chunk_regex_separators = _parse_chunk_regex_separators(d.pop("chunk_regex_separators", UNSET))
 
         def _parse_chunk_separators(data: object) -> None | str | Unset:
             if data is None:
@@ -388,9 +382,7 @@ class SourceResponse:
                 return data
             return cast(None | str | Unset, data)
 
-        embedding_model_type = _parse_embedding_model_type(
-            d.pop("embedding_model_type", UNSET)
-        )
+        embedding_model_type = _parse_embedding_model_type(d.pop("embedding_model_type", UNSET))
 
         has_historical_data = d.pop("has_historical_data", UNSET)
 

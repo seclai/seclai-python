@@ -55,25 +55,19 @@ class VariantOptionResponse:
         if isinstance(self.input_1h_cache_write_credits_per_1000_tokens, Unset):
             input_1h_cache_write_credits_per_1000_tokens = UNSET
         else:
-            input_1h_cache_write_credits_per_1000_tokens = (
-                self.input_1h_cache_write_credits_per_1000_tokens
-            )
+            input_1h_cache_write_credits_per_1000_tokens = self.input_1h_cache_write_credits_per_1000_tokens
 
         input_5m_cache_write_credits_per_1000_tokens: float | None | Unset
         if isinstance(self.input_5m_cache_write_credits_per_1000_tokens, Unset):
             input_5m_cache_write_credits_per_1000_tokens = UNSET
         else:
-            input_5m_cache_write_credits_per_1000_tokens = (
-                self.input_5m_cache_write_credits_per_1000_tokens
-            )
+            input_5m_cache_write_credits_per_1000_tokens = self.input_5m_cache_write_credits_per_1000_tokens
 
         input_cache_hit_credits_per_1000_tokens: float | None | Unset
         if isinstance(self.input_cache_hit_credits_per_1000_tokens, Unset):
             input_cache_hit_credits_per_1000_tokens = UNSET
         else:
-            input_cache_hit_credits_per_1000_tokens = (
-                self.input_cache_hit_credits_per_1000_tokens
-            )
+            input_cache_hit_credits_per_1000_tokens = self.input_cache_hit_credits_per_1000_tokens
 
         input_credits_per_1000_tokens: float | None | Unset
         if isinstance(self.input_credits_per_1000_tokens, Unset):
@@ -99,23 +93,15 @@ class VariantOptionResponse:
         if description is not UNSET:
             field_dict["description"] = description
         if input_1h_cache_write_credits_per_1000_tokens is not UNSET:
-            field_dict["input_1h_cache_write_credits_per_1000_tokens"] = (
-                input_1h_cache_write_credits_per_1000_tokens
-            )
+            field_dict["input_1h_cache_write_credits_per_1000_tokens"] = input_1h_cache_write_credits_per_1000_tokens
         if input_5m_cache_write_credits_per_1000_tokens is not UNSET:
-            field_dict["input_5m_cache_write_credits_per_1000_tokens"] = (
-                input_5m_cache_write_credits_per_1000_tokens
-            )
+            field_dict["input_5m_cache_write_credits_per_1000_tokens"] = input_5m_cache_write_credits_per_1000_tokens
         if input_cache_hit_credits_per_1000_tokens is not UNSET:
-            field_dict["input_cache_hit_credits_per_1000_tokens"] = (
-                input_cache_hit_credits_per_1000_tokens
-            )
+            field_dict["input_cache_hit_credits_per_1000_tokens"] = input_cache_hit_credits_per_1000_tokens
         if input_credits_per_1000_tokens is not UNSET:
             field_dict["input_credits_per_1000_tokens"] = input_credits_per_1000_tokens
         if output_credits_per_1000_tokens is not UNSET:
-            field_dict["output_credits_per_1000_tokens"] = (
-                output_credits_per_1000_tokens
-            )
+            field_dict["output_credits_per_1000_tokens"] = output_credits_per_1000_tokens
 
         return field_dict
 
@@ -146,10 +132,8 @@ class VariantOptionResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        input_1h_cache_write_credits_per_1000_tokens = (
-            _parse_input_1h_cache_write_credits_per_1000_tokens(
-                d.pop("input_1h_cache_write_credits_per_1000_tokens", UNSET)
-            )
+        input_1h_cache_write_credits_per_1000_tokens = _parse_input_1h_cache_write_credits_per_1000_tokens(
+            d.pop("input_1h_cache_write_credits_per_1000_tokens", UNSET)
         )
 
         def _parse_input_5m_cache_write_credits_per_1000_tokens(
@@ -161,10 +145,8 @@ class VariantOptionResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        input_5m_cache_write_credits_per_1000_tokens = (
-            _parse_input_5m_cache_write_credits_per_1000_tokens(
-                d.pop("input_5m_cache_write_credits_per_1000_tokens", UNSET)
-            )
+        input_5m_cache_write_credits_per_1000_tokens = _parse_input_5m_cache_write_credits_per_1000_tokens(
+            d.pop("input_5m_cache_write_credits_per_1000_tokens", UNSET)
         )
 
         def _parse_input_cache_hit_credits_per_1000_tokens(
@@ -176,10 +158,8 @@ class VariantOptionResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        input_cache_hit_credits_per_1000_tokens = (
-            _parse_input_cache_hit_credits_per_1000_tokens(
-                d.pop("input_cache_hit_credits_per_1000_tokens", UNSET)
-            )
+        input_cache_hit_credits_per_1000_tokens = _parse_input_cache_hit_credits_per_1000_tokens(
+            d.pop("input_cache_hit_credits_per_1000_tokens", UNSET)
         )
 
         def _parse_input_credits_per_1000_tokens(data: object) -> float | None | Unset:
