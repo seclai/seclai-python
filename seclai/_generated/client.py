@@ -163,9 +163,9 @@ class AuthenticatedClient:
         raise_on_unexpected_status: Whether or not to raise an errors.UnexpectedStatus if the API returns a
             status code that was not documented in the source OpenAPI document. Can also be provided as a keyword
             argument to the constructor.
-        token: The token to use for authentication
-        prefix: The prefix to use for the Authorization header
-        auth_header_name: The name of the Authorization header
+        token: The API key / token to use for authentication
+        prefix: Optional prefix for the auth header value (usually empty for API key auth)
+        auth_header_name: The name of the auth header (defaults to API key header)
     """
 
     raise_on_unexpected_status: bool = field(default=False, kw_only=True)
@@ -184,8 +184,8 @@ class AuthenticatedClient:
     _async_client: httpx.AsyncClient | None = field(default=None, init=False)
 
     token: str
-    prefix: str = "Bearer"
-    auth_header_name: str = "Authorization"
+    prefix: str = ""
+    auth_header_name: str = "x-api-key"
 
     def with_headers(self, headers: dict[str, str]) -> "AuthenticatedClient":
         """Get a new client matching this one with additional headers"""

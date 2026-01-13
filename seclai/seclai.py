@@ -44,7 +44,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, BinaryIO, Self, cast
+from typing import Any, BinaryIO, Self, TypedDict, cast
 
 import httpx
 
@@ -65,6 +65,16 @@ logger = logging.getLogger(__name__)
 
 
 JSONValue = dict[str, "JSONValue"] | list["JSONValue"] | str | int | float | bool | None
+
+
+class AgentRunStreamRequest(TypedDict):
+    """Request body for streaming agent runs.
+
+    This matches the API schema for POST /api/agents/{agent_id}/runs/stream.
+    """
+
+    input: str | None
+    metadata: dict[str, JSONValue]
 
 
 SECLAI_API_URL = os.getenv("SECLAI_API_URL", "https://seclai.com")
@@ -494,6 +504,122 @@ class Seclai(_SeclaiBase):
                 validation_error=parsed,
             )
         return parsed
+
+    def run_streaming_agent_and_wait(
+        self,
+        agent_id: str,
+        body: AgentRunStreamRequest,
+        *,
+        timeout: float | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> AgentRunResponse:
+        """Run an agent via SSE streaming and block until completion.
+
+        This uses POST /api/agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
+        The method returns when an `event: done` message is received.
+
+        Args:
+            agent_id: Agent identifier.
+            body: Streaming agent run request payload.
+            timeout: Max time (seconds) to wait for the final result (client-side). Defaults to this
+                client's configured timeout.
+            headers: Optional extra headers for this request.
+
+        Returns:
+            The final agent run payload from the `done` event.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the stream ends early or times out.
+        """
+        import json as _json
+        import time as _time
+
+        path = f"/api/agents/{agent_id}/runs/stream"
+
+        merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
+        merged_headers.setdefault("accept", "text/event-stream")
+
+        timeout_seconds = self._options.timeout if timeout is None else timeout
+        start = _time.monotonic()
+
+        try:
+            with self._client.stream(
+                "POST",
+                path,
+                json=body,
+                headers=merged_headers,
+                timeout=timeout_seconds,
+            ) as response:
+                if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+                    payload = response.json()
+                    raise SeclaiAPIValidationError(
+                        message=f"Request failed with status {response.status_code}",
+                        status_code=int(response.status_code),
+                        method="POST",
+                        url=self._build_url(path),
+                        response_text=response.text,
+                        validation_error=HTTPValidationError.from_dict(payload),
+                    )
+                _raise_for_status(response)
+
+                current_event: str | None = None
+                data_lines: list[str] = []
+                last_seen: AgentRunResponse | None = None
+
+                def dispatch() -> AgentRunResponse | None:
+                    nonlocal current_event, data_lines, last_seen
+                    if current_event is None and not data_lines:
+                        return None
+                    data = "\n".join(data_lines)
+                    evt = current_event
+                    current_event = None
+                    data_lines = []
+                    if not data:
+                        return None
+                    if evt not in {"init", "done"}:
+                        return None
+                    try:
+                        parsed_dict = cast(dict[str, Any], _json.loads(data))
+                        parsed = AgentRunResponse.from_dict(parsed_dict)
+                        last_seen = parsed
+                        if evt == "done":
+                            return parsed
+                    except Exception:
+                        return None
+                    return None
+
+                for line in response.iter_lines():
+                    if _time.monotonic() - start > timeout_seconds:
+                        raise SeclaiError(
+                            f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
+                        )
+
+                    if line == "":
+                        done = dispatch()
+                        if done is not None:
+                            return done
+                        continue
+                    if line.startswith(":"):
+                        continue
+                    if line.startswith("event:"):
+                        current_event = line[len("event:") :].strip() or None
+                        continue
+                    if line.startswith("data:"):
+                        data_lines.append(line[len("data:") :].lstrip())
+                        continue
+
+                done = dispatch()
+                if done is not None:
+                    return done
+                if last_seen is not None:
+                    return last_seen
+                raise SeclaiError("Stream ended before receiving a 'done' event.")
+        except httpx.TimeoutException as e:
+            raise SeclaiError(
+                f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
+            ) from e
 
     def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -1129,6 +1255,107 @@ class AsyncSeclai(_SeclaiBase):
                 validation_error=parsed,
             )
         return parsed
+
+    async def run_streaming_agent_and_wait(
+        self,
+        agent_id: str,
+        body: AgentRunStreamRequest,
+        *,
+        timeout: float | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> AgentRunResponse:
+        """Run an agent via SSE streaming and block until completion (async).
+
+        This uses POST /api/agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
+        The method returns when an `event: done` message is received.
+        """
+        import json as _json
+        import time as _time
+
+        path = f"/api/agents/{agent_id}/runs/stream"
+
+        merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
+        merged_headers.setdefault("accept", "text/event-stream")
+
+        timeout_seconds = self._options.timeout if timeout is None else timeout
+        start = _time.monotonic()
+
+        try:
+            async with self._client.stream(
+                "POST",
+                path,
+                json=body,
+                headers=merged_headers,
+                timeout=timeout_seconds,
+            ) as response:
+                if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+                    payload = response.json()
+                    raise SeclaiAPIValidationError(
+                        message=f"Request failed with status {response.status_code}",
+                        status_code=int(response.status_code),
+                        method="POST",
+                        url=self._build_url(path),
+                        response_text=response.text,
+                        validation_error=HTTPValidationError.from_dict(payload),
+                    )
+                _raise_for_status(response)
+
+                current_event: str | None = None
+                data_lines: list[str] = []
+                last_seen: AgentRunResponse | None = None
+
+                def dispatch() -> AgentRunResponse | None:
+                    nonlocal current_event, data_lines, last_seen
+                    if current_event is None and not data_lines:
+                        return None
+                    data = "\n".join(data_lines)
+                    evt = current_event
+                    current_event = None
+                    data_lines = []
+                    if not data:
+                        return None
+                    if evt not in {"init", "done"}:
+                        return None
+                    try:
+                        parsed_dict = cast(dict[str, Any], _json.loads(data))
+                        parsed = AgentRunResponse.from_dict(parsed_dict)
+                        last_seen = parsed
+                        if evt == "done":
+                            return parsed
+                    except Exception:
+                        return None
+                    return None
+
+                async for line in response.aiter_lines():
+                    if _time.monotonic() - start > timeout_seconds:
+                        raise SeclaiError(
+                            f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
+                        )
+
+                    if line == "":
+                        done = dispatch()
+                        if done is not None:
+                            return done
+                        continue
+                    if line.startswith(":"):
+                        continue
+                    if line.startswith("event:"):
+                        current_event = line[len("event:") :].strip() or None
+                        continue
+                    if line.startswith("data:"):
+                        data_lines.append(line[len("data:") :].lstrip())
+                        continue
+
+                done = dispatch()
+                if done is not None:
+                    return done
+                if last_seen is not None:
+                    return last_seen
+                raise SeclaiError("Stream ended before receiving a 'done' event.")
+        except httpx.TimeoutException as e:
+            raise SeclaiError(
+                f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
+            ) from e
 
     async def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50

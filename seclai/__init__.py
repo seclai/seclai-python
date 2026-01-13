@@ -1,4 +1,5 @@
 from .seclai import (
+    AgentRunStreamRequest,
     AsyncSeclai,
     Seclai,
     SeclaiAPIStatusError,
@@ -7,6 +8,7 @@ from .seclai import (
 )
 
 __all__ = [
+    "AgentRunStreamRequest",
     "AsyncSeclai",
     "Seclai",
     "SeclaiAPIStatusError",
