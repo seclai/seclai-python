@@ -8,19 +8,28 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_run_response import AgentRunResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     agent_id: str,
     run_id: str,
+    *,
+    include_step_outputs: bool | Unset = False,
 ) -> dict[str, Any]:
+    params: dict[str, Any] = {}
+
+    params["include_step_outputs"] = include_step_outputs
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/agents/{agent_id}/runs/{run_id}".format(
             agent_id=quote(str(agent_id), safe=""),
             run_id=quote(str(run_id), safe=""),
         ),
+        "params": params,
     }
 
     return _kwargs
@@ -61,6 +70,7 @@ def sync_detailed(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    include_step_outputs: bool | Unset = False,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Get Agent Run
 
@@ -69,6 +79,8 @@ def sync_detailed(
     Args:
         agent_id (str):
         run_id (str):
+        include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
+            durations, and credits. Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -81,6 +93,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         run_id=run_id,
+        include_step_outputs=include_step_outputs,
     )
 
     response = client.get_httpx_client().request(
@@ -95,6 +108,7 @@ def sync(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    include_step_outputs: bool | Unset = False,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Get Agent Run
 
@@ -103,6 +117,8 @@ def sync(
     Args:
         agent_id (str):
         run_id (str):
+        include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
+            durations, and credits. Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -116,6 +132,7 @@ def sync(
         agent_id=agent_id,
         run_id=run_id,
         client=client,
+        include_step_outputs=include_step_outputs,
     ).parsed
 
 
@@ -124,6 +141,7 @@ async def asyncio_detailed(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    include_step_outputs: bool | Unset = False,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Get Agent Run
 
@@ -132,6 +150,8 @@ async def asyncio_detailed(
     Args:
         agent_id (str):
         run_id (str):
+        include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
+            durations, and credits. Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -144,6 +164,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         run_id=run_id,
+        include_step_outputs=include_step_outputs,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -156,6 +177,7 @@ async def asyncio(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    include_step_outputs: bool | Unset = False,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Get Agent Run
 
@@ -164,6 +186,8 @@ async def asyncio(
     Args:
         agent_id (str):
         run_id (str):
+        include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
+            durations, and credits. Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -178,5 +202,6 @@ async def asyncio(
             agent_id=agent_id,
             run_id=run_id,
             client=client,
+            include_step_outputs=include_step_outputs,
         )
     ).parsed

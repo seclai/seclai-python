@@ -7,9 +7,11 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.pending_processing_completed_failed_status import PendingProcessingCompletedFailedStatus
+from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.agent_run_attempt_response import AgentRunAttemptResponse
+    from ..models.agent_run_step_response import AgentRunStepResponse
 
 
 T = TypeVar("T", bound="AgentRunResponse")
@@ -27,6 +29,8 @@ class AgentRunResponse:
         priority (bool): Indicates if the run was treated as a priority execution.
         run_id (str): Unique identifier for the agent run.
         status (PendingProcessingCompletedFailedStatus):
+        steps (list[AgentRunStepResponse] | None | Unset): Step outputs and per-step timing/credits. Only included when
+            requested.
     """
 
     attempts: list[AgentRunAttemptResponse]
@@ -37,6 +41,7 @@ class AgentRunResponse:
     priority: bool
     run_id: str
     status: PendingProcessingCompletedFailedStatus
+    steps: list[AgentRunStepResponse] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -62,6 +67,18 @@ class AgentRunResponse:
 
         status = self.status.value
 
+        steps: list[dict[str, Any]] | None | Unset
+        if isinstance(self.steps, Unset):
+            steps = UNSET
+        elif isinstance(self.steps, list):
+            steps = []
+            for steps_type_0_item_data in self.steps:
+                steps_type_0_item = steps_type_0_item_data.to_dict()
+                steps.append(steps_type_0_item)
+
+        else:
+            steps = self.steps
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -76,12 +93,15 @@ class AgentRunResponse:
                 "status": status,
             }
         )
+        if steps is not UNSET:
+            field_dict["steps"] = steps
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_run_attempt_response import AgentRunAttemptResponse
+        from ..models.agent_run_step_response import AgentRunStepResponse
 
         d = dict(src_dict)
         attempts = []
@@ -120,6 +140,28 @@ class AgentRunResponse:
 
         status = PendingProcessingCompletedFailedStatus(d.pop("status"))
 
+        def _parse_steps(data: object) -> list[AgentRunStepResponse] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                steps_type_0 = []
+                _steps_type_0 = data
+                for steps_type_0_item_data in _steps_type_0:
+                    steps_type_0_item = AgentRunStepResponse.from_dict(steps_type_0_item_data)
+
+                    steps_type_0.append(steps_type_0_item)
+
+                return steps_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[AgentRunStepResponse] | None | Unset, data)
+
+        steps = _parse_steps(d.pop("steps", UNSET))
+
         agent_run_response = cls(
             attempts=attempts,
             credits_=credits_,
@@ -129,6 +171,7 @@ class AgentRunResponse:
             priority=priority,
             run_id=run_id,
             status=status,
+            steps=steps,
         )
 
         agent_run_response.additional_properties = d

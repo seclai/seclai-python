@@ -685,7 +685,9 @@ class Seclai(_SeclaiBase):
             )
         return parsed
 
-    def get_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
+    def get_agent_run(
+        self, agent_id: str, run_id: str, *, include_step_outputs: bool = False
+    ) -> AgentRunResponse:
         """Get details of a specific agent run.
 
         Fetches the current state and details for a previously created run.
@@ -693,6 +695,8 @@ class Seclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             run_id: Run identifier.
+            include_step_outputs: If true, include per-step outputs with timing,
+                durations, and credits. Defaults to False.
 
         Returns:
             Agent run details.
@@ -707,7 +711,10 @@ class Seclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs/{run_id}"
         response = sync_detailed(
-            agent_id=agent_id, run_id=run_id, client=self._generated_client()
+            agent_id=agent_id,
+            run_id=run_id,
+            client=self._generated_client(),
+            include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
             method="GET",
@@ -1468,7 +1475,9 @@ class AsyncSeclai(_SeclaiBase):
             )
         return parsed
 
-    async def get_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
+    async def get_agent_run(
+        self, agent_id: str, run_id: str, *, include_step_outputs: bool = False
+    ) -> AgentRunResponse:
         """Get details of a specific agent run.
 
         Fetches the current state and details for a previously created run.
@@ -1476,6 +1485,8 @@ class AsyncSeclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             run_id: Run identifier.
+            include_step_outputs: If true, include per-step outputs with timing,
+                durations, and credits. Defaults to False.
 
         Returns:
             Agent run details.
@@ -1493,6 +1504,7 @@ class AsyncSeclai(_SeclaiBase):
             agent_id=agent_id,
             run_id=run_id,
             client=self._generated_client(),
+            include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
             method="GET",

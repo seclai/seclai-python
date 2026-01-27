@@ -111,6 +111,31 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+### Get agent run details
+
+Get details of a specific agent run, optionally including per-step outputs:
+
+```python
+from seclai import Seclai
+
+client = Seclai(api_key="...")
+
+# Basic details
+run = client.get_agent_run(
+	"11111111-1111-4111-8111-111111111111",
+	"22222222-2222-4222-8222-222222222222",
+)
+print(run)
+
+# Include per-step outputs with timing, durations, and credits
+run = client.get_agent_run(
+	"11111111-1111-4111-8111-111111111111",
+	"22222222-2222-4222-8222-222222222222",
+	include_step_outputs=True,
+)
+print(run)
+```
+
 ### List sources
 
 ```python
