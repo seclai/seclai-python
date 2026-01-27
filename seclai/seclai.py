@@ -45,7 +45,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, BinaryIO, Self, TypedDict, cast
+from typing import Any, BinaryIO, Self, TypedDict, cast, overload
 
 import httpx
 
@@ -685,16 +685,24 @@ class Seclai(_SeclaiBase):
             )
         return parsed
 
+    @overload
     def get_agent_run(
-        self, agent_id: str, run_id: str, *, include_step_outputs: bool = False
-    ) -> AgentRunResponse:
+        self, run_id: str, /, *, include_step_outputs: bool = False
+    ) -> AgentRunResponse: ...
+
+    @overload
+    def get_agent_run(
+        self, agent_id: str, run_id: str, /, *, include_step_outputs: bool = False
+    ) -> AgentRunResponse: ...
+
+    def get_agent_run(self, *args: str, include_step_outputs: bool = False) -> AgentRunResponse:
         """Get details of a specific agent run.
 
         Fetches the current state and details for a previously created run.
 
         Args:
-            agent_id: Agent identifier.
             run_id: Run identifier.
+            agent_id: Deprecated. Ignored if provided; maintained for backwards compatibility.
             include_step_outputs: If true, include per-step outputs with timing,
                 durations, and credits. Defaults to False.
 
@@ -705,13 +713,20 @@ class Seclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
-        from seclai._generated.api.agents.get_agent_run_api_agents_agent_id_runs_run_id_get import (
+        if len(args) == 1:
+            run_id = args[0]
+        elif len(args) == 2:
+            # Backwards compatible: get_agent_run(agent_id, run_id)
+            run_id = args[1]
+        else:
+            raise TypeError("get_agent_run expects (run_id) or (agent_id, run_id)")
+
+        from seclai._generated.api.agents.get_agent_run_api_agents_runs_run_id_get import (
             sync_detailed,
         )
 
-        path = f"/agents/{agent_id}/runs/{run_id}"
+        path = f"/agents/runs/{run_id}"
         response = sync_detailed(
-            agent_id=agent_id,
             run_id=run_id,
             client=self._generated_client(),
             include_step_outputs=include_step_outputs,
@@ -742,14 +757,20 @@ class Seclai(_SeclaiBase):
             )
         return parsed
 
-    def delete_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
+    @overload
+    def delete_agent_run(self, run_id: str, /) -> AgentRunResponse: ...
+
+    @overload
+    def delete_agent_run(self, agent_id: str, run_id: str, /) -> AgentRunResponse: ...
+
+    def delete_agent_run(self, *args: str) -> AgentRunResponse:
         """Cancel an agent run.
 
         Requests cancellation of a run and returns the updated run record. Note: cancellation will not stop the currently executing step, but will prevent any further steps from running.
 
         Args:
-            agent_id: Agent identifier.
             run_id: Run identifier.
+            agent_id: Deprecated. Ignored if provided; maintained for backwards compatibility.
 
         Returns:
             The updated agent run.
@@ -758,14 +779,20 @@ class Seclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
-        from seclai._generated.api.agents.delete_agent_run_api_agents_agent_id_runs_run_id_delete import (
+        if len(args) == 1:
+            run_id = args[0]
+        elif len(args) == 2:
+            # Backwards compatible: delete_agent_run(agent_id, run_id)
+            run_id = args[1]
+        else:
+            raise TypeError("delete_agent_run expects (run_id) or (agent_id, run_id)")
+
+        from seclai._generated.api.agents.delete_agent_run_api_agents_runs_run_id_delete import (
             sync_detailed,
         )
 
-        path = f"/agents/{agent_id}/runs/{run_id}"
-        response = sync_detailed(
-            agent_id=agent_id, run_id=run_id, client=self._generated_client()
-        )
+        path = f"/agents/runs/{run_id}"
+        response = sync_detailed(run_id=run_id, client=self._generated_client())
         self._raise_for_openapi_response(
             method="DELETE",
             path=path,
@@ -1475,16 +1502,24 @@ class AsyncSeclai(_SeclaiBase):
             )
         return parsed
 
+    @overload
     async def get_agent_run(
-        self, agent_id: str, run_id: str, *, include_step_outputs: bool = False
-    ) -> AgentRunResponse:
+        self, run_id: str, /, *, include_step_outputs: bool = False
+    ) -> AgentRunResponse: ...
+
+    @overload
+    async def get_agent_run(
+        self, agent_id: str, run_id: str, /, *, include_step_outputs: bool = False
+    ) -> AgentRunResponse: ...
+
+    async def get_agent_run(self, *args: str, include_step_outputs: bool = False) -> AgentRunResponse:
         """Get details of a specific agent run.
 
         Fetches the current state and details for a previously created run.
 
         Args:
-            agent_id: Agent identifier.
             run_id: Run identifier.
+            agent_id: Deprecated. Ignored if provided; maintained for backwards compatibility.
             include_step_outputs: If true, include per-step outputs with timing,
                 durations, and credits. Defaults to False.
 
@@ -1495,13 +1530,20 @@ class AsyncSeclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
-        from seclai._generated.api.agents.get_agent_run_api_agents_agent_id_runs_run_id_get import (
+        if len(args) == 1:
+            run_id = args[0]
+        elif len(args) == 2:
+            # Backwards compatible: get_agent_run(agent_id, run_id)
+            run_id = args[1]
+        else:
+            raise TypeError("get_agent_run expects (run_id) or (agent_id, run_id)")
+
+        from seclai._generated.api.agents.get_agent_run_api_agents_runs_run_id_get import (
             asyncio_detailed,
         )
 
-        path = f"/agents/{agent_id}/runs/{run_id}"
+        path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
-            agent_id=agent_id,
             run_id=run_id,
             client=self._generated_client(),
             include_step_outputs=include_step_outputs,
@@ -1532,14 +1574,20 @@ class AsyncSeclai(_SeclaiBase):
             )
         return parsed
 
-    async def delete_agent_run(self, agent_id: str, run_id: str) -> AgentRunResponse:
+    @overload
+    async def delete_agent_run(self, run_id: str, /) -> AgentRunResponse: ...
+
+    @overload
+    async def delete_agent_run(self, agent_id: str, run_id: str, /) -> AgentRunResponse: ...
+
+    async def delete_agent_run(self, *args: str) -> AgentRunResponse:
         """Cancel an agent run.
 
         Requests cancellation of a run and returns the updated run record.
 
         Args:
-            agent_id: Agent identifier.
             run_id: Run identifier.
+            agent_id: Deprecated. Ignored if provided; maintained for backwards compatibility.
 
         Returns:
             The updated agent run.
@@ -1548,13 +1596,20 @@ class AsyncSeclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
-        from seclai._generated.api.agents.delete_agent_run_api_agents_agent_id_runs_run_id_delete import (
+        if len(args) == 1:
+            run_id = args[0]
+        elif len(args) == 2:
+            # Backwards compatible: delete_agent_run(agent_id, run_id)
+            run_id = args[1]
+        else:
+            raise TypeError("delete_agent_run expects (run_id) or (agent_id, run_id)")
+
+        from seclai._generated.api.agents.delete_agent_run_api_agents_runs_run_id_delete import (
             asyncio_detailed,
         )
 
-        path = f"/agents/{agent_id}/runs/{run_id}"
+        path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
-            agent_id=agent_id,
             run_id=run_id,
             client=self._generated_client(),
         )

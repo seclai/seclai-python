@@ -12,13 +12,11 @@ from ...types import Response
 
 
 def _get_kwargs(
-    agent_id: str,
     run_id: str,
 ) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": "/agents/{agent_id}/runs/{run_id}".format(
-            agent_id=quote(str(agent_id), safe=""),
+        "url": "/agents/runs/{run_id}".format(
             run_id=quote(str(run_id), safe=""),
         ),
     }
@@ -57,7 +55,6 @@ def _build_response(
 
 
 def sync_detailed(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -67,7 +64,6 @@ def sync_detailed(
      Cancel agent run.
 
     Args:
-        agent_id (str):
         run_id (str):
 
     Raises:
@@ -79,7 +75,6 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
-        agent_id=agent_id,
         run_id=run_id,
     )
 
@@ -91,7 +86,6 @@ def sync_detailed(
 
 
 def sync(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -101,7 +95,6 @@ def sync(
      Cancel agent run.
 
     Args:
-        agent_id (str):
         run_id (str):
 
     Raises:
@@ -113,14 +106,12 @@ def sync(
     """
 
     return sync_detailed(
-        agent_id=agent_id,
         run_id=run_id,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -130,7 +121,6 @@ async def asyncio_detailed(
      Cancel agent run.
 
     Args:
-        agent_id (str):
         run_id (str):
 
     Raises:
@@ -142,7 +132,6 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
-        agent_id=agent_id,
         run_id=run_id,
     )
 
@@ -152,7 +141,6 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -162,7 +150,6 @@ async def asyncio(
      Cancel agent run.
 
     Args:
-        agent_id (str):
         run_id (str):
 
     Raises:
@@ -175,7 +162,6 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            agent_id=agent_id,
             run_id=run_id,
             client=client,
         )

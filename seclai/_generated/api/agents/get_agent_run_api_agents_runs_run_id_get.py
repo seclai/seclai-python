@@ -12,7 +12,6 @@ from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    agent_id: str,
     run_id: str,
     *,
     include_step_outputs: bool | Unset = False,
@@ -25,8 +24,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/agents/{agent_id}/runs/{run_id}".format(
-            agent_id=quote(str(agent_id), safe=""),
+        "url": "/agents/runs/{run_id}".format(
             run_id=quote(str(run_id), safe=""),
         ),
         "params": params,
@@ -66,7 +64,6 @@ def _build_response(
 
 
 def sync_detailed(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -77,7 +74,6 @@ def sync_detailed(
      Get agent run details.
 
     Args:
-        agent_id (str):
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
@@ -91,7 +87,6 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
-        agent_id=agent_id,
         run_id=run_id,
         include_step_outputs=include_step_outputs,
     )
@@ -104,7 +99,6 @@ def sync_detailed(
 
 
 def sync(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -115,7 +109,6 @@ def sync(
      Get agent run details.
 
     Args:
-        agent_id (str):
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
@@ -129,7 +122,6 @@ def sync(
     """
 
     return sync_detailed(
-        agent_id=agent_id,
         run_id=run_id,
         client=client,
         include_step_outputs=include_step_outputs,
@@ -137,7 +129,6 @@ def sync(
 
 
 async def asyncio_detailed(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -148,7 +139,6 @@ async def asyncio_detailed(
      Get agent run details.
 
     Args:
-        agent_id (str):
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
@@ -162,7 +152,6 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
-        agent_id=agent_id,
         run_id=run_id,
         include_step_outputs=include_step_outputs,
     )
@@ -173,7 +162,6 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    agent_id: str,
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
@@ -184,7 +172,6 @@ async def asyncio(
      Get agent run details.
 
     Args:
-        agent_id (str):
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
@@ -199,7 +186,6 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            agent_id=agent_id,
             run_id=run_id,
             client=client,
             include_step_outputs=include_step_outputs,
