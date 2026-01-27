@@ -3,6 +3,7 @@ import json
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any
 
 import httpx
 import pytest
@@ -10,8 +11,8 @@ import pytest
 from seclai import AgentRunStreamRequest, AsyncSeclai, Seclai, SeclaiError
 
 
-def _agent_run_payload(status: str, *, output: str | None = None) -> dict:
-    payload: dict = {
+def _agent_run_payload(status: str, *, output: str | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "attempts": [],
         "credits": None,
         "error_count": 0,

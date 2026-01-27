@@ -70,9 +70,49 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
-    """Upload File To Source
+    """Upload a file to a content source
 
      Upload a file to a content source.
+
+    **Maximum file size:** 209715200 bytes.
+
+    **Supported MIME types:**
+    - `application/epub+zip`
+    - `application/json`
+    - `application/msword`
+    - `application/pdf`
+    - `application/vnd.ms-excel`
+    - `application/vnd.ms-outlook`
+    - `application/vnd.ms-powerpoint`
+    - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
+    - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+    - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/xml`
+    - `application/zip`
+    - `audio/flac`
+    - `audio/mp4`
+    - `audio/mpeg`
+    - `audio/ogg`
+    - `audio/wav`
+    - `image/bmp`
+    - `image/gif`
+    - `image/jpeg`
+    - `image/png`
+    - `image/tiff`
+    - `image/webp`
+    - `text/csv`
+    - `text/html`
+    - `text/markdown`
+    - `text/plain`
+    - `text/x-markdown`
+    - `text/xml`
+    - `video/mp4`
+    - `video/quicktime`
+    - `video/x-msvideo`
+
+    Notes:
+    - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
+    the type from the file extension.
 
     Args:
         source_connection_id (str):
@@ -104,9 +144,49 @@ def sync(
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
 ) -> FileUploadResponse | HTTPValidationError | None:
-    """Upload File To Source
+    """Upload a file to a content source
 
      Upload a file to a content source.
+
+    **Maximum file size:** 209715200 bytes.
+
+    **Supported MIME types:**
+    - `application/epub+zip`
+    - `application/json`
+    - `application/msword`
+    - `application/pdf`
+    - `application/vnd.ms-excel`
+    - `application/vnd.ms-outlook`
+    - `application/vnd.ms-powerpoint`
+    - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
+    - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+    - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/xml`
+    - `application/zip`
+    - `audio/flac`
+    - `audio/mp4`
+    - `audio/mpeg`
+    - `audio/ogg`
+    - `audio/wav`
+    - `image/bmp`
+    - `image/gif`
+    - `image/jpeg`
+    - `image/png`
+    - `image/tiff`
+    - `image/webp`
+    - `text/csv`
+    - `text/html`
+    - `text/markdown`
+    - `text/plain`
+    - `text/x-markdown`
+    - `text/xml`
+    - `video/mp4`
+    - `video/quicktime`
+    - `video/x-msvideo`
+
+    Notes:
+    - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
+    the type from the file extension.
 
     Args:
         source_connection_id (str):
@@ -133,9 +213,49 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
-    """Upload File To Source
+    """Upload a file to a content source
 
      Upload a file to a content source.
+
+    **Maximum file size:** 209715200 bytes.
+
+    **Supported MIME types:**
+    - `application/epub+zip`
+    - `application/json`
+    - `application/msword`
+    - `application/pdf`
+    - `application/vnd.ms-excel`
+    - `application/vnd.ms-outlook`
+    - `application/vnd.ms-powerpoint`
+    - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
+    - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+    - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/xml`
+    - `application/zip`
+    - `audio/flac`
+    - `audio/mp4`
+    - `audio/mpeg`
+    - `audio/ogg`
+    - `audio/wav`
+    - `image/bmp`
+    - `image/gif`
+    - `image/jpeg`
+    - `image/png`
+    - `image/tiff`
+    - `image/webp`
+    - `text/csv`
+    - `text/html`
+    - `text/markdown`
+    - `text/plain`
+    - `text/x-markdown`
+    - `text/xml`
+    - `video/mp4`
+    - `video/quicktime`
+    - `video/x-msvideo`
+
+    Notes:
+    - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
+    the type from the file extension.
 
     Args:
         source_connection_id (str):
@@ -165,9 +285,49 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
 ) -> FileUploadResponse | HTTPValidationError | None:
-    """Upload File To Source
+    """Upload a file to a content source
 
      Upload a file to a content source.
+
+    **Maximum file size:** 209715200 bytes.
+
+    **Supported MIME types:**
+    - `application/epub+zip`
+    - `application/json`
+    - `application/msword`
+    - `application/pdf`
+    - `application/vnd.ms-excel`
+    - `application/vnd.ms-outlook`
+    - `application/vnd.ms-powerpoint`
+    - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
+    - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+    - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/xml`
+    - `application/zip`
+    - `audio/flac`
+    - `audio/mp4`
+    - `audio/mpeg`
+    - `audio/ogg`
+    - `audio/wav`
+    - `image/bmp`
+    - `image/gif`
+    - `image/jpeg`
+    - `image/png`
+    - `image/tiff`
+    - `image/webp`
+    - `text/csv`
+    - `text/html`
+    - `text/markdown`
+    - `text/plain`
+    - `text/x-markdown`
+    - `text/xml`
+    - `video/mp4`
+    - `video/quicktime`
+    - `video/x-msvideo`
+
+    Notes:
+    - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
+    the type from the file extension.
 
     Args:
         source_connection_id (str):

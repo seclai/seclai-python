@@ -38,6 +38,7 @@ Async:
 """
 
 import logging
+import mimetypes
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -140,6 +141,13 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
             response_text=response_text,
         )
         self.validation_error = validation_error
+
+
+def _guess_mime_type(file_name: str | None) -> str | None:
+    if not file_name:
+        return None
+    guessed, _ = mimetypes.guess_type(file_name)
+    return guessed
 
 
 def _resolve_api_key(api_key: str | None) -> str:
@@ -1005,6 +1013,45 @@ class Seclai(_SeclaiBase):
 
         Sends a file to be ingested under the given source connection.
 
+        Maximum file size: 200 MiB.
+
+        Supported MIME types:
+            - `application/epub+zip`
+            - `application/json`
+            - `application/msword`
+            - `application/pdf`
+            - `application/vnd.ms-excel`
+            - `application/vnd.ms-outlook`
+            - `application/vnd.ms-powerpoint`
+            - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
+            - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+            - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+            - `application/xml`
+            - `application/zip`
+            - `audio/flac`
+            - `audio/mp4`
+            - `audio/mpeg`
+            - `audio/ogg`
+            - `audio/wav`
+            - `image/bmp`
+            - `image/gif`
+            - `image/jpeg`
+            - `image/png`
+            - `image/tiff`
+            - `image/webp`
+            - `text/csv`
+            - `text/html`
+            - `text/markdown` / `text/x-markdown`
+            - `text/plain`
+            - `text/xml`
+            - `video/mp4`
+            - `video/quicktime`
+            - `video/x-msvideo`
+
+        If `mime_type` is omitted and a filename is available, the SDK tries to infer it.
+        If the upload is sent as `application/octet-stream`, the server attempts to infer
+        the type from the file extension.
+
         Notes:
             - If `file` is a path or `bytes`, this method creates an in-memory/file handle and
               closes it before returning.
@@ -1039,20 +1086,28 @@ class Seclai(_SeclaiBase):
                 upload_file = file
             elif isinstance(file, (str, os.PathLike)):
                 file_path = Path(file)
+                resolved_file_name = file_name or file_path.name
+                resolved_mime_type = mime_type or _guess_mime_type(resolved_file_name)
                 created_payload = file_path.open("rb")
                 upload_file = File(
                     payload=created_payload,
-                    file_name=file_name or file_path.name,
-                    mime_type=mime_type,
+                    file_name=resolved_file_name,
+                    mime_type=resolved_mime_type,
                 )
             elif isinstance(file, bytes):
                 created_payload = BytesIO(file)
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
                 upload_file = File(
-                    payload=created_payload, file_name=file_name, mime_type=mime_type
+                    payload=created_payload,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
                 )
             else:
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
                 upload_file = File(
-                    payload=file, file_name=file_name, mime_type=mime_type
+                    payload=file,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
                 )
 
             body = BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost(
@@ -1745,6 +1800,45 @@ class AsyncSeclai(_SeclaiBase):
 
         Sends a file to be ingested under the given source connection.
 
+        Maximum file size: 200 MiB.
+
+        Supported MIME types:
+            - `application/epub+zip`
+            - `application/json`
+            - `application/msword`
+            - `application/pdf`
+            - `application/vnd.ms-excel`
+            - `application/vnd.ms-outlook`
+            - `application/vnd.ms-powerpoint`
+            - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
+            - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+            - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+            - `application/xml`
+            - `application/zip`
+            - `audio/flac`
+            - `audio/mp4`
+            - `audio/mpeg`
+            - `audio/ogg`
+            - `audio/wav`
+            - `image/bmp`
+            - `image/gif`
+            - `image/jpeg`
+            - `image/png`
+            - `image/tiff`
+            - `image/webp`
+            - `text/csv`
+            - `text/html`
+            - `text/markdown` / `text/x-markdown`
+            - `text/plain`
+            - `text/xml`
+            - `video/mp4`
+            - `video/quicktime`
+            - `video/x-msvideo`
+
+        If `mime_type` is omitted and a filename is available, the SDK tries to infer it.
+        If the upload is sent as `application/octet-stream`, the server attempts to infer
+        the type from the file extension.
+
         Notes:
             - If `file` is a path or `bytes`, this method creates an in-memory/file handle and
               closes it before returning.
@@ -1779,20 +1873,28 @@ class AsyncSeclai(_SeclaiBase):
                 upload_file = file
             elif isinstance(file, (str, os.PathLike)):
                 file_path = Path(file)
+                resolved_file_name = file_name or file_path.name
+                resolved_mime_type = mime_type or _guess_mime_type(resolved_file_name)
                 created_payload = file_path.open("rb")
                 upload_file = File(
                     payload=created_payload,
-                    file_name=file_name or file_path.name,
-                    mime_type=mime_type,
+                    file_name=resolved_file_name,
+                    mime_type=resolved_mime_type,
                 )
             elif isinstance(file, bytes):
                 created_payload = BytesIO(file)
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
                 upload_file = File(
-                    payload=created_payload, file_name=file_name, mime_type=mime_type
+                    payload=created_payload,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
                 )
             else:
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
                 upload_file = File(
-                    payload=file, file_name=file_name, mime_type=mime_type
+                    payload=file,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
                 )
 
             body = BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost(
