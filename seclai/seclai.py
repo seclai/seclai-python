@@ -1167,9 +1167,11 @@ class Seclai(_SeclaiBase):
 
             parsed: FileUploadResponse | HTTPValidationError | None = None
             if raw.status_code == 200:
-                parsed = FileUploadResponse.from_dict(raw.json())
+                payload = cast(dict[str, Any], raw.json())
+                parsed = FileUploadResponse.from_dict(payload)
             elif raw.status_code == 422:
-                parsed = HTTPValidationError.from_dict(raw.json())
+                payload = cast(dict[str, Any], raw.json())
+                parsed = HTTPValidationError.from_dict(payload)
 
             response = OpenAPIResponse(
                 status_code=HTTPStatus(raw.status_code),
@@ -1191,17 +1193,25 @@ class Seclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                 )
-            parsed = response.parsed
-            if isinstance(parsed, HTTPValidationError):
+            parsed_response = cast(FileUploadResponse | HTTPValidationError, response.parsed)
+            if isinstance(parsed_response, HTTPValidationError):
                 raise SeclaiAPIValidationError(
                     message="Validation error",
                     status_code=int(response.status_code),
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
-                    validation_error=parsed,
+                    validation_error=parsed_response,
                 )
-            return parsed
+            if not isinstance(parsed_response, FileUploadResponse):
+                raise SeclaiAPIStatusError(
+                    message="Unexpected response shape",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                )
+            return parsed_response
         finally:
             if created_payload is not None:
                 created_payload.close()
@@ -2118,9 +2128,11 @@ class AsyncSeclai(_SeclaiBase):
 
             parsed: FileUploadResponse | HTTPValidationError | None = None
             if raw.status_code == 200:
-                parsed = FileUploadResponse.from_dict(raw.json())
+                payload = cast(dict[str, Any], raw.json())
+                parsed = FileUploadResponse.from_dict(payload)
             elif raw.status_code == 422:
-                parsed = HTTPValidationError.from_dict(raw.json())
+                payload = cast(dict[str, Any], raw.json())
+                parsed = HTTPValidationError.from_dict(payload)
 
             response = OpenAPIResponse(
                 status_code=HTTPStatus(raw.status_code),
@@ -2142,17 +2154,25 @@ class AsyncSeclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                 )
-            parsed = response.parsed
-            if isinstance(parsed, HTTPValidationError):
+            parsed_response = cast(FileUploadResponse | HTTPValidationError, response.parsed)
+            if isinstance(parsed_response, HTTPValidationError):
                 raise SeclaiAPIValidationError(
                     message="Validation error",
                     status_code=int(response.status_code),
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
-                    validation_error=parsed,
+                    validation_error=parsed_response,
                 )
-            return parsed
+            if not isinstance(parsed_response, FileUploadResponse):
+                raise SeclaiAPIStatusError(
+                    message="Unexpected response shape",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                )
+            return parsed_response
         finally:
             if created_payload is not None:
                 created_payload.close()
