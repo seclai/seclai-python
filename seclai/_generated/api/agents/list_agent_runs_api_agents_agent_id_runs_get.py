@@ -73,9 +73,19 @@ def sync_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 50,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
-    """List Agent Runs
+    """List agent runs
 
-     List agent runs for an agent with pagination.
+     List runs for a specific agent (most recent first), with pagination.
+
+    Typical use cases:
+    - Build a run history UI for an agent.
+    - Debug recent executions and inspect terminal statuses.
+
+    Notes:
+    - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only list runs for agents in your account.
 
     Args:
         agent_id (str):
@@ -110,9 +120,19 @@ def sync(
     page: int | Unset = 1,
     limit: int | Unset = 50,
 ) -> AgentRunListResponse | HTTPValidationError | None:
-    """List Agent Runs
+    """List agent runs
 
-     List agent runs for an agent with pagination.
+     List runs for a specific agent (most recent first), with pagination.
+
+    Typical use cases:
+    - Build a run history UI for an agent.
+    - Debug recent executions and inspect terminal statuses.
+
+    Notes:
+    - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only list runs for agents in your account.
 
     Args:
         agent_id (str):
@@ -142,9 +162,19 @@ async def asyncio_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 50,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
-    """List Agent Runs
+    """List agent runs
 
-     List agent runs for an agent with pagination.
+     List runs for a specific agent (most recent first), with pagination.
+
+    Typical use cases:
+    - Build a run history UI for an agent.
+    - Debug recent executions and inspect terminal statuses.
+
+    Notes:
+    - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only list runs for agents in your account.
 
     Args:
         agent_id (str):
@@ -177,9 +207,19 @@ async def asyncio(
     page: int | Unset = 1,
     limit: int | Unset = 50,
 ) -> AgentRunListResponse | HTTPValidationError | None:
-    """List Agent Runs
+    """List agent runs
 
-     List agent runs for an agent with pagination.
+     List runs for a specific agent (most recent first), with pagination.
+
+    Typical use cases:
+    - Build a run history UI for an agent.
+    - Debug recent executions and inspect terminal statuses.
+
+    Notes:
+    - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only list runs for agents in your account.
 
     Args:
         agent_id (str):

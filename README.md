@@ -181,6 +181,7 @@ resp = client.upload_file_to_source(
 	"22222222-2222-4222-8222-222222222222",
 	file="./document.pdf",
 	title="Example document",
+	metadata={"category": "docs", "author": "Ada"},
 )
 print(resp)
 ```
@@ -196,8 +197,27 @@ resp = client.upload_file_to_source(
 	file=b"hello world",
 	file_name="hello.txt",
 	mime_type="text/plain",
+	metadata={"category": "examples"},
 )
 print(resp)
+
+### Replace an existing content version (upload a new file)
+
+To replace the file backing an existing content version, upload a new file to `/contents/{source_connection_content_version}/upload`:
+
+```python
+from seclai import Seclai
+
+client = Seclai(api_key="...")
+
+resp = client.upload_file_to_content(
+	"sc_cv_123",
+	file="./updated.pdf",
+	metadata={"revision": 2},
+)
+
+print(resp)
+```
 ```
 
 ## Error handling

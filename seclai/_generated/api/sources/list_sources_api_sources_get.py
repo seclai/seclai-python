@@ -85,9 +85,21 @@ def sync_detailed(
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
-    """List Sources
+    """List sources
 
-     List content sources with pagination.
+     List content sources for your account.
+
+    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
+    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
+    workflows.
+
+    Parameters:
+    - Pagination: `page` and `limit`.
+    - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
+
+    Auth & scoping:
+    - Requires `X-API-Key`. Results are scoped to the API key's account.
+    - The optional `account_id` query param is only allowed when it matches the API key's account.
 
     Args:
         page (int | Unset): Page number Default: 1.
@@ -129,9 +141,21 @@ def sync(
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
-    """List Sources
+    """List sources
 
-     List content sources with pagination.
+     List content sources for your account.
+
+    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
+    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
+    workflows.
+
+    Parameters:
+    - Pagination: `page` and `limit`.
+    - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
+
+    Auth & scoping:
+    - Requires `X-API-Key`. Results are scoped to the API key's account.
+    - The optional `account_id` query param is only allowed when it matches the API key's account.
 
     Args:
         page (int | Unset): Page number Default: 1.
@@ -168,9 +192,21 @@ async def asyncio_detailed(
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
-    """List Sources
+    """List sources
 
-     List content sources with pagination.
+     List content sources for your account.
+
+    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
+    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
+    workflows.
+
+    Parameters:
+    - Pagination: `page` and `limit`.
+    - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
+
+    Auth & scoping:
+    - Requires `X-API-Key`. Results are scoped to the API key's account.
+    - The optional `account_id` query param is only allowed when it matches the API key's account.
 
     Args:
         page (int | Unset): Page number Default: 1.
@@ -210,9 +246,21 @@ async def asyncio(
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
-    """List Sources
+    """List sources
 
-     List content sources with pagination.
+     List content sources for your account.
+
+    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
+    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
+    workflows.
+
+    Parameters:
+    - Pagination: `page` and `limit`.
+    - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
+
+    Auth & scoping:
+    - Requires `X-API-Key`. Results are scoped to the API key's account.
+    - The optional `account_id` query param is only allowed when it matches the API key's account.
 
     Args:
         page (int | Unset): Page number Default: 1.

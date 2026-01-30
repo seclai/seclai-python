@@ -69,9 +69,16 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
-    """Get Agent Run
+    """Get an agent run
 
-     Get agent run details.
+     Fetch the latest snapshot for an agent run created by `POST /agents/{agent_id}/runs` or `POST
+    /agents/{agent_id}/runs/stream`.
+
+    The response includes `status`, `error_count`, and `output` once the run completes. Use
+    `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access runs belonging to your account.
 
     Args:
         run_id (str):
@@ -104,9 +111,16 @@ def sync(
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
 ) -> AgentRunResponse | HTTPValidationError | None:
-    """Get Agent Run
+    """Get an agent run
 
-     Get agent run details.
+     Fetch the latest snapshot for an agent run created by `POST /agents/{agent_id}/runs` or `POST
+    /agents/{agent_id}/runs/stream`.
+
+    The response includes `status`, `error_count`, and `output` once the run completes. Use
+    `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access runs belonging to your account.
 
     Args:
         run_id (str):
@@ -134,9 +148,16 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
-    """Get Agent Run
+    """Get an agent run
 
-     Get agent run details.
+     Fetch the latest snapshot for an agent run created by `POST /agents/{agent_id}/runs` or `POST
+    /agents/{agent_id}/runs/stream`.
+
+    The response includes `status`, `error_count`, and `output` once the run completes. Use
+    `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access runs belonging to your account.
 
     Args:
         run_id (str):
@@ -167,9 +188,16 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
 ) -> AgentRunResponse | HTTPValidationError | None:
-    """Get Agent Run
+    """Get an agent run
 
-     Get agent run details.
+     Fetch the latest snapshot for an agent run created by `POST /agents/{agent_id}/runs` or `POST
+    /agents/{agent_id}/runs/stream`.
+
+    The response includes `status`, `error_count`, and `output` once the run completes. Use
+    `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access runs belonging to your account.
 
     Args:
         run_id (str):

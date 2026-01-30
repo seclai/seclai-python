@@ -68,9 +68,25 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
 ) -> Response[Any | HTTPValidationError]:
-    """Run Streaming Agent
+    """Run an agent (stream events)
 
-     Run an agent in priority mode and stream events via Server-Sent Events (SSE).
+     Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
+
+    This is the best option for interactive UIs where you want progress updates as the run executes.
+
+    How it works:
+    - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
+    - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - The final `done` event contains the terminal snapshot (including `output` and `credits` when
+    available).
+
+    Client guidance:
+    - Keep the connection open and handle keepalive comments.
+    - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
+    /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):
@@ -102,9 +118,25 @@ def sync(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
 ) -> Any | HTTPValidationError | None:
-    """Run Streaming Agent
+    """Run an agent (stream events)
 
-     Run an agent in priority mode and stream events via Server-Sent Events (SSE).
+     Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
+
+    This is the best option for interactive UIs where you want progress updates as the run executes.
+
+    How it works:
+    - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
+    - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - The final `done` event contains the terminal snapshot (including `output` and `credits` when
+    available).
+
+    Client guidance:
+    - Keep the connection open and handle keepalive comments.
+    - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
+    /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):
@@ -131,9 +163,25 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
 ) -> Response[Any | HTTPValidationError]:
-    """Run Streaming Agent
+    """Run an agent (stream events)
 
-     Run an agent in priority mode and stream events via Server-Sent Events (SSE).
+     Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
+
+    This is the best option for interactive UIs where you want progress updates as the run executes.
+
+    How it works:
+    - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
+    - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - The final `done` event contains the terminal snapshot (including `output` and `credits` when
+    available).
+
+    Client guidance:
+    - Keep the connection open and handle keepalive comments.
+    - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
+    /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):
@@ -163,9 +211,25 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
 ) -> Any | HTTPValidationError | None:
-    """Run Streaming Agent
+    """Run an agent (stream events)
 
-     Run an agent in priority mode and stream events via Server-Sent Events (SSE).
+     Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
+
+    This is the best option for interactive UIs where you want progress updates as the run executes.
+
+    How it works:
+    - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
+    - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - The final `done` event contains the terminal snapshot (including `output` and `credits` when
+    available).
+
+    Client guidance:
+    - Keep the connection open and handle keepalive comments.
+    - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
+    /agents/runs/{run_id}`.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):

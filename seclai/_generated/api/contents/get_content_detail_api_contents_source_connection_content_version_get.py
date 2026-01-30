@@ -73,9 +73,20 @@ def sync_detailed(
     start: int | Unset = 0,
     end: int | Unset = 5000,
 ) -> Response[ContentDetailResponse | HTTPValidationError]:
-    """Get Content Detail
+    """Get content details
 
-     Get detailed information about a specific content version.
+     Get detailed information about a specific content item (a `SourceConnectionContentVersion`).
+
+    This is useful when you want to:
+    - Inspect the extracted text for debugging or review.
+    - Display content details in a UI.
+
+    Text range:
+    - `start` and `end` control the character range returned in `text_content` so clients can page
+    through large documents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -110,9 +121,20 @@ def sync(
     start: int | Unset = 0,
     end: int | Unset = 5000,
 ) -> ContentDetailResponse | HTTPValidationError | None:
-    """Get Content Detail
+    """Get content details
 
-     Get detailed information about a specific content version.
+     Get detailed information about a specific content item (a `SourceConnectionContentVersion`).
+
+    This is useful when you want to:
+    - Inspect the extracted text for debugging or review.
+    - Display content details in a UI.
+
+    Text range:
+    - `start` and `end` control the character range returned in `text_content` so clients can page
+    through large documents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -142,9 +164,20 @@ async def asyncio_detailed(
     start: int | Unset = 0,
     end: int | Unset = 5000,
 ) -> Response[ContentDetailResponse | HTTPValidationError]:
-    """Get Content Detail
+    """Get content details
 
-     Get detailed information about a specific content version.
+     Get detailed information about a specific content item (a `SourceConnectionContentVersion`).
+
+    This is useful when you want to:
+    - Inspect the extracted text for debugging or review.
+    - Display content details in a UI.
+
+    Text range:
+    - `start` and `end` control the character range returned in `text_content` so clients can page
+    through large documents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -177,9 +210,20 @@ async def asyncio(
     start: int | Unset = 0,
     end: int | Unset = 5000,
 ) -> ContentDetailResponse | HTTPValidationError | None:
-    """Get Content Detail
+    """Get content details
 
-     Get detailed information about a specific content version.
+     Get detailed information about a specific content item (a `SourceConnectionContentVersion`).
+
+    This is useful when you want to:
+    - Inspect the extracted text for debugging or review.
+    - Display content details in a UI.
+
+    Text range:
+    - `start` and `end` control the character range returned in `text_content` so clients can page
+    through large documents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access content belonging to your account.
 
     Args:
         source_connection_content_version (str):

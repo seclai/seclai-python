@@ -73,9 +73,15 @@ def sync_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 20,
 ) -> Response[ContentEmbeddingsListResponse | HTTPValidationError]:
-    """List Content Embeddings
+    """List content embeddings
 
-     List embeddings for a specific content version.
+     List the embeddings (chunk vectors) for a content item, with pagination.
+
+    Embeddings are used for semantic search and retrieval in knowledge base workflows. This endpoint is
+    primarily useful for debugging chunking, indexing, and vector contents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access embeddings for content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -110,9 +116,15 @@ def sync(
     page: int | Unset = 1,
     limit: int | Unset = 20,
 ) -> ContentEmbeddingsListResponse | HTTPValidationError | None:
-    """List Content Embeddings
+    """List content embeddings
 
-     List embeddings for a specific content version.
+     List the embeddings (chunk vectors) for a content item, with pagination.
+
+    Embeddings are used for semantic search and retrieval in knowledge base workflows. This endpoint is
+    primarily useful for debugging chunking, indexing, and vector contents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access embeddings for content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -142,9 +154,15 @@ async def asyncio_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 20,
 ) -> Response[ContentEmbeddingsListResponse | HTTPValidationError]:
-    """List Content Embeddings
+    """List content embeddings
 
-     List embeddings for a specific content version.
+     List the embeddings (chunk vectors) for a content item, with pagination.
+
+    Embeddings are used for semantic search and retrieval in knowledge base workflows. This endpoint is
+    primarily useful for debugging chunking, indexing, and vector contents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access embeddings for content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -177,9 +195,15 @@ async def asyncio(
     page: int | Unset = 1,
     limit: int | Unset = 20,
 ) -> ContentEmbeddingsListResponse | HTTPValidationError | None:
-    """List Content Embeddings
+    """List content embeddings
 
-     List embeddings for a specific content version.
+     List the embeddings (chunk vectors) for a content item, with pagination.
+
+    Embeddings are used for semantic search and retrieval in knowledge base workflows. This endpoint is
+    primarily useful for debugging chunking, indexing, and vector contents.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only access embeddings for content belonging to your account.
 
     Args:
         source_connection_content_version (str):

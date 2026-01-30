@@ -11,12 +11,12 @@ T = TypeVar("T", bound="FileUploadResponse")
 
 @_attrs_define
 class FileUploadResponse:
-    """Response model for file upload
+    """Response model for content file replacement upload.
 
     Attributes:
-        content_version_id (None | str): ID of the created content version
+        content_version_id (None | str): ID of the content version being replaced
         filename (str): Original filename
-        source_connection_content_version_id (None | str): ID of the duplicate source connection content version
+        source_connection_content_version_id (None | str): ID of the source connection content version
         status (str): Processing status
     """
 

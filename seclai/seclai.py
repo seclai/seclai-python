@@ -1040,6 +1040,7 @@ class Seclai(_SeclaiBase):
         *,
         file: bytes | str | os.PathLike[str] | BinaryIO,
         title: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
         file_name: str | None = None,
         mime_type: str | None = None,
     ) -> FileUploadResponse:
@@ -1095,6 +1096,7 @@ class Seclai(_SeclaiBase):
             source_connection_id: Source connection identifier.
             file: File payload. Accepts raw bytes, a filesystem path, or a binary file-like.
             title: Optional title for the uploaded file.
+            metadata: Optional metadata dictionary to associate with the uploaded content.
             file_name: Optional filename to send when `file` is bytes or a file-like.
             mime_type: Optional MIME type to send.
 
@@ -1105,13 +1107,12 @@ class Seclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
-        from seclai._generated.api.sources.upload_file_to_source_api_sources_source_connection_id_upload_post import (
-            sync_detailed,
-        )
         from seclai._generated.models.body_upload_file_to_source_api_sources_source_connection_id_upload_post import (
             BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
         )
         from seclai._generated.types import UNSET, File
+
+        import json as _json
 
         created_payload: BinaryIO | None = None
         try:
@@ -1148,9 +1149,142 @@ class Seclai(_SeclaiBase):
                 file=upload_file,
                 title=UNSET if title is None else title,
             )
+
+            if metadata is not None:
+                body["metadata"] = _json.dumps(metadata)
+
             endpoint_path = f"/sources/{source_connection_id}/upload"
+
+            # Note: openapi-python-client currently struggles with Seclai's spec for this endpoint
+            # due to duplicate schema names, so we send the multipart request directly and parse
+            # into our SDK model types.
+            http = self._generated_client().get_httpx_client()
+            raw = http.request(
+                "POST",
+                endpoint_path,
+                files=body.to_multipart(),
+            )
+
+            parsed: FileUploadResponse | HTTPValidationError | None = None
+            if raw.status_code == 200:
+                parsed = FileUploadResponse.from_dict(raw.json())
+            elif raw.status_code == 422:
+                parsed = HTTPValidationError.from_dict(raw.json())
+
+            response = OpenAPIResponse(
+                status_code=HTTPStatus(raw.status_code),
+                content=raw.content,
+                headers=raw.headers,
+                parsed=parsed,
+            )
+            self._raise_for_openapi_response(
+                method="POST",
+                path=endpoint_path,
+                response=response,
+                ok_statuses={HTTPStatus.OK},
+            )
+            if response.parsed is None:
+                raise SeclaiAPIStatusError(
+                    message="Empty response",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                )
+            parsed = response.parsed
+            if isinstance(parsed, HTTPValidationError):
+                raise SeclaiAPIValidationError(
+                    message="Validation error",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                    validation_error=parsed,
+                )
+            return parsed
+        finally:
+            if created_payload is not None:
+                created_payload.close()
+
+    def upload_file_to_content(
+        self,
+        source_connection_content_version: str,
+        *,
+        file: bytes | str | os.PathLike[str] | BinaryIO,
+        title: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        file_name: str | None = None,
+        mime_type: str | None = None,
+    ) -> FileUploadResponse:
+        """Replace an existing content version with a new file upload.
+
+        This uploads a new file to `/contents/{source_connection_content_version}/upload` and replaces
+        the content backing that existing content version.
+
+        Args:
+            source_connection_content_version: Source connection content version identifier.
+            file: File payload. Accepts raw bytes, a filesystem path, or a binary file-like.
+            title: Optional title for the uploaded file.
+            metadata: Optional metadata dictionary to associate with the uploaded content.
+            file_name: Optional filename to send when `file` is bytes or a file-like.
+            mime_type: Optional MIME type to send.
+
+        Returns:
+            Upload response details.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+        """
+        from seclai._generated.api.contents.upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
+            sync_detailed,
+        )
+        from seclai._generated.models.body_upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
+            BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+        )
+        from seclai._generated.types import UNSET, File
+
+        import json as _json
+
+        created_payload: BinaryIO | None = None
+        try:
+            upload_file: File
+            if isinstance(file, File):
+                upload_file = file
+            elif isinstance(file, (str, os.PathLike)):
+                file_path = Path(file)
+                resolved_file_name = file_name or file_path.name
+                resolved_mime_type = mime_type or _guess_mime_type(resolved_file_name)
+                created_payload = file_path.open("rb")
+                upload_file = File(
+                    payload=created_payload,
+                    file_name=resolved_file_name,
+                    mime_type=resolved_mime_type,
+                )
+            elif isinstance(file, bytes):
+                created_payload = BytesIO(file)
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
+                upload_file = File(
+                    payload=created_payload,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
+                )
+            else:
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
+                upload_file = File(
+                    payload=file,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
+                )
+
+            body = BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost(
+                file=upload_file,
+                title=UNSET if title is None else title,
+                metadata=UNSET if metadata is None else _json.dumps(metadata),
+            )
+            endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = sync_detailed(
-                source_connection_id=source_connection_id,
+                source_connection_content_version=source_connection_content_version,
                 client=self._generated_client(),
                 body=body,
             )
@@ -1860,6 +1994,7 @@ class AsyncSeclai(_SeclaiBase):
         *,
         file: bytes | str | os.PathLike[str] | BinaryIO,
         title: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
         file_name: str | None = None,
         mime_type: str | None = None,
     ) -> FileUploadResponse:
@@ -1915,6 +2050,7 @@ class AsyncSeclai(_SeclaiBase):
             source_connection_id: Source connection identifier.
             file: File payload. Accepts raw bytes, a filesystem path, or a binary file-like.
             title: Optional title for the uploaded file.
+            metadata: Optional metadata dictionary to associate with the uploaded content.
             file_name: Optional filename to send when `file` is bytes or a file-like.
             mime_type: Optional MIME type to send.
 
@@ -1925,13 +2061,12 @@ class AsyncSeclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
-        from seclai._generated.api.sources.upload_file_to_source_api_sources_source_connection_id_upload_post import (
-            asyncio_detailed,
-        )
         from seclai._generated.models.body_upload_file_to_source_api_sources_source_connection_id_upload_post import (
             BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
         )
         from seclai._generated.types import UNSET, File
+
+        import json as _json
 
         created_payload: BinaryIO | None = None
         try:
@@ -1968,9 +2103,139 @@ class AsyncSeclai(_SeclaiBase):
                 file=upload_file,
                 title=UNSET if title is None else title,
             )
+
+            if metadata is not None:
+                body["metadata"] = _json.dumps(metadata)
+
             endpoint_path = f"/sources/{source_connection_id}/upload"
+
+            http = self._generated_client().get_async_httpx_client()
+            raw = await http.request(
+                "POST",
+                endpoint_path,
+                files=body.to_multipart(),
+            )
+
+            parsed: FileUploadResponse | HTTPValidationError | None = None
+            if raw.status_code == 200:
+                parsed = FileUploadResponse.from_dict(raw.json())
+            elif raw.status_code == 422:
+                parsed = HTTPValidationError.from_dict(raw.json())
+
+            response = OpenAPIResponse(
+                status_code=HTTPStatus(raw.status_code),
+                content=raw.content,
+                headers=raw.headers,
+                parsed=parsed,
+            )
+            self._raise_for_openapi_response(
+                method="POST",
+                path=endpoint_path,
+                response=response,
+                ok_statuses={HTTPStatus.OK},
+            )
+            if response.parsed is None:
+                raise SeclaiAPIStatusError(
+                    message="Empty response",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                )
+            parsed = response.parsed
+            if isinstance(parsed, HTTPValidationError):
+                raise SeclaiAPIValidationError(
+                    message="Validation error",
+                    status_code=int(response.status_code),
+                    method="POST",
+                    url=self._build_url(endpoint_path),
+                    response_text=None,
+                    validation_error=parsed,
+                )
+            return parsed
+        finally:
+            if created_payload is not None:
+                created_payload.close()
+
+    async def upload_file_to_content(
+        self,
+        source_connection_content_version: str,
+        *,
+        file: bytes | str | os.PathLike[str] | BinaryIO,
+        title: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        file_name: str | None = None,
+        mime_type: str | None = None,
+    ) -> FileUploadResponse:
+        """Replace an existing content version with a new file upload.
+
+        This uploads a new file to `/contents/{source_connection_content_version}/upload` and replaces
+        the content backing that existing content version.
+
+        Args:
+            source_connection_content_version: Source connection content version identifier.
+            file: File payload. Accepts raw bytes, a filesystem path, or a binary file-like.
+            title: Optional title for the uploaded file.
+            metadata: Optional metadata dictionary to associate with the uploaded content.
+            file_name: Optional filename to send when `file` is bytes or a file-like.
+            mime_type: Optional MIME type to send.
+
+        Returns:
+            Upload response details.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+        """
+        from seclai._generated.api.contents.upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
+            asyncio_detailed,
+        )
+        from seclai._generated.models.body_upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
+            BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+        )
+        from seclai._generated.types import UNSET, File
+
+        import json as _json
+
+        created_payload: BinaryIO | None = None
+        try:
+            upload_file: File
+            if isinstance(file, File):
+                upload_file = file
+            elif isinstance(file, (str, os.PathLike)):
+                file_path = Path(file)
+                resolved_file_name = file_name or file_path.name
+                resolved_mime_type = mime_type or _guess_mime_type(resolved_file_name)
+                created_payload = file_path.open("rb")
+                upload_file = File(
+                    payload=created_payload,
+                    file_name=resolved_file_name,
+                    mime_type=resolved_mime_type,
+                )
+            elif isinstance(file, bytes):
+                created_payload = BytesIO(file)
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
+                upload_file = File(
+                    payload=created_payload,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
+                )
+            else:
+                resolved_mime_type = mime_type or _guess_mime_type(file_name)
+                upload_file = File(
+                    payload=file,
+                    file_name=file_name,
+                    mime_type=resolved_mime_type,
+                )
+
+            body = BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost(
+                file=upload_file,
+                title=UNSET if title is None else title,
+                metadata=UNSET if metadata is None else _json.dumps(metadata),
+            )
+            endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = await asyncio_detailed(
-                source_connection_id=source_connection_id,
+                source_connection_content_version=source_connection_content_version,
                 client=self._generated_client(),
                 body=body,
             )

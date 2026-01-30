@@ -8,6 +8,9 @@ from .agent_run_response import AgentRunResponse
 from .agent_run_step_response import AgentRunStepResponse
 from .agent_run_stream_request import AgentRunStreamRequest
 from .agent_run_stream_request_metadata_type_0 import AgentRunStreamRequestMetadataType0
+from .body_upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
+    BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+)
 from .body_upload_file_to_source_api_sources_source_connection_id_upload_post import (
     BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
 )
@@ -32,6 +35,7 @@ __all__ = (
     "AgentRunStepResponse",
     "AgentRunStreamRequest",
     "AgentRunStreamRequestMetadataType0",
+    "BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost",
     "BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost",
     "ContentDetailResponse",
     "ContentDetailResponseMetadataType0Item",

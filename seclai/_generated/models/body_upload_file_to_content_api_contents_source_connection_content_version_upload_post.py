@@ -10,16 +10,16 @@ from attrs import field as _attrs_field
 from .. import types
 from ..types import UNSET, File, Unset
 
-T = TypeVar("T", bound="BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost")
+T = TypeVar("T", bound="BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost")
 
 
 @_attrs_define
-class BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost:
+class BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost:
     """
     Attributes:
         file (File): File to upload
         metadata (None | str | Unset): Optional JSON object string of metadata. Example:
-            `{"author":"Ada","category":"docs"}`. `title` will be merged into this dictionary as `metadata.title` if it is
+            `{"category":"docs","author":"Ada"}`. `title` will be merged into this dictionary as `metadata.title` if it is
             not already present.
         title (str | Unset): Optional title for the content
     """
@@ -89,14 +89,14 @@ class BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost:
 
         title = d.pop("title", UNSET)
 
-        body_upload_file_to_source_api_sources_source_connection_id_upload_post = cls(
+        body_upload_file_to_content_api_contents_source_connection_content_version_upload_post = cls(
             file=file,
             metadata=metadata,
             title=title,
         )
 
-        body_upload_file_to_source_api_sources_source_connection_id_upload_post.additional_properties = d
-        return body_upload_file_to_source_api_sources_source_connection_id_upload_post
+        body_upload_file_to_content_api_contents_source_connection_content_version_upload_post.additional_properties = d
+        return body_upload_file_to_content_api_contents_source_connection_content_version_upload_post
 
     @property
     def additional_keys(self) -> list[str]:

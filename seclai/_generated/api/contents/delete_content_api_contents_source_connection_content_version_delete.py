@@ -57,9 +57,15 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[Any | HTTPValidationError]:
-    """Delete Content
+    """Delete content
 
-     Delete a specific content version.
+     Delete a content item (a `SourceConnectionContentVersion`).
+
+    Use this to remove an uploaded or indexed item from your account. Deleting content can affect agents
+    and knowledge base workflows that reference this item.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only delete content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -88,9 +94,15 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
 ) -> Any | HTTPValidationError | None:
-    """Delete Content
+    """Delete content
 
-     Delete a specific content version.
+     Delete a content item (a `SourceConnectionContentVersion`).
+
+    Use this to remove an uploaded or indexed item from your account. Deleting content can affect agents
+    and knowledge base workflows that reference this item.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only delete content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -114,9 +126,15 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[Any | HTTPValidationError]:
-    """Delete Content
+    """Delete content
 
-     Delete a specific content version.
+     Delete a content item (a `SourceConnectionContentVersion`).
+
+    Use this to remove an uploaded or indexed item from your account. Deleting content can affect agents
+    and knowledge base workflows that reference this item.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only delete content belonging to your account.
 
     Args:
         source_connection_content_version (str):
@@ -143,9 +161,15 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
 ) -> Any | HTTPValidationError | None:
-    """Delete Content
+    """Delete content
 
-     Delete a specific content version.
+     Delete a content item (a `SourceConnectionContentVersion`).
+
+    Use this to remove an uploaded or indexed item from your account. Deleting content can affect agents
+    and knowledge base workflows that reference this item.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only delete content belonging to your account.
 
     Args:
         source_connection_content_version (str):

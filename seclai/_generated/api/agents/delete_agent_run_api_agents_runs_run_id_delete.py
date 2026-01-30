@@ -59,9 +59,14 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
-    """Delete Agent Run
+    """Cancel an agent run
 
-     Cancel agent run.
+     Cancel a running agent run.
+
+    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
 
     Args:
         run_id (str):
@@ -90,9 +95,14 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
 ) -> AgentRunResponse | HTTPValidationError | None:
-    """Delete Agent Run
+    """Cancel an agent run
 
-     Cancel agent run.
+     Cancel a running agent run.
+
+    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
 
     Args:
         run_id (str):
@@ -116,9 +126,14 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
-    """Delete Agent Run
+    """Cancel an agent run
 
-     Cancel agent run.
+     Cancel a running agent run.
+
+    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
 
     Args:
         run_id (str):
@@ -145,9 +160,14 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
 ) -> AgentRunResponse | HTTPValidationError | None:
-    """Delete Agent Run
+    """Cancel an agent run
 
-     Cancel agent run.
+     Cancel a running agent run.
+
+    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
 
     Args:
         run_id (str):

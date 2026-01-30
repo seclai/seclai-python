@@ -70,9 +70,28 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
-    """Run Agent
+    """Run an agent
 
-     Run an agent.
+     Start an agent run.
+
+    An *agent* is an automated workflow that can monitor content from your sources, process it with AI,
+    and trigger actions. This endpoint creates a new run and returns a `run_id` you can poll to retrieve
+    status and output.
+
+    When to use:
+    - Use this endpoint for request/response style integrations where polling is acceptable.
+    - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
+
+    Key fields:
+    - `priority`: set true for latency-sensitive, user-facing work.
+    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+
+    After starting:
+    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):
@@ -104,9 +123,28 @@ def sync(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
 ) -> AgentRunResponse | HTTPValidationError | None:
-    """Run Agent
+    """Run an agent
 
-     Run an agent.
+     Start an agent run.
+
+    An *agent* is an automated workflow that can monitor content from your sources, process it with AI,
+    and trigger actions. This endpoint creates a new run and returns a `run_id` you can poll to retrieve
+    status and output.
+
+    When to use:
+    - Use this endpoint for request/response style integrations where polling is acceptable.
+    - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
+
+    Key fields:
+    - `priority`: set true for latency-sensitive, user-facing work.
+    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+
+    After starting:
+    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):
@@ -133,9 +171,28 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
-    """Run Agent
+    """Run an agent
 
-     Run an agent.
+     Start an agent run.
+
+    An *agent* is an automated workflow that can monitor content from your sources, process it with AI,
+    and trigger actions. This endpoint creates a new run and returns a `run_id` you can poll to retrieve
+    status and output.
+
+    When to use:
+    - Use this endpoint for request/response style integrations where polling is acceptable.
+    - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
+
+    Key fields:
+    - `priority`: set true for latency-sensitive, user-facing work.
+    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+
+    After starting:
+    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):
@@ -165,9 +222,28 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
 ) -> AgentRunResponse | HTTPValidationError | None:
-    """Run Agent
+    """Run an agent
 
-     Run an agent.
+     Start an agent run.
+
+    An *agent* is an automated workflow that can monitor content from your sources, process it with AI,
+    and trigger actions. This endpoint creates a new run and returns a `run_id` you can poll to retrieve
+    status and output.
+
+    When to use:
+    - Use this endpoint for request/response style integrations where polling is acceptable.
+    - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
+
+    Key fields:
+    - `priority`: set true for latency-sensitive, user-facing work.
+    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+
+    After starting:
+    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
+
+    Auth & scoping:
+    - Requires `X-API-Key`. All resources are scoped to the API key's account.
 
     Args:
         agent_id (str):

@@ -6,24 +6,25 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.body_upload_file_to_source_api_sources_source_connection_id_upload_post import (
-    BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
+from ...models.body_upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
+    BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
 )
+from ...models.file_upload_response import FileUploadResponse
 from ...models.http_validation_error import HTTPValidationError
 from ...types import Response
 
 
 def _get_kwargs(
-    source_connection_id: str,
+    source_connection_content_version: str,
     *,
-    body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
+    body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/sources/{source_connection_id}/upload".format(
-            source_connection_id=quote(str(source_connection_id), safe=""),
+        "url": "/contents/{source_connection_content_version}/upload".format(
+            source_connection_content_version=quote(str(source_connection_content_version), safe=""),
         ),
     }
 
@@ -33,7 +34,14 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> HTTPValidationError | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> FileUploadResponse | HTTPValidationError | None:
+    if response.status_code == 200:
+        response_200 = FileUploadResponse.from_dict(response.json())
+
+        return response_200
+
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
@@ -45,7 +53,9 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[HTTPValidationError]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[FileUploadResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -55,14 +65,17 @@ def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 
 
 def sync_detailed(
-    source_connection_id: str,
+    source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-) -> Response[HTTPValidationError]:
-    r"""Upload a file to a content source
+    body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+) -> Response[FileUploadResponse | HTTPValidationError]:
+    r"""Replace a content version with a new upload
 
-     Upload a file to a content source.
+     Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
+
+    This behaves like a source file upload, but it targets an existing content version ID. This is
+    useful when you want to correct or update an uploaded document while keeping references stable.
 
     **Maximum file size:** 209715200 bytes.
 
@@ -104,30 +117,29 @@ def sync_detailed(
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
-    `metadata={\"author\":\"Ada\",\"category\":\"docs\"}`).
+    `metadata={\"category\":\"docs\"}`).
     - `title` is a convenience field and is merged into the metadata as `metadata.title` (it does not
     override an existing `metadata.title`).
     - For backwards compatibility, you can also pass form fields named `metadata_<key>` (for example
     `metadata_author=...`). These override keys from `metadata`.
 
-    Response:
-    - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
-    source.
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only replace content belonging to your account.
 
     Args:
-        source_connection_id (str):
-        body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
+        source_connection_content_version (str):
+        body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError]
+        Response[FileUploadResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        source_connection_id=source_connection_id,
+        source_connection_content_version=source_connection_content_version,
         body=body,
     )
 
@@ -139,14 +151,17 @@ def sync_detailed(
 
 
 def sync(
-    source_connection_id: str,
+    source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-) -> HTTPValidationError | None:
-    r"""Upload a file to a content source
+    body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+) -> FileUploadResponse | HTTPValidationError | None:
+    r"""Replace a content version with a new upload
 
-     Upload a file to a content source.
+     Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
+
+    This behaves like a source file upload, but it targets an existing content version ID. This is
+    useful when you want to correct or update an uploaded document while keeping references stable.
 
     **Maximum file size:** 209715200 bytes.
 
@@ -188,44 +203,46 @@ def sync(
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
-    `metadata={\"author\":\"Ada\",\"category\":\"docs\"}`).
+    `metadata={\"category\":\"docs\"}`).
     - `title` is a convenience field and is merged into the metadata as `metadata.title` (it does not
     override an existing `metadata.title`).
     - For backwards compatibility, you can also pass form fields named `metadata_<key>` (for example
     `metadata_author=...`). These override keys from `metadata`.
 
-    Response:
-    - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
-    source.
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only replace content belonging to your account.
 
     Args:
-        source_connection_id (str):
-        body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
+        source_connection_content_version (str):
+        body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError
+        FileUploadResponse | HTTPValidationError
     """
 
     return sync_detailed(
-        source_connection_id=source_connection_id,
+        source_connection_content_version=source_connection_content_version,
         client=client,
         body=body,
     ).parsed
 
 
 async def asyncio_detailed(
-    source_connection_id: str,
+    source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-) -> Response[HTTPValidationError]:
-    r"""Upload a file to a content source
+    body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+) -> Response[FileUploadResponse | HTTPValidationError]:
+    r"""Replace a content version with a new upload
 
-     Upload a file to a content source.
+     Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
+
+    This behaves like a source file upload, but it targets an existing content version ID. This is
+    useful when you want to correct or update an uploaded document while keeping references stable.
 
     **Maximum file size:** 209715200 bytes.
 
@@ -267,30 +284,29 @@ async def asyncio_detailed(
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
-    `metadata={\"author\":\"Ada\",\"category\":\"docs\"}`).
+    `metadata={\"category\":\"docs\"}`).
     - `title` is a convenience field and is merged into the metadata as `metadata.title` (it does not
     override an existing `metadata.title`).
     - For backwards compatibility, you can also pass form fields named `metadata_<key>` (for example
     `metadata_author=...`). These override keys from `metadata`.
 
-    Response:
-    - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
-    source.
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only replace content belonging to your account.
 
     Args:
-        source_connection_id (str):
-        body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
+        source_connection_content_version (str):
+        body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError]
+        Response[FileUploadResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        source_connection_id=source_connection_id,
+        source_connection_content_version=source_connection_content_version,
         body=body,
     )
 
@@ -300,14 +316,17 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    source_connection_id: str,
+    source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-) -> HTTPValidationError | None:
-    r"""Upload a file to a content source
+    body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+) -> FileUploadResponse | HTTPValidationError | None:
+    r"""Replace a content version with a new upload
 
-     Upload a file to a content source.
+     Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
+
+    This behaves like a source file upload, but it targets an existing content version ID. This is
+    useful when you want to correct or update an uploaded document while keeping references stable.
 
     **Maximum file size:** 209715200 bytes.
 
@@ -349,31 +368,30 @@ async def asyncio(
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
-    `metadata={\"author\":\"Ada\",\"category\":\"docs\"}`).
+    `metadata={\"category\":\"docs\"}`).
     - `title` is a convenience field and is merged into the metadata as `metadata.title` (it does not
     override an existing `metadata.title`).
     - For backwards compatibility, you can also pass form fields named `metadata_<key>` (for example
     `metadata_author=...`). These override keys from `metadata`.
 
-    Response:
-    - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
-    source.
+    Auth & scoping:
+    - Requires `X-API-Key`. You can only replace content belonging to your account.
 
     Args:
-        source_connection_id (str):
-        body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
+        source_connection_content_version (str):
+        body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError
+        FileUploadResponse | HTTPValidationError
     """
 
     return (
         await asyncio_detailed(
-            source_connection_id=source_connection_id,
+            source_connection_content_version=source_connection_content_version,
             client=client,
             body=body,
         )
