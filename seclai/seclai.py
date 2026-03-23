@@ -119,6 +119,7 @@ class SeclaiAPIStatusError(SeclaiError):
     ) -> None:
         """Create a status error for a non-2xx API response."""
         super().__init__(message)
+        self.message = message
         self.status_code = status_code
         self.method = method
         self.url = url
@@ -162,6 +163,7 @@ class SeclaiStreamingError(SeclaiError):
 
     def __init__(self, message: str, *, run_id: str | None = None) -> None:
         super().__init__(message)
+        self.message = message
         self.run_id = run_id
 
 
@@ -2387,19 +2389,27 @@ class Seclai(_SeclaiBase):
     def download_source_export(self, source_id: str, export_id: str) -> httpx.Response:
         """Download a completed source export.
 
-        The caller is responsible for consuming and closing the response.
+        Returns a **streaming** response. The caller is responsible for
+        consuming and closing the response::
+
+            response = client.download_source_export("src", "exp")
+            with response:
+                for chunk in response.iter_bytes():
+                    f.write(chunk)
 
         Args:
             source_id: Source identifier.
             export_id: Export identifier.
 
         Returns:
-            Raw ``httpx.Response`` containing the export data.
+            A streaming ``httpx.Response``. Must be closed by the caller.
         """
-        response = self._client.get(
+        request = self._client.build_request(
+            "GET",
             f"/sources/{source_id}/exports/{export_id}/download",
             headers=_merge_request_headers(options=self._options, request_headers=None),
         )
+        response = self._client.send(request, stream=True)
         _raise_for_status(response)
         return response
 
@@ -5544,19 +5554,27 @@ class AsyncSeclai(_SeclaiBase):
     ) -> httpx.Response:
         """Download a completed source export.
 
-        The caller is responsible for consuming and closing the response.
+        Returns a **streaming** response. The caller is responsible for
+        consuming and closing the response::
+
+            response = await client.download_source_export("src", "exp")
+            async with response:
+                async for chunk in response.aiter_bytes():
+                    f.write(chunk)
 
         Args:
             source_id: Source identifier.
             export_id: Export identifier.
 
         Returns:
-            Raw ``httpx.Response`` containing the export data.
+            A streaming ``httpx.Response``. Must be closed by the caller.
         """
-        response = await self._client.get(
+        request = self._client.build_request(
+            "GET",
             f"/sources/{source_id}/exports/{export_id}/download",
             headers=_merge_request_headers(options=self._options, request_headers=None),
         )
+        response = await self._client.send(request, stream=True)
         _raise_for_status(response)
         return response
 

@@ -819,7 +819,9 @@ class TestSourceExports:
         client = _sync_client(handler)
         resp = client.download_source_export("s1", "e1")
         assert seen == {"method": "GET", "path": "/sources/s1/exports/e1/download"}
+        resp.read()
         assert resp.content == b"csv-data"
+        resp.close()
 
     def test_estimate_source_export(self) -> None:
         seen: dict[str, Any] = {}

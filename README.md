@@ -484,7 +484,9 @@ from seclai import (
 client = Seclai(api_key="...")
 
 try:
-    result = client.run_agent("agent_id", body)
+    from seclai._generated.models.agent_run_request import AgentRunRequest
+
+    result = client.run_agent("agent_id", AgentRunRequest(input_="Hello"))
 except SeclaiAPIValidationError as e:
     print("Validation error:", e.status_code, e.validation_error)
 except SeclaiAPIStatusError as e:
