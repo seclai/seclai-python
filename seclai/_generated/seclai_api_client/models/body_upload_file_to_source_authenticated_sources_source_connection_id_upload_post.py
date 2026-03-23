@@ -9,7 +9,9 @@ from attrs import field as _attrs_field
 
 from ..types import UNSET, File, Unset
 
-T = TypeVar("T", bound="BodyUploadFileToSourceAuthenticatedSourcesSourceConnectionIdUploadPost")
+T = TypeVar(
+    "T", bound="BodyUploadFileToSourceAuthenticatedSourcesSourceConnectionIdUploadPost"
+)
 
 
 @_attrs_define
@@ -53,7 +55,9 @@ class BodyUploadFileToSourceAuthenticatedSourcesSourceConnectionIdUploadPost:
             title=title,
         )
 
-        body_upload_file_to_source_authenticated_sources_source_connection_id_upload_post.additional_properties = d
+        body_upload_file_to_source_authenticated_sources_source_connection_id_upload_post.additional_properties = (
+            d
+        )
         return body_upload_file_to_source_authenticated_sources_source_connection_id_upload_post
 
     @property

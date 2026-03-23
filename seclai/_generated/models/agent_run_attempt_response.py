@@ -6,7 +6,9 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.pending_processing_completed_failed_status import PendingProcessingCompletedFailedStatus
+from ..models.pending_processing_completed_failed_status import (
+    PendingProcessingCompletedFailedStatus,
+)
 
 T = TypeVar("T", bound="AgentRunAttemptResponse")
 

@@ -70,7 +70,9 @@ class RerankerModelsResponse:
         embedding_costs = []
         _embedding_costs = d.pop("embedding_costs")
         for embedding_costs_item_data in _embedding_costs:
-            embedding_costs_item = EmbeddingCostInfo.from_dict(embedding_costs_item_data)
+            embedding_costs_item = EmbeddingCostInfo.from_dict(
+                embedding_costs_item_data
+            )
 
             embedding_costs.append(embedding_costs_item)
 

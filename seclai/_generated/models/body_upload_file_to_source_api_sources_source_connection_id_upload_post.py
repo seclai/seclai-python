@@ -61,9 +61,13 @@ class BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost:
 
         if not isinstance(self.metadata, Unset):
             if isinstance(self.metadata, str):
-                files.append(("metadata", (None, str(self.metadata).encode(), "text/plain")))
+                files.append(
+                    ("metadata", (None, str(self.metadata).encode(), "text/plain"))
+                )
             else:
-                files.append(("metadata", (None, str(self.metadata).encode(), "text/plain")))
+                files.append(
+                    ("metadata", (None, str(self.metadata).encode(), "text/plain"))
+                )
 
         if not isinstance(self.title, Unset):
             files.append(("title", (None, str(self.title).encode(), "text/plain")))
@@ -95,7 +99,9 @@ class BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost:
             title=title,
         )
 
-        body_upload_file_to_source_api_sources_source_connection_id_upload_post.additional_properties = d
+        body_upload_file_to_source_api_sources_source_connection_id_upload_post.additional_properties = (
+            d
+        )
         return body_upload_file_to_source_api_sources_source_connection_id_upload_post
 
     @property

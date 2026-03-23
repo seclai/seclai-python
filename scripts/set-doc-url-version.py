@@ -5,13 +5,15 @@ import shutil
 import sys
 from pathlib import Path
 
-
 DOCS_LATEST = 'documentation = "https://seclai.github.io/seclai-python/latest/"'
 
 
 def main() -> int:
     if len(sys.argv) != 2 or sys.argv[1] not in {"apply", "restore"}:
-        print("Usage: python scripts/set-doc-url-version.py <apply|restore>", file=sys.stderr)
+        print(
+            "Usage: python scripts/set-doc-url-version.py <apply|restore>",
+            file=sys.stderr,
+        )
         return 2
 
     mode = sys.argv[1]
@@ -30,7 +32,9 @@ def main() -> int:
             shutil.copyfile(pyproject_path, backup_path)
 
         original = pyproject_path.read_text(encoding="utf-8")
-        versioned = f'documentation = "https://seclai.github.io/seclai-python/{version}/"'
+        versioned = (
+            f'documentation = "https://seclai.github.io/seclai-python/{version}/"'
+        )
 
         updated = original.replace(DOCS_LATEST, versioned)
         pyproject_path.write_text(updated, encoding="utf-8")

@@ -1,12 +1,14 @@
+import json
+
 import httpx
 import pytest
-
-import json
 
 from seclai import AsyncSeclai, Seclai
 
 
-def _extract_multipart_field(*, body: bytes, boundary: str, field_name: str) -> bytes | None:
+def _extract_multipart_field(
+    *, body: bytes, boundary: str, field_name: str
+) -> bytes | None:
     marker = f'name="{field_name}"'.encode()
     delim = ("--" + boundary).encode()
     for part in body.split(delim):
@@ -43,7 +45,9 @@ def test_convenience_delete_content_uses_generated_client_transport() -> None:
     assert seen == {"method": "DELETE", "path": "/contents/sc_cv_123"}
 
 
-def test_convenience_upload_file_to_source_sends_metadata_and_uses_generated_client_transport() -> None:
+def test_convenience_upload_file_to_source_sends_metadata_and_uses_generated_client_transport() -> (
+    None
+):
     seen: dict[str, object] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -90,7 +94,9 @@ def test_convenience_upload_file_to_source_sends_metadata_and_uses_generated_cli
     }
 
 
-def test_convenience_upload_file_to_content_sends_metadata_and_uses_generated_client_transport() -> None:
+def test_convenience_upload_file_to_content_sends_metadata_and_uses_generated_client_transport() -> (
+    None
+):
     seen: dict[str, object] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -138,7 +144,9 @@ def test_convenience_upload_file_to_content_sends_metadata_and_uses_generated_cl
 
 
 @pytest.mark.asyncio
-async def test_async_convenience_delete_content_uses_generated_client_transport() -> None:
+async def test_async_convenience_delete_content_uses_generated_client_transport() -> (
+    None
+):
     seen: dict[str, str] = {}
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -159,7 +167,9 @@ async def test_async_convenience_delete_content_uses_generated_client_transport(
 
 
 @pytest.mark.asyncio
-async def test_async_convenience_upload_file_to_source_sends_metadata_and_uses_generated_client_transport() -> None:
+async def test_async_convenience_upload_file_to_source_sends_metadata_and_uses_generated_client_transport() -> (
+    None
+):
     seen: dict[str, object] = {}
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -207,7 +217,9 @@ async def test_async_convenience_upload_file_to_source_sends_metadata_and_uses_g
 
 
 @pytest.mark.asyncio
-async def test_async_convenience_upload_file_to_content_sends_metadata_and_uses_generated_client_transport() -> None:
+async def test_async_convenience_upload_file_to_content_sends_metadata_and_uses_generated_client_transport() -> (
+    None
+):
     seen: dict[str, object] = {}
 
     async def handler(request: httpx.Request) -> httpx.Response:

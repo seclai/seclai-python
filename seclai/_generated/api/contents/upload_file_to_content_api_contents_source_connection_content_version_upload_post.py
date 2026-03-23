@@ -24,7 +24,9 @@ def _get_kwargs(
     _kwargs: dict[str, Any] = {
         "method": "post",
         "url": "/contents/{source_connection_content_version}/upload".format(
-            source_connection_content_version=quote(str(source_connection_content_version), safe=""),
+            source_connection_content_version=quote(
+                str(source_connection_content_version), safe=""
+            ),
         ),
     }
 

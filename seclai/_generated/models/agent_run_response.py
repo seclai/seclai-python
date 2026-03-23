@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..models.pending_processing_completed_failed_status import PendingProcessingCompletedFailedStatus
+from ..models.pending_processing_completed_failed_status import (
+    PendingProcessingCompletedFailedStatus,
+)
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
@@ -151,7 +153,9 @@ class AgentRunResponse:
                 steps_type_0 = []
                 _steps_type_0 = data
                 for steps_type_0_item_data in _steps_type_0:
-                    steps_type_0_item = AgentRunStepResponse.from_dict(steps_type_0_item_data)
+                    steps_type_0_item = AgentRunStepResponse.from_dict(
+                        steps_type_0_item_data
+                    )
 
                     steps_type_0.append(steps_type_0_item)
 

@@ -26,7 +26,9 @@ class FileUploadConfigResponseSupportedTypesAdditionalProperty:
         d = dict(src_dict)
         file_upload_config_response_supported_types_additional_property = cls()
 
-        file_upload_config_response_supported_types_additional_property.additional_properties = d
+        file_upload_config_response_supported_types_additional_property.additional_properties = (
+            d
+        )
         return file_upload_config_response_supported_types_additional_property
 
     @property

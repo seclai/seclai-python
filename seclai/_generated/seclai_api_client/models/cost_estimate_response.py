@@ -142,7 +142,9 @@ class CostEstimateResponse:
         if episodes_per_day is not UNSET:
             field_dict["episodes_per_day"] = episodes_per_day
         if feed_processing_cost_per_episode is not UNSET:
-            field_dict["feed_processing_cost_per_episode"] = feed_processing_cost_per_episode
+            field_dict["feed_processing_cost_per_episode"] = (
+                feed_processing_cost_per_episode
+            )
         if indexing_cost is not UNSET:
             field_dict["indexing_cost"] = indexing_cost
         if indexing_cost_per_episode is not UNSET:
@@ -154,7 +156,9 @@ class CostEstimateResponse:
         if storage_cost is not UNSET:
             field_dict["storage_cost"] = storage_cost
         if storage_cost_per_chunk_per_month is not UNSET:
-            field_dict["storage_cost_per_chunk_per_month"] = storage_cost_per_chunk_per_month
+            field_dict["storage_cost_per_chunk_per_month"] = (
+                storage_cost_per_chunk_per_month
+            )
         if total_cost is not UNSET:
             field_dict["total_cost"] = total_cost
 
@@ -174,7 +178,9 @@ class CostEstimateResponse:
                 return data
             return cast(int | None | Unset, data)
 
-        chunks_per_episode = _parse_chunks_per_episode(d.pop("chunks_per_episode", UNSET))
+        chunks_per_episode = _parse_chunks_per_episode(
+            d.pop("chunks_per_episode", UNSET)
+        )
 
         def _parse_cost_per_episode(data: object) -> float | None | Unset:
             if data is None:
@@ -232,7 +238,9 @@ class CostEstimateResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        indexing_cost_per_episode = _parse_indexing_cost_per_episode(d.pop("indexing_cost_per_episode", UNSET))
+        indexing_cost_per_episode = _parse_indexing_cost_per_episode(
+            d.pop("indexing_cost_per_episode", UNSET)
+        )
 
         def _parse_num_chunks(data: object) -> int | None | Unset:
             if data is None:
@@ -250,7 +258,9 @@ class CostEstimateResponse:
                 return data
             return cast(float | None | Unset, data)
 
-        page_processing_cost = _parse_page_processing_cost(d.pop("page_processing_cost", UNSET))
+        page_processing_cost = _parse_page_processing_cost(
+            d.pop("page_processing_cost", UNSET)
+        )
 
         def _parse_storage_cost(data: object) -> float | None | Unset:
             if data is None:
