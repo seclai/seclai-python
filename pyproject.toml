@@ -37,8 +37,6 @@ documentation = "https://seclai.github.io/seclai-python/latest/"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[dependencies]
-
 [tool.black]
 target-version = ['py313']
 line-length = 88
@@ -97,6 +95,7 @@ version = "1.0"
 include = [
   "README.md",
   "LICENSE",
+  "seclai/py.typed",
 ]
 
 [tool.poetry.dependencies]
