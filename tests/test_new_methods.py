@@ -22,7 +22,10 @@ from seclai import AsyncSeclai, Seclai
 def _sync_client(handler) -> Seclai:
     transport = httpx.MockTransport(handler)
     http_client = httpx.Client(base_url="https://example.invalid", transport=transport)
-    return Seclai(api_key="test", http_client=http_client)
+    client = Seclai(api_key="test", http_client=http_client)
+    # Ensure the externally-provided httpx client is closed when the SDK client closes.
+    client._owns_client = True
+    return client
 
 
 def _async_client(handler) -> AsyncSeclai:
@@ -30,7 +33,9 @@ def _async_client(handler) -> AsyncSeclai:
     http_client = httpx.AsyncClient(
         base_url="https://example.invalid", transport=transport
     )
-    return AsyncSeclai(api_key="test", http_client=http_client)
+    client = AsyncSeclai(api_key="test", http_client=http_client)
+    client._owns_client = True
+    return client
 
 
 def _json_response(body: Any = None, status: int = 200) -> httpx.Response:

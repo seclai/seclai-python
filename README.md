@@ -282,7 +282,7 @@ Upload a file to a source (max 200 MiB):
 
 ```python
 upload = client.upload_file_to_source(
-    "source_id",
+    "source_connection_id",
     file="./document.pdf",
     title="Q4 Report",
     metadata={"department": "finance"},
@@ -302,7 +302,7 @@ Replace a content version with a new file:
 
 ```python
 upload = client.upload_file_to_content(
-    "content_version_id",
+    "source_connection_content_version",
     file="./updated.pdf",
     metadata={"revision": 2},
 )
@@ -311,7 +311,7 @@ upload = client.upload_file_to_content(
 Replace a content version with inline text:
 
 ```python
-client.replace_content_with_inline_text("content_version_id", {
+client.replace_content_with_inline_text("source_connection_content_version", {
     "title": "Updated",
     "content": "New content text",
 })
@@ -340,9 +340,9 @@ client.cancel_source_embedding_migration("source_id")
 ### Content
 
 ```python
-detail = client.get_content_detail("content_id")
-embeddings = client.list_content_embeddings("content_id")
-client.delete_content("content_id")
+detail = client.get_content_detail("source_connection_content_version")
+embeddings = client.list_content_embeddings("source_connection_content_version")
+client.delete_content("source_connection_content_version")
 ```
 
 ### Solutions
