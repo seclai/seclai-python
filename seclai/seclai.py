@@ -581,7 +581,9 @@ class Seclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs/stream"
 
-        merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
+        merged_headers = _merge_request_headers(
+            options=self._options, request_headers=headers
+        )
         merged_headers.setdefault("accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
@@ -730,7 +732,9 @@ class Seclai(_SeclaiBase):
         self, agent_id: str, run_id: str, /, *, include_step_outputs: bool = False
     ) -> AgentRunResponse: ...
 
-    def get_agent_run(self, *args: str, include_step_outputs: bool = False) -> AgentRunResponse:
+    def get_agent_run(
+        self, *args: str, include_step_outputs: bool = False
+    ) -> AgentRunResponse:
         """Get details of a specific agent run.
 
         Fetches the current state and details for a previously created run.
@@ -1142,12 +1146,12 @@ class Seclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
+        import json as _json
+
         from seclai._generated.models.body_upload_file_to_source_api_sources_source_connection_id_upload_post import (
             BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
         )
         from seclai._generated.types import UNSET, File
-
-        import json as _json
 
         created_payload: BinaryIO | None = None
         try:
@@ -1228,7 +1232,9 @@ class Seclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                 )
-            parsed_response = cast(FileUploadResponse | HTTPValidationError, response.parsed)
+            parsed_response = cast(
+                FileUploadResponse | HTTPValidationError, response.parsed
+            )
             if isinstance(parsed_response, HTTPValidationError):
                 raise SeclaiAPIValidationError(
                     message="Validation error",
@@ -1281,6 +1287,8 @@ class Seclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
+        import json as _json
+
         from seclai._generated.api.contents.upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
             sync_detailed,
         )
@@ -1288,8 +1296,6 @@ class Seclai(_SeclaiBase):
             BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
         )
         from seclai._generated.types import UNSET, File
-
-        import json as _json
 
         created_payload: BinaryIO | None = None
         try:
@@ -1374,9 +1380,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated list of agents.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/agents", params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/agents",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     def create_agent(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a new agent.
@@ -1410,7 +1421,9 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated agent.
         """
-        return cast(dict[str, Any], self.request("PUT", f"/agents/{agent_id}", json=body))
+        return cast(
+            dict[str, Any], self.request("PUT", f"/agents/{agent_id}", json=body)
+        )
 
     def delete_agent(self, agent_id: str) -> None:
         """Delete an agent.
@@ -1431,7 +1444,9 @@ class Seclai(_SeclaiBase):
         Returns:
             The agent's step definition.
         """
-        return cast(dict[str, Any], self.request("GET", f"/agents/{agent_id}/definition"))
+        return cast(
+            dict[str, Any], self.request("GET", f"/agents/{agent_id}/definition")
+        )
 
     def update_agent_definition(
         self, agent_id: str, body: dict[str, Any]
@@ -1445,9 +1460,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated agent definition.
         """
-        return cast(dict[str, Any], self.request(
-            "PUT", f"/agents/{agent_id}/definition", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/agents/{agent_id}/definition",
+                json=body,
+            ),
+        )
 
     # ── Agent Runs (additional) ───────────────────────────────────────────────
 
@@ -1460,7 +1480,9 @@ class Seclai(_SeclaiBase):
         Returns:
             Search results with matching runs.
         """
-        return cast(dict[str, Any], self.request("POST", "/agents/runs/search", json=body))
+        return cast(
+            dict[str, Any], self.request("POST", "/agents/runs/search", json=body)
+        )
 
     def cancel_agent_run(self, run_id: str) -> dict[str, Any]:
         """Cancel an in-progress agent run.
@@ -1471,7 +1493,9 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated agent run.
         """
-        return cast(dict[str, Any], self.request("POST", f"/agents/runs/{run_id}/cancel"))
+        return cast(
+            dict[str, Any], self.request("POST", f"/agents/runs/{run_id}/cancel")
+        )
 
     # ── Agent Input Uploads ───────────────────────────────────────────────────
 
@@ -1499,7 +1523,9 @@ class Seclai(_SeclaiBase):
             response = self._client.post(
                 f"/agents/{agent_id}/upload-input",
                 files={"file": payload},
-                headers=_merge_request_headers(options=self._options, request_headers=None),
+                headers=_merge_request_headers(
+                    options=self._options, request_headers=None
+                ),
             )
             _raise_for_status(response)
             return cast(dict[str, Any], response.json())
@@ -1519,9 +1545,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Upload status details.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/{agent_id}/input-uploads/{upload_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/{agent_id}/input-uploads/{upload_id}",
+            ),
+        )
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
 
@@ -1537,9 +1567,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated steps suggestion.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/agents/{agent_id}/ai-assistant/generate-steps", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/agents/{agent_id}/ai-assistant/generate-steps",
+                json=body,
+            ),
+        )
 
     def generate_step_config(
         self, agent_id: str, body: dict[str, Any]
@@ -1553,13 +1588,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated step configuration.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/agents/{agent_id}/ai-assistant/step-config", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/agents/{agent_id}/ai-assistant/step-config",
+                json=body,
+            ),
+        )
 
-    def get_agent_ai_conversation_history(
-        self, agent_id: str
-    ) -> dict[str, Any]:
+    def get_agent_ai_conversation_history(self, agent_id: str) -> dict[str, Any]:
         """Get the AI assistant conversation history for an agent.
 
         Args:
@@ -1568,9 +1606,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Conversation history with the AI assistant.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/{agent_id}/ai-assistant/conversations",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/{agent_id}/ai-assistant/conversations",
+            ),
+        )
 
     def mark_agent_ai_suggestion(
         self, agent_id: str, conversation_id: str, body: dict[str, Any]
@@ -1583,7 +1625,9 @@ class Seclai(_SeclaiBase):
             body: Acceptance/rejection payload.
         """
         self.request(
-            "PATCH", f"/agents/{agent_id}/ai-assistant/{conversation_id}", json=body,
+            "PATCH",
+            f"/agents/{agent_id}/ai-assistant/{conversation_id}",
+            json=body,
         )
 
     # ── Agent Evaluations ─────────────────────────────────────────────────────
@@ -1601,10 +1645,14 @@ class Seclai(_SeclaiBase):
         Returns:
             List of evaluation criteria.
         """
-        return cast(list[dict[str, Any]], self.request(
-            "GET", f"/agents/{agent_id}/evaluation-criteria",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            list[dict[str, Any]],
+            self.request(
+                "GET",
+                f"/agents/{agent_id}/evaluation-criteria",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -1618,9 +1666,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The created evaluation criteria.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/agents/{agent_id}/evaluation-criteria", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/agents/{agent_id}/evaluation-criteria",
+                json=body,
+            ),
+        )
 
     def get_evaluation_criteria(self, criteria_id: str) -> dict[str, Any]:
         """Get evaluation criteria by ID.
@@ -1631,9 +1684,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Evaluation criteria details.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}",
+            ),
+        )
 
     def update_evaluation_criteria(
         self, criteria_id: str, body: dict[str, Any]
@@ -1647,9 +1704,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated evaluation criteria.
         """
-        return cast(dict[str, Any], self.request(
-            "PATCH", f"/agents/evaluation-criteria/{criteria_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PATCH",
+                f"/agents/evaluation-criteria/{criteria_id}",
+                json=body,
+            ),
+        )
 
     def delete_evaluation_criteria(self, criteria_id: str) -> None:
         """Delete evaluation criteria.
@@ -1659,9 +1721,7 @@ class Seclai(_SeclaiBase):
         """
         self.request("DELETE", f"/agents/evaluation-criteria/{criteria_id}")
 
-    def get_evaluation_criteria_summary(
-        self, criteria_id: str
-    ) -> dict[str, Any]:
+    def get_evaluation_criteria_summary(self, criteria_id: str) -> dict[str, Any]:
         """Get the result summary for evaluation criteria.
 
         Args:
@@ -1670,9 +1730,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Summary of evaluation results.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}/summary",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}/summary",
+            ),
+        )
 
     def list_evaluation_results(
         self, criteria_id: str, *, page: int = 1, limit: int = 50
@@ -1687,10 +1751,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated evaluation results.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}/results",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}/results",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     def create_evaluation_result(
         self, criteria_id: str, body: dict[str, Any]
@@ -1704,9 +1772,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The created evaluation result.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/agents/evaluation-criteria/{criteria_id}/results", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/agents/evaluation-criteria/{criteria_id}/results",
+                json=body,
+            ),
+        )
 
     def list_compatible_runs(
         self, criteria_id: str, *, page: int = 1, limit: int = 50
@@ -1721,10 +1794,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated list of compatible runs.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     def test_draft_evaluation(
         self, agent_id: str, body: dict[str, Any]
@@ -1738,9 +1815,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Test evaluation result.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/agents/{agent_id}/evaluation-criteria/test-draft", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/agents/{agent_id}/evaluation-criteria/test-draft",
+                json=body,
+            ),
+        )
 
     def list_agent_evaluation_results(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -1755,10 +1837,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated evaluation results with criteria.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/{agent_id}/evaluation-results",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/{agent_id}/evaluation-results",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     def list_run_evaluation_results(
         self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
@@ -1774,10 +1860,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated evaluation results with criteria.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -1792,14 +1882,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated evaluation run summaries.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/agents/{agent_id}/evaluation-runs",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/{agent_id}/evaluation-runs",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
-    def get_non_manual_evaluation_summary(
-        self, agent_id: str
-    ) -> dict[str, Any]:
+    def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
         """Get the non-manual evaluation summary for an agent.
 
         Args:
@@ -1808,15 +1900,24 @@ class Seclai(_SeclaiBase):
         Returns:
             Summary of automated evaluation results.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/agents/evaluation-results/non-manual-summary",
-            params={"agent_id": agent_id},
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/agents/evaluation-results/non-manual-summary",
+                params={"agent_id": agent_id},
+            ),
+        )
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
     def list_knowledge_bases(
-        self, *, page: int = 1, limit: int = 50, sort: str = "created_at", order: str = "desc"
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        sort: str = "created_at",
+        order: str = "desc",
     ) -> dict[str, Any]:
         """List knowledge bases.
 
@@ -1829,10 +1930,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated list of knowledge bases.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/knowledge_bases",
-            params=_strip_none({"page": page, "limit": limit, "sort": sort, "order": order}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/knowledge_bases",
+                params=_strip_none(
+                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                ),
+            ),
+        )
 
     def create_knowledge_base(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a knowledge base.
@@ -1854,9 +1961,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Knowledge base details.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/knowledge_bases/{knowledge_base_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/knowledge_bases/{knowledge_base_id}",
+            ),
+        )
 
     def update_knowledge_base(
         self, knowledge_base_id: str, body: dict[str, Any]
@@ -1870,9 +1981,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated knowledge base.
         """
-        return cast(dict[str, Any], self.request(
-            "PUT", f"/knowledge_bases/{knowledge_base_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/knowledge_bases/{knowledge_base_id}",
+                json=body,
+            ),
+        )
 
     def delete_knowledge_base(self, knowledge_base_id: str) -> None:
         """Delete a knowledge base.
@@ -1885,7 +2001,12 @@ class Seclai(_SeclaiBase):
     # ── Memory Banks ──────────────────────────────────────────────────────────
 
     def list_memory_banks(
-        self, *, page: int = 1, limit: int = 50, sort: str = "created_at", order: str = "desc"
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        sort: str = "created_at",
+        order: str = "desc",
     ) -> dict[str, Any]:
         """List memory banks.
 
@@ -1898,10 +2019,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated list of memory banks.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/memory_banks",
-            params=_strip_none({"page": page, "limit": limit, "sort": sort, "order": order}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/memory_banks",
+                params=_strip_none(
+                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                ),
+            ),
+        )
 
     def create_memory_bank(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a memory bank.
@@ -1923,9 +2050,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Memory bank details.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/memory_banks/{memory_bank_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/memory_banks/{memory_bank_id}",
+            ),
+        )
 
     def update_memory_bank(
         self, memory_bank_id: str, body: dict[str, Any]
@@ -1939,9 +2070,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated memory bank.
         """
-        return cast(dict[str, Any], self.request(
-            "PUT", f"/memory_banks/{memory_bank_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/memory_banks/{memory_bank_id}",
+                json=body,
+            ),
+        )
 
     def delete_memory_bank(self, memory_bank_id: str) -> None:
         """Delete a memory bank.
@@ -1951,9 +2087,7 @@ class Seclai(_SeclaiBase):
         """
         self.request("DELETE", f"/memory_banks/{memory_bank_id}")
 
-    def get_agents_using_memory_bank(
-        self, memory_bank_id: str
-    ) -> JSONValue:
+    def get_agents_using_memory_bank(self, memory_bank_id: str) -> JSONValue:
         """Get agents that use a specific memory bank.
 
         Args:
@@ -2003,13 +2137,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Compaction test result.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/memory_banks/{memory_bank_id}/test-compaction", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/memory_banks/{memory_bank_id}/test-compaction",
+                json=body,
+            ),
+        )
 
-    def test_compaction_prompt_standalone(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    def test_compaction_prompt_standalone(self, body: dict[str, Any]) -> dict[str, Any]:
         """Test a compaction prompt without an existing memory bank.
 
         Args:
@@ -2018,9 +2155,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Compaction test result.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", "/memory_banks/test-compaction", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                "/memory_banks/test-compaction",
+                json=body,
+            ),
+        )
 
     def list_memory_bank_templates(self) -> JSONValue:
         """List available memory bank templates.
@@ -2030,9 +2172,7 @@ class Seclai(_SeclaiBase):
         """
         return self.request("GET", "/memory_banks/templates")
 
-    def generate_memory_bank_config(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    def generate_memory_bank_config(self, body: dict[str, Any]) -> dict[str, Any]:
         """Use the AI assistant to generate memory bank configuration.
 
         Args:
@@ -2041,9 +2181,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated memory bank configuration.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", "/memory_banks/ai-assistant", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                "/memory_banks/ai-assistant",
+                json=body,
+            ),
+        )
 
     def get_memory_bank_ai_last_conversation(self) -> dict[str, Any]:
         """Get the last AI assistant conversation for memory banks.
@@ -2051,9 +2196,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Last conversation with the memory bank AI assistant.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/memory_banks/ai-assistant/last-conversation",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/memory_banks/ai-assistant/last-conversation",
+            ),
+        )
 
     def accept_memory_bank_ai_suggestion(
         self, conversation_id: str, body: dict[str, Any]
@@ -2068,7 +2217,9 @@ class Seclai(_SeclaiBase):
             Acceptance result.
         """
         return self.request(
-            "PATCH", f"/memory_banks/ai-assistant/{conversation_id}", json=body,
+            "PATCH",
+            f"/memory_banks/ai-assistant/{conversation_id}",
+            json=body,
         )
 
     # ── Sources (additional) ──────────────────────────────────────────────────
@@ -2095,9 +2246,7 @@ class Seclai(_SeclaiBase):
         """
         return cast(dict[str, Any], self.request("GET", f"/sources/{source_id}"))
 
-    def update_source(
-        self, source_id: str, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    def update_source(self, source_id: str, body: dict[str, Any]) -> dict[str, Any]:
         """Update a source.
 
         Args:
@@ -2107,9 +2256,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated source.
         """
-        return cast(dict[str, Any], self.request(
-            "PUT", f"/sources/{source_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/sources/{source_id}",
+                json=body,
+            ),
+        )
 
     def delete_source(self, source_id: str) -> None:
         """Delete a source.
@@ -2131,9 +2285,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Upload response details.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/sources/{source_connection_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/sources/{source_connection_id}",
+                json=body,
+            ),
+        )
 
     # ── Source Exports ────────────────────────────────────────────────────────
 
@@ -2150,10 +2309,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated list of exports.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/sources/{source_id}/exports",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/sources/{source_id}/exports",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     def create_source_export(
         self, source_id: str, body: dict[str, Any]
@@ -2167,13 +2330,16 @@ class Seclai(_SeclaiBase):
         Returns:
             The created export.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/sources/{source_id}/exports", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/sources/{source_id}/exports",
+                json=body,
+            ),
+        )
 
-    def get_source_export(
-        self, source_id: str, export_id: str
-    ) -> dict[str, Any]:
+    def get_source_export(self, source_id: str, export_id: str) -> dict[str, Any]:
         """Get details of a source export.
 
         Args:
@@ -2183,13 +2349,15 @@ class Seclai(_SeclaiBase):
         Returns:
             Export details.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/sources/{source_id}/exports/{export_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/sources/{source_id}/exports/{export_id}",
+            ),
+        )
 
-    def cancel_source_export(
-        self, source_id: str, export_id: str
-    ) -> dict[str, Any]:
+    def cancel_source_export(self, source_id: str, export_id: str) -> dict[str, Any]:
         """Cancel a source export.
 
         Args:
@@ -2199,13 +2367,15 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated export.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/sources/{source_id}/exports/{export_id}/cancel",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/sources/{source_id}/exports/{export_id}/cancel",
+            ),
+        )
 
-    def delete_source_export(
-        self, source_id: str, export_id: str
-    ) -> None:
+    def delete_source_export(self, source_id: str, export_id: str) -> None:
         """Delete a source export.
 
         Args:
@@ -2214,9 +2384,7 @@ class Seclai(_SeclaiBase):
         """
         self.request("DELETE", f"/sources/{source_id}/exports/{export_id}")
 
-    def download_source_export(
-        self, source_id: str, export_id: str
-    ) -> httpx.Response:
+    def download_source_export(self, source_id: str, export_id: str) -> httpx.Response:
         """Download a completed source export.
 
         The caller is responsible for consuming and closing the response.
@@ -2247,15 +2415,18 @@ class Seclai(_SeclaiBase):
         Returns:
             Export estimate.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/sources/{source_id}/exports/estimate", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/sources/{source_id}/exports/estimate",
+                json=body,
+            ),
+        )
 
     # ── Source Embedding Migrations ───────────────────────────────────────────
 
-    def get_source_embedding_migration(
-        self, source_id: str
-    ) -> dict[str, Any]:
+    def get_source_embedding_migration(self, source_id: str) -> dict[str, Any]:
         """Get the embedding migration status for a source.
 
         Args:
@@ -2264,9 +2435,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Migration status.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", f"/sources/{source_id}/embedding-migration",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/sources/{source_id}/embedding-migration",
+            ),
+        )
 
     def start_source_embedding_migration(
         self, source_id: str, body: dict[str, Any]
@@ -2280,13 +2455,16 @@ class Seclai(_SeclaiBase):
         Returns:
             The started migration.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/sources/{source_id}/embedding-migration", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/sources/{source_id}/embedding-migration",
+                json=body,
+            ),
+        )
 
-    def cancel_source_embedding_migration(
-        self, source_id: str
-    ) -> dict[str, Any]:
+    def cancel_source_embedding_migration(self, source_id: str) -> dict[str, Any]:
         """Cancel an in-progress embedding migration for a source.
 
         Args:
@@ -2295,9 +2473,13 @@ class Seclai(_SeclaiBase):
         Returns:
             The cancelled migration.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/sources/{source_id}/embedding-migration/cancel",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/sources/{source_id}/embedding-migration/cancel",
+            ),
+        )
 
     # ── Content (additional) ──────────────────────────────────────────────────
 
@@ -2313,14 +2495,24 @@ class Seclai(_SeclaiBase):
         Returns:
             Upload response.
         """
-        return cast(dict[str, Any], self.request(
-            "PUT", f"/contents/{content_version_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/contents/{content_version_id}",
+                json=body,
+            ),
+        )
 
     # ── Solutions ─────────────────────────────────────────────────────────────
 
     def list_solutions(
-        self, *, page: int = 1, limit: int = 50, sort: str = "created_at", order: str = "desc"
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        sort: str = "created_at",
+        order: str = "desc",
     ) -> dict[str, Any]:
         """List solutions.
 
@@ -2333,10 +2525,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Paginated list of solutions.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/solutions",
-            params=_strip_none({"page": page, "limit": limit, "sort": sort, "order": order}),
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/solutions",
+                params=_strip_none(
+                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                ),
+            ),
+        )
 
     def create_solution(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a solution.
@@ -2360,9 +2558,7 @@ class Seclai(_SeclaiBase):
         """
         return cast(dict[str, Any], self.request("GET", f"/solutions/{solution_id}"))
 
-    def update_solution(
-        self, solution_id: str, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    def update_solution(self, solution_id: str, body: dict[str, Any]) -> dict[str, Any]:
         """Update a solution.
 
         Args:
@@ -2372,9 +2568,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], self.request(
-            "PATCH", f"/solutions/{solution_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PATCH",
+                f"/solutions/{solution_id}",
+                json=body,
+            ),
+        )
 
     def delete_solution(self, solution_id: str) -> None:
         """Delete a solution.
@@ -2396,9 +2597,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/solutions/{solution_id}/agents", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/agents",
+                json=body,
+            ),
+        )
 
     def unlink_agents_from_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -2412,9 +2618,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], self.request(
-            "DELETE", f"/solutions/{solution_id}/agents", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "DELETE",
+                f"/solutions/{solution_id}/agents",
+                json=body,
+            ),
+        )
 
     def link_knowledge_bases_to_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -2428,9 +2639,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/solutions/{solution_id}/knowledge-bases", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/knowledge-bases",
+                json=body,
+            ),
+        )
 
     def unlink_knowledge_bases_from_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -2444,9 +2660,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], self.request(
-            "DELETE", f"/solutions/{solution_id}/knowledge-bases", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "DELETE",
+                f"/solutions/{solution_id}/knowledge-bases",
+                json=body,
+            ),
+        )
 
     def link_source_connections_to_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -2460,9 +2681,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/solutions/{solution_id}/source-connections", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/source-connections",
+                json=body,
+            ),
+        )
 
     def unlink_source_connections_from_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -2476,13 +2702,16 @@ class Seclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], self.request(
-            "DELETE", f"/solutions/{solution_id}/source-connections", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "DELETE",
+                f"/solutions/{solution_id}/source-connections",
+                json=body,
+            ),
+        )
 
-    def list_solution_conversations(
-        self, solution_id: str
-    ) -> list[dict[str, Any]]:
+    def list_solution_conversations(self, solution_id: str) -> list[dict[str, Any]]:
         """List AI assistant conversations for a solution.
 
         Args:
@@ -2491,9 +2720,13 @@ class Seclai(_SeclaiBase):
         Returns:
             List of conversations.
         """
-        return cast(list[dict[str, Any]], self.request(
-            "GET", f"/solutions/{solution_id}/conversations",
-        ))
+        return cast(
+            list[dict[str, Any]],
+            self.request(
+                "GET",
+                f"/solutions/{solution_id}/conversations",
+            ),
+        )
 
     def add_solution_conversation_turn(
         self, solution_id: str, body: dict[str, Any]
@@ -2507,9 +2740,14 @@ class Seclai(_SeclaiBase):
         Returns:
             The conversation response.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/solutions/{solution_id}/conversations", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/conversations",
+                json=body,
+            ),
+        )
 
     def mark_solution_conversation_turn(
         self, solution_id: str, conversation_id: str, body: dict[str, Any]
@@ -2522,7 +2760,8 @@ class Seclai(_SeclaiBase):
             body: Acceptance/rejection payload.
         """
         self.request(
-            "PATCH", f"/solutions/{solution_id}/conversations/{conversation_id}",
+            "PATCH",
+            f"/solutions/{solution_id}/conversations/{conversation_id}",
             json=body,
         )
 
@@ -2538,9 +2777,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated plan with proposed actions.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/solutions/{solution_id}/ai-assistant/generate", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/generate",
+                json=body,
+            ),
+        )
 
     def generate_solution_ai_knowledge_base(
         self, solution_id: str, body: dict[str, Any]
@@ -2554,9 +2798,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated knowledge base plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/solutions/{solution_id}/ai-assistant/knowledge-base", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/knowledge-base",
+                json=body,
+            ),
+        )
 
     def generate_solution_ai_source(
         self, solution_id: str, body: dict[str, Any]
@@ -2570,9 +2819,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated source plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/solutions/{solution_id}/ai-assistant/source", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/source",
+                json=body,
+            ),
+        )
 
     def accept_solution_ai_plan(
         self, solution_id: str, conversation_id: str, body: dict[str, Any]
@@ -2587,15 +2841,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Result of applying the plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST",
-            f"/solutions/{solution_id}/ai-assistant/{conversation_id}/accept",
-            json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/{conversation_id}/accept",
+                json=body,
+            ),
+        )
 
-    def decline_solution_ai_plan(
-        self, solution_id: str, conversation_id: str
-    ) -> None:
+    def decline_solution_ai_plan(self, solution_id: str, conversation_id: str) -> None:
         """Decline an AI-generated solution plan.
 
         Args:
@@ -2609,9 +2864,7 @@ class Seclai(_SeclaiBase):
 
     # ── Governance AI ─────────────────────────────────────────────────────────
 
-    def generate_governance_ai_plan(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    def generate_governance_ai_plan(self, body: dict[str, Any]) -> dict[str, Any]:
         """Use the AI assistant to generate a governance plan.
 
         Args:
@@ -2620,9 +2873,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated governance plan with proposed actions.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", "/governance/ai-assistant", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                "/governance/ai-assistant",
+                json=body,
+            ),
+        )
 
     def list_governance_ai_conversations(self) -> list[dict[str, Any]]:
         """List governance AI assistant conversations.
@@ -2630,13 +2888,15 @@ class Seclai(_SeclaiBase):
         Returns:
             List of governance conversations.
         """
-        return cast(list[dict[str, Any]], self.request(
-            "GET", "/governance/ai-assistant/conversations",
-        ))
+        return cast(
+            list[dict[str, Any]],
+            self.request(
+                "GET",
+                "/governance/ai-assistant/conversations",
+            ),
+        )
 
-    def accept_governance_ai_plan(
-        self, conversation_id: str
-    ) -> dict[str, Any]:
+    def accept_governance_ai_plan(self, conversation_id: str) -> dict[str, Any]:
         """Accept an AI-generated governance plan.
 
         Args:
@@ -2645,9 +2905,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Result of applying the governance plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/governance/ai-assistant/{conversation_id}/accept",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/governance/ai-assistant/{conversation_id}/accept",
+            ),
+        )
 
     def decline_governance_ai_plan(self, conversation_id: str) -> None:
         """Decline an AI-generated governance plan.
@@ -2656,7 +2920,8 @@ class Seclai(_SeclaiBase):
             conversation_id: Conversation identifier.
         """
         self.request(
-            "POST", f"/governance/ai-assistant/{conversation_id}/decline",
+            "POST",
+            f"/governance/ai-assistant/{conversation_id}/decline",
         )
 
     # ── Alerts ────────────────────────────────────────────────────────────────
@@ -2681,8 +2946,11 @@ class Seclai(_SeclaiBase):
             Paginated list of alerts.
         """
         return self.request(
-            "GET", "/alerts",
-            params=_strip_none({"page": page, "limit": limit, "status": status, "severity": severity}),
+            "GET",
+            "/alerts",
+            params=_strip_none(
+                {"page": page, "limit": limit, "status": status, "severity": severity}
+            ),
         )
 
     def get_alert(self, alert_id: str) -> JSONValue:
@@ -2696,9 +2964,7 @@ class Seclai(_SeclaiBase):
         """
         return self.request("GET", f"/alerts/{alert_id}")
 
-    def change_alert_status(
-        self, alert_id: str, body: dict[str, Any]
-    ) -> JSONValue:
+    def change_alert_status(self, alert_id: str, body: dict[str, Any]) -> JSONValue:
         """Change the status of an alert.
 
         Args:
@@ -2710,9 +2976,7 @@ class Seclai(_SeclaiBase):
         """
         return self.request("POST", f"/alerts/{alert_id}/status", json=body)
 
-    def add_alert_comment(
-        self, alert_id: str, body: dict[str, Any]
-    ) -> JSONValue:
+    def add_alert_comment(self, alert_id: str, body: dict[str, Any]) -> JSONValue:
         """Add a comment to an alert.
 
         Args:
@@ -2748,9 +3012,7 @@ class Seclai(_SeclaiBase):
 
     # ── Alert Configs ─────────────────────────────────────────────────────────
 
-    def list_alert_configs(
-        self, *, page: int = 1, limit: int = 50
-    ) -> JSONValue:
+    def list_alert_configs(self, *, page: int = 1, limit: int = 50) -> JSONValue:
         """List alert configurations.
 
         Args:
@@ -2761,7 +3023,8 @@ class Seclai(_SeclaiBase):
             Paginated list of alert configurations.
         """
         return self.request(
-            "GET", "/alerts/configs",
+            "GET",
+            "/alerts/configs",
             params=_strip_none({"page": page, "limit": limit}),
         )
 
@@ -2787,9 +3050,7 @@ class Seclai(_SeclaiBase):
         """
         return self.request("GET", f"/alerts/configs/{config_id}")
 
-    def update_alert_config(
-        self, config_id: str, body: dict[str, Any]
-    ) -> JSONValue:
+    def update_alert_config(self, config_id: str, body: dict[str, Any]) -> JSONValue:
         """Update an alert configuration.
 
         Args:
@@ -2817,9 +3078,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Alert preferences for the organization.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/alerts/organization-preferences/list",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/alerts/organization-preferences/list",
+            ),
+        )
 
     def update_organization_alert_preference(
         self, organization_id: str, alert_type: str, body: dict[str, Any]
@@ -2842,9 +3107,7 @@ class Seclai(_SeclaiBase):
 
     # ── Model Alerts ──────────────────────────────────────────────────────────
 
-    def list_model_alerts(
-        self, *, page: int = 1, limit: int = 50
-    ) -> JSONValue:
+    def list_model_alerts(self, *, page: int = 1, limit: int = 50) -> JSONValue:
         """List model alerts.
 
         Args:
@@ -2855,7 +3118,8 @@ class Seclai(_SeclaiBase):
             Paginated list of model alerts.
         """
         return self.request(
-            "GET", "/models/alerts",
+            "GET",
+            "/models/alerts",
             params=_strip_none({"page": page, "limit": limit}),
         )
 
@@ -2912,8 +3176,11 @@ class Seclai(_SeclaiBase):
             Search results.
         """
         return self.request(
-            "GET", "/search",
-            params=_strip_none({"query": query, "limit": limit, "entity_type": entity_type}),
+            "GET",
+            "/search",
+            params=_strip_none(
+                {"query": query, "limit": limit, "entity_type": entity_type}
+            ),
         )
 
     # ── Top-level AI Assistant ─────────────────────────────────────────────────
@@ -2927,11 +3194,11 @@ class Seclai(_SeclaiBase):
         Returns:
             Feedback response.
         """
-        return cast(dict[str, Any], self.request("POST", "/ai-assistant/feedback", json=body))
+        return cast(
+            dict[str, Any], self.request("POST", "/ai-assistant/feedback", json=body)
+        )
 
-    def ai_assistant_knowledge_base(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    def ai_assistant_knowledge_base(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a knowledge base plan via the top-level AI assistant.
 
         Args:
@@ -2940,9 +3207,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", "/ai-assistant/knowledge-base", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                "/ai-assistant/knowledge-base",
+                json=body,
+            ),
+        )
 
     def ai_assistant_source(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a source plan via the top-level AI assistant.
@@ -2953,9 +3225,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", "/ai-assistant/source", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                "/ai-assistant/source",
+                json=body,
+            ),
+        )
 
     def ai_assistant_solution(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a solution plan via the top-level AI assistant.
@@ -2966,13 +3243,16 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", "/ai-assistant/solution", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                "/ai-assistant/solution",
+                json=body,
+            ),
+        )
 
-    def ai_assistant_memory_bank(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    def ai_assistant_memory_bank(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a memory bank plan via the top-level AI assistant.
 
         Args:
@@ -2981,9 +3261,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", "/ai-assistant/memory-bank", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                "/ai-assistant/memory-bank",
+                json=body,
+            ),
+        )
 
     def get_ai_assistant_memory_bank_history(self) -> dict[str, Any]:
         """Get the last AI assistant memory bank conversation.
@@ -2991,9 +3276,13 @@ class Seclai(_SeclaiBase):
         Returns:
             Last conversation.
         """
-        return cast(dict[str, Any], self.request(
-            "GET", "/ai-assistant/memory-bank/last-conversation",
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/ai-assistant/memory-bank/last-conversation",
+            ),
+        )
 
     def accept_ai_assistant_plan(
         self, conversation_id: str, body: dict[str, Any]
@@ -3007,9 +3296,14 @@ class Seclai(_SeclaiBase):
         Returns:
             Result of applying the plan.
         """
-        return cast(dict[str, Any], self.request(
-            "POST", f"/ai-assistant/{conversation_id}/accept", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            self.request(
+                "POST",
+                f"/ai-assistant/{conversation_id}/accept",
+                json=body,
+            ),
+        )
 
     def decline_ai_assistant_plan(self, conversation_id: str) -> None:
         """Decline a top-level AI assistant plan.
@@ -3032,7 +3326,9 @@ class Seclai(_SeclaiBase):
             Acceptance result.
         """
         return self.request(
-            "PATCH", f"/ai-assistant/memory-bank/{conversation_id}", json=body,
+            "PATCH",
+            f"/ai-assistant/memory-bank/{conversation_id}",
+            json=body,
         )
 
     # ── Pagination helper ─────────────────────────────────────────────────────
@@ -3045,7 +3341,7 @@ class Seclai(_SeclaiBase):
         params: dict[str, Any] | None = None,
         limit: int = 50,
         items_key: str = "data",
-    ) -> Generator[dict[str, Any], None, None]:
+    ) -> Generator[dict[str, Any]]:
         """Auto-paginate a list endpoint.
 
         Yields individual items from each page.
@@ -3072,7 +3368,8 @@ class Seclai(_SeclaiBase):
             items = result.get(items_key, [])
             if not isinstance(items, list):
                 return
-            yield from items
+            for item in items:
+                yield cast(dict[str, Any], item)
             if len(items) < limit:
                 return
             page += 1
@@ -3108,7 +3405,9 @@ class Seclai(_SeclaiBase):
         run = self.run_agent(agent_id, body)
         while run.status not in ("completed", "failed"):
             time.sleep(poll_interval)
-            run = self.get_agent_run(run.run_id, include_step_outputs=include_step_outputs)
+            run = self.get_agent_run(
+                run.run_id, include_step_outputs=include_step_outputs
+            )
         return run
 
     def run_streaming_agent(
@@ -3118,7 +3417,7 @@ class Seclai(_SeclaiBase):
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
-    ) -> Generator[tuple[str, dict[str, Any]], None, None]:
+    ) -> Generator[tuple[str, dict[str, Any]]]:
         """Run an agent via SSE streaming, yielding events as they arrive.
 
         This is a generator that yields ``(event_type, data)`` tuples for each
@@ -3141,14 +3440,20 @@ class Seclai(_SeclaiBase):
         import json as _json
 
         path = f"/agents/{agent_id}/runs/stream"
-        merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
+        merged_headers = _merge_request_headers(
+            options=self._options, request_headers=headers
+        )
         merged_headers.setdefault("accept", "text/event-stream")
         timeout_seconds = self._options.timeout if timeout is None else timeout
         start = time.monotonic()
 
         try:
             with self._client.stream(
-                "POST", path, json=body, headers=merged_headers, timeout=timeout_seconds,
+                "POST",
+                path,
+                json=body,
+                headers=merged_headers,
+                timeout=timeout_seconds,
             ) as response:
                 _raise_for_status(response)
                 current_event: str | None = None
@@ -3178,10 +3483,10 @@ class Seclai(_SeclaiBase):
                     if line.startswith(":"):
                         continue
                     if line.startswith("event:"):
-                        current_event = line[len("event:"):].strip() or None
+                        current_event = line[len("event:") :].strip() or None
                         continue
                     if line.startswith("data:"):
-                        data_lines.append(line[len("data:"):].lstrip())
+                        data_lines.append(line[len("data:") :].lstrip())
                         continue
 
                 # Flush any final event
@@ -3414,7 +3719,9 @@ class AsyncSeclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs/stream"
 
-        merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
+        merged_headers = _merge_request_headers(
+            options=self._options, request_headers=headers
+        )
         merged_headers.setdefault("accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
@@ -3563,7 +3870,9 @@ class AsyncSeclai(_SeclaiBase):
         self, agent_id: str, run_id: str, /, *, include_step_outputs: bool = False
     ) -> AgentRunResponse: ...
 
-    async def get_agent_run(self, *args: str, include_step_outputs: bool = False) -> AgentRunResponse:
+    async def get_agent_run(
+        self, *args: str, include_step_outputs: bool = False
+    ) -> AgentRunResponse:
         """Get details of a specific agent run.
 
         Fetches the current state and details for a previously created run.
@@ -3629,7 +3938,9 @@ class AsyncSeclai(_SeclaiBase):
     async def delete_agent_run(self, run_id: str, /) -> AgentRunResponse: ...
 
     @overload
-    async def delete_agent_run(self, agent_id: str, run_id: str, /) -> AgentRunResponse: ...
+    async def delete_agent_run(
+        self, agent_id: str, run_id: str, /
+    ) -> AgentRunResponse: ...
 
     async def delete_agent_run(self, *args: str) -> AgentRunResponse:
         """Cancel an agent run.
@@ -3978,12 +4289,12 @@ class AsyncSeclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
+        import json as _json
+
         from seclai._generated.models.body_upload_file_to_source_api_sources_source_connection_id_upload_post import (
             BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
         )
         from seclai._generated.types import UNSET, File
-
-        import json as _json
 
         created_payload: BinaryIO | None = None
         try:
@@ -4061,7 +4372,9 @@ class AsyncSeclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                 )
-            parsed_response = cast(FileUploadResponse | HTTPValidationError, response.parsed)
+            parsed_response = cast(
+                FileUploadResponse | HTTPValidationError, response.parsed
+            )
             if isinstance(parsed_response, HTTPValidationError):
                 raise SeclaiAPIValidationError(
                     message="Validation error",
@@ -4114,6 +4427,8 @@ class AsyncSeclai(_SeclaiBase):
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
+        import json as _json
+
         from seclai._generated.api.contents.upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
             asyncio_detailed,
         )
@@ -4121,8 +4436,6 @@ class AsyncSeclai(_SeclaiBase):
             BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
         )
         from seclai._generated.types import UNSET, File
-
-        import json as _json
 
         created_payload: BinaryIO | None = None
         try:
@@ -4207,9 +4520,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated list of agents.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/agents", params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/agents",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     async def create_agent(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a new agent.
@@ -4243,7 +4561,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated agent.
         """
-        return cast(dict[str, Any], await self.request("PUT", f"/agents/{agent_id}", json=body))
+        return cast(
+            dict[str, Any], await self.request("PUT", f"/agents/{agent_id}", json=body)
+        )
 
     async def delete_agent(self, agent_id: str) -> None:
         """Delete an agent.
@@ -4264,7 +4584,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The agent's step definition.
         """
-        return cast(dict[str, Any], await self.request("GET", f"/agents/{agent_id}/definition"))
+        return cast(
+            dict[str, Any], await self.request("GET", f"/agents/{agent_id}/definition")
+        )
 
     async def update_agent_definition(
         self, agent_id: str, body: dict[str, Any]
@@ -4278,9 +4600,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated agent definition.
         """
-        return cast(dict[str, Any], await self.request(
-            "PUT", f"/agents/{agent_id}/definition", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/agents/{agent_id}/definition",
+                json=body,
+            ),
+        )
 
     # ── Agent Runs (additional) ───────────────────────────────────────────────
 
@@ -4293,7 +4620,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Search results with matching runs.
         """
-        return cast(dict[str, Any], await self.request("POST", "/agents/runs/search", json=body))
+        return cast(
+            dict[str, Any], await self.request("POST", "/agents/runs/search", json=body)
+        )
 
     async def cancel_agent_run(self, run_id: str) -> dict[str, Any]:
         """Cancel an in-progress agent run.
@@ -4304,7 +4633,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated agent run.
         """
-        return cast(dict[str, Any], await self.request("POST", f"/agents/runs/{run_id}/cancel"))
+        return cast(
+            dict[str, Any], await self.request("POST", f"/agents/runs/{run_id}/cancel")
+        )
 
     # ── Agent Input Uploads ───────────────────────────────────────────────────
 
@@ -4327,12 +4658,19 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Upload response with the input upload ID.
         """
-        payload, created = Seclai._prepare_upload_payload(self, file, file_name, mime_type)
+        payload, created = Seclai._prepare_upload_payload(
+            self,  # type: ignore[arg-type]  # reuse sync helper from async context
+            file,
+            file_name,
+            mime_type,
+        )
         try:
             response = await self._client.post(
                 f"/agents/{agent_id}/upload-input",
                 files={"file": payload},
-                headers=_merge_request_headers(options=self._options, request_headers=None),
+                headers=_merge_request_headers(
+                    options=self._options, request_headers=None
+                ),
             )
             _raise_for_status(response)
             return cast(dict[str, Any], response.json())
@@ -4352,9 +4690,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Upload status details.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/{agent_id}/input-uploads/{upload_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/{agent_id}/input-uploads/{upload_id}",
+            ),
+        )
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
 
@@ -4370,9 +4712,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated steps suggestion.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/agents/{agent_id}/ai-assistant/generate-steps", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/agents/{agent_id}/ai-assistant/generate-steps",
+                json=body,
+            ),
+        )
 
     async def generate_step_config(
         self, agent_id: str, body: dict[str, Any]
@@ -4386,13 +4733,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated step configuration.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/agents/{agent_id}/ai-assistant/step-config", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/agents/{agent_id}/ai-assistant/step-config",
+                json=body,
+            ),
+        )
 
-    async def get_agent_ai_conversation_history(
-        self, agent_id: str
-    ) -> dict[str, Any]:
+    async def get_agent_ai_conversation_history(self, agent_id: str) -> dict[str, Any]:
         """Get the AI assistant conversation history for an agent.
 
         Args:
@@ -4401,9 +4751,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Conversation history with the AI assistant.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/{agent_id}/ai-assistant/conversations",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/{agent_id}/ai-assistant/conversations",
+            ),
+        )
 
     async def mark_agent_ai_suggestion(
         self, agent_id: str, conversation_id: str, body: dict[str, Any]
@@ -4416,7 +4770,9 @@ class AsyncSeclai(_SeclaiBase):
             body: Acceptance/rejection payload.
         """
         await self.request(
-            "PATCH", f"/agents/{agent_id}/ai-assistant/{conversation_id}", json=body,
+            "PATCH",
+            f"/agents/{agent_id}/ai-assistant/{conversation_id}",
+            json=body,
         )
 
     # ── Agent Evaluations ─────────────────────────────────────────────────────
@@ -4434,10 +4790,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             List of evaluation criteria.
         """
-        return cast(list[dict[str, Any]], await self.request(
-            "GET", f"/agents/{agent_id}/evaluation-criteria",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            list[dict[str, Any]],
+            await self.request(
+                "GET",
+                f"/agents/{agent_id}/evaluation-criteria",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     async def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -4451,9 +4811,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The created evaluation criteria.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/agents/{agent_id}/evaluation-criteria", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/agents/{agent_id}/evaluation-criteria",
+                json=body,
+            ),
+        )
 
     async def get_evaluation_criteria(self, criteria_id: str) -> dict[str, Any]:
         """Get evaluation criteria by ID.
@@ -4464,9 +4829,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Evaluation criteria details.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}",
+            ),
+        )
 
     async def update_evaluation_criteria(
         self, criteria_id: str, body: dict[str, Any]
@@ -4480,9 +4849,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated evaluation criteria.
         """
-        return cast(dict[str, Any], await self.request(
-            "PATCH", f"/agents/evaluation-criteria/{criteria_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PATCH",
+                f"/agents/evaluation-criteria/{criteria_id}",
+                json=body,
+            ),
+        )
 
     async def delete_evaluation_criteria(self, criteria_id: str) -> None:
         """Delete evaluation criteria.
@@ -4492,9 +4866,7 @@ class AsyncSeclai(_SeclaiBase):
         """
         await self.request("DELETE", f"/agents/evaluation-criteria/{criteria_id}")
 
-    async def get_evaluation_criteria_summary(
-        self, criteria_id: str
-    ) -> dict[str, Any]:
+    async def get_evaluation_criteria_summary(self, criteria_id: str) -> dict[str, Any]:
         """Get the result summary for evaluation criteria.
 
         Args:
@@ -4503,9 +4875,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Summary of evaluation results.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}/summary",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}/summary",
+            ),
+        )
 
     async def list_evaluation_results(
         self, criteria_id: str, *, page: int = 1, limit: int = 50
@@ -4520,10 +4896,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated evaluation results.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}/results",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}/results",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     async def create_evaluation_result(
         self, criteria_id: str, body: dict[str, Any]
@@ -4537,9 +4917,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The created evaluation result.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/agents/evaluation-criteria/{criteria_id}/results", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/agents/evaluation-criteria/{criteria_id}/results",
+                json=body,
+            ),
+        )
 
     async def list_compatible_runs(
         self, criteria_id: str, *, page: int = 1, limit: int = 50
@@ -4554,10 +4939,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated list of compatible runs.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     async def test_draft_evaluation(
         self, agent_id: str, body: dict[str, Any]
@@ -4571,9 +4960,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Test evaluation result.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/agents/{agent_id}/evaluation-criteria/test-draft", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/agents/{agent_id}/evaluation-criteria/test-draft",
+                json=body,
+            ),
+        )
 
     async def list_agent_evaluation_results(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -4588,10 +4982,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated evaluation results with criteria.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/{agent_id}/evaluation-results",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/{agent_id}/evaluation-results",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     async def list_run_evaluation_results(
         self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
@@ -4607,10 +5005,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated evaluation results with criteria.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     async def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -4625,14 +5027,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated evaluation run summaries.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/agents/{agent_id}/evaluation-runs",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/{agent_id}/evaluation-runs",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
-    async def get_non_manual_evaluation_summary(
-        self, agent_id: str
-    ) -> dict[str, Any]:
+    async def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
         """Get the non-manual evaluation summary for an agent.
 
         Args:
@@ -4641,15 +5045,24 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Summary of automated evaluation results.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/agents/evaluation-results/non-manual-summary",
-            params={"agent_id": agent_id},
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/agents/evaluation-results/non-manual-summary",
+                params={"agent_id": agent_id},
+            ),
+        )
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
     async def list_knowledge_bases(
-        self, *, page: int = 1, limit: int = 50, sort: str = "created_at", order: str = "desc"
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        sort: str = "created_at",
+        order: str = "desc",
     ) -> dict[str, Any]:
         """List knowledge bases.
 
@@ -4662,10 +5075,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated list of knowledge bases.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/knowledge_bases",
-            params=_strip_none({"page": page, "limit": limit, "sort": sort, "order": order}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/knowledge_bases",
+                params=_strip_none(
+                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                ),
+            ),
+        )
 
     async def create_knowledge_base(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a knowledge base.
@@ -4676,7 +5095,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The created knowledge base.
         """
-        return cast(dict[str, Any], await self.request("POST", "/knowledge_bases", json=body))
+        return cast(
+            dict[str, Any], await self.request("POST", "/knowledge_bases", json=body)
+        )
 
     async def get_knowledge_base(self, knowledge_base_id: str) -> dict[str, Any]:
         """Get a knowledge base by ID.
@@ -4687,9 +5108,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Knowledge base details.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/knowledge_bases/{knowledge_base_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/knowledge_bases/{knowledge_base_id}",
+            ),
+        )
 
     async def update_knowledge_base(
         self, knowledge_base_id: str, body: dict[str, Any]
@@ -4703,9 +5128,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated knowledge base.
         """
-        return cast(dict[str, Any], await self.request(
-            "PUT", f"/knowledge_bases/{knowledge_base_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/knowledge_bases/{knowledge_base_id}",
+                json=body,
+            ),
+        )
 
     async def delete_knowledge_base(self, knowledge_base_id: str) -> None:
         """Delete a knowledge base.
@@ -4718,7 +5148,12 @@ class AsyncSeclai(_SeclaiBase):
     # ── Memory Banks ──────────────────────────────────────────────────────────
 
     async def list_memory_banks(
-        self, *, page: int = 1, limit: int = 50, sort: str = "created_at", order: str = "desc"
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        sort: str = "created_at",
+        order: str = "desc",
     ) -> dict[str, Any]:
         """List memory banks.
 
@@ -4731,10 +5166,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated list of memory banks.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/memory_banks",
-            params=_strip_none({"page": page, "limit": limit, "sort": sort, "order": order}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/memory_banks",
+                params=_strip_none(
+                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                ),
+            ),
+        )
 
     async def create_memory_bank(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a memory bank.
@@ -4745,7 +5186,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The created memory bank.
         """
-        return cast(dict[str, Any], await self.request("POST", "/memory_banks", json=body))
+        return cast(
+            dict[str, Any], await self.request("POST", "/memory_banks", json=body)
+        )
 
     async def get_memory_bank(self, memory_bank_id: str) -> dict[str, Any]:
         """Get a memory bank by ID.
@@ -4756,9 +5199,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Memory bank details.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/memory_banks/{memory_bank_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/memory_banks/{memory_bank_id}",
+            ),
+        )
 
     async def update_memory_bank(
         self, memory_bank_id: str, body: dict[str, Any]
@@ -4772,9 +5219,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated memory bank.
         """
-        return cast(dict[str, Any], await self.request(
-            "PUT", f"/memory_banks/{memory_bank_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/memory_banks/{memory_bank_id}",
+                json=body,
+            ),
+        )
 
     async def delete_memory_bank(self, memory_bank_id: str) -> None:
         """Delete a memory bank.
@@ -4784,9 +5236,7 @@ class AsyncSeclai(_SeclaiBase):
         """
         await self.request("DELETE", f"/memory_banks/{memory_bank_id}")
 
-    async def get_agents_using_memory_bank(
-        self, memory_bank_id: str
-    ) -> JSONValue:
+    async def get_agents_using_memory_bank(self, memory_bank_id: str) -> JSONValue:
         """Get agents that use a specific memory bank.
 
         Args:
@@ -4836,9 +5286,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Compaction test result.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/memory_banks/{memory_bank_id}/test-compaction", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/memory_banks/{memory_bank_id}/test-compaction",
+                json=body,
+            ),
+        )
 
     async def test_compaction_prompt_standalone(
         self, body: dict[str, Any]
@@ -4851,9 +5306,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Compaction test result.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", "/memory_banks/test-compaction", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                "/memory_banks/test-compaction",
+                json=body,
+            ),
+        )
 
     async def list_memory_bank_templates(self) -> JSONValue:
         """List available memory bank templates.
@@ -4863,9 +5323,7 @@ class AsyncSeclai(_SeclaiBase):
         """
         return await self.request("GET", "/memory_banks/templates")
 
-    async def generate_memory_bank_config(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def generate_memory_bank_config(self, body: dict[str, Any]) -> dict[str, Any]:
         """Use the AI assistant to generate memory bank configuration.
 
         Args:
@@ -4874,9 +5332,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated memory bank configuration.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", "/memory_banks/ai-assistant", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                "/memory_banks/ai-assistant",
+                json=body,
+            ),
+        )
 
     async def get_memory_bank_ai_last_conversation(self) -> dict[str, Any]:
         """Get the last AI assistant conversation for memory banks.
@@ -4884,9 +5347,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Last conversation with the memory bank AI assistant.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/memory_banks/ai-assistant/last-conversation",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/memory_banks/ai-assistant/last-conversation",
+            ),
+        )
 
     async def accept_memory_bank_ai_suggestion(
         self, conversation_id: str, body: dict[str, Any]
@@ -4901,7 +5368,9 @@ class AsyncSeclai(_SeclaiBase):
             Acceptance result.
         """
         return await self.request(
-            "PATCH", f"/memory_banks/ai-assistant/{conversation_id}", json=body,
+            "PATCH",
+            f"/memory_banks/ai-assistant/{conversation_id}",
+            json=body,
         )
 
     # ── Sources (additional) ──────────────────────────────────────────────────
@@ -4940,9 +5409,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated source.
         """
-        return cast(dict[str, Any], await self.request(
-            "PUT", f"/sources/{source_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/sources/{source_id}",
+                json=body,
+            ),
+        )
 
     async def delete_source(self, source_id: str) -> None:
         """Delete a source.
@@ -4964,9 +5438,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Upload response details.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/sources/{source_connection_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/sources/{source_connection_id}",
+                json=body,
+            ),
+        )
 
     # ── Source Exports ────────────────────────────────────────────────────────
 
@@ -4983,10 +5462,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated list of exports.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/sources/{source_id}/exports",
-            params=_strip_none({"page": page, "limit": limit}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/sources/{source_id}/exports",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
 
     async def create_source_export(
         self, source_id: str, body: dict[str, Any]
@@ -5000,13 +5483,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The created export.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/sources/{source_id}/exports", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/sources/{source_id}/exports",
+                json=body,
+            ),
+        )
 
-    async def get_source_export(
-        self, source_id: str, export_id: str
-    ) -> dict[str, Any]:
+    async def get_source_export(self, source_id: str, export_id: str) -> dict[str, Any]:
         """Get details of a source export.
 
         Args:
@@ -5016,9 +5502,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Export details.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/sources/{source_id}/exports/{export_id}",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/sources/{source_id}/exports/{export_id}",
+            ),
+        )
 
     async def cancel_source_export(
         self, source_id: str, export_id: str
@@ -5032,13 +5522,15 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated export.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/sources/{source_id}/exports/{export_id}/cancel",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/sources/{source_id}/exports/{export_id}/cancel",
+            ),
+        )
 
-    async def delete_source_export(
-        self, source_id: str, export_id: str
-    ) -> None:
+    async def delete_source_export(self, source_id: str, export_id: str) -> None:
         """Delete a source export.
 
         Args:
@@ -5080,15 +5572,18 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Export estimate.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/sources/{source_id}/exports/estimate", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/sources/{source_id}/exports/estimate",
+                json=body,
+            ),
+        )
 
     # ── Source Embedding Migrations ───────────────────────────────────────────
 
-    async def get_source_embedding_migration(
-        self, source_id: str
-    ) -> dict[str, Any]:
+    async def get_source_embedding_migration(self, source_id: str) -> dict[str, Any]:
         """Get the embedding migration status for a source.
 
         Args:
@@ -5097,9 +5592,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Migration status.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", f"/sources/{source_id}/embedding-migration",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/sources/{source_id}/embedding-migration",
+            ),
+        )
 
     async def start_source_embedding_migration(
         self, source_id: str, body: dict[str, Any]
@@ -5113,13 +5612,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The started migration.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/sources/{source_id}/embedding-migration", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/sources/{source_id}/embedding-migration",
+                json=body,
+            ),
+        )
 
-    async def cancel_source_embedding_migration(
-        self, source_id: str
-    ) -> dict[str, Any]:
+    async def cancel_source_embedding_migration(self, source_id: str) -> dict[str, Any]:
         """Cancel an in-progress embedding migration for a source.
 
         Args:
@@ -5128,9 +5630,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The cancelled migration.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/sources/{source_id}/embedding-migration/cancel",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/sources/{source_id}/embedding-migration/cancel",
+            ),
+        )
 
     # ── Content (additional) ──────────────────────────────────────────────────
 
@@ -5146,14 +5652,24 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Upload response.
         """
-        return cast(dict[str, Any], await self.request(
-            "PUT", f"/contents/{content_version_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/contents/{content_version_id}",
+                json=body,
+            ),
+        )
 
     # ── Solutions ─────────────────────────────────────────────────────────────
 
     async def list_solutions(
-        self, *, page: int = 1, limit: int = 50, sort: str = "created_at", order: str = "desc"
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        sort: str = "created_at",
+        order: str = "desc",
     ) -> dict[str, Any]:
         """List solutions.
 
@@ -5166,10 +5682,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Paginated list of solutions.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/solutions",
-            params=_strip_none({"page": page, "limit": limit, "sort": sort, "order": order}),
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/solutions",
+                params=_strip_none(
+                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                ),
+            ),
+        )
 
     async def create_solution(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a solution.
@@ -5191,7 +5713,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Solution details.
         """
-        return cast(dict[str, Any], await self.request("GET", f"/solutions/{solution_id}"))
+        return cast(
+            dict[str, Any], await self.request("GET", f"/solutions/{solution_id}")
+        )
 
     async def update_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -5205,9 +5729,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], await self.request(
-            "PATCH", f"/solutions/{solution_id}", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PATCH",
+                f"/solutions/{solution_id}",
+                json=body,
+            ),
+        )
 
     async def delete_solution(self, solution_id: str) -> None:
         """Delete a solution.
@@ -5229,9 +5758,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/solutions/{solution_id}/agents", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/agents",
+                json=body,
+            ),
+        )
 
     async def unlink_agents_from_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -5245,9 +5779,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], await self.request(
-            "DELETE", f"/solutions/{solution_id}/agents", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "DELETE",
+                f"/solutions/{solution_id}/agents",
+                json=body,
+            ),
+        )
 
     async def link_knowledge_bases_to_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -5261,9 +5800,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/solutions/{solution_id}/knowledge-bases", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/knowledge-bases",
+                json=body,
+            ),
+        )
 
     async def unlink_knowledge_bases_from_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -5277,9 +5821,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], await self.request(
-            "DELETE", f"/solutions/{solution_id}/knowledge-bases", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "DELETE",
+                f"/solutions/{solution_id}/knowledge-bases",
+                json=body,
+            ),
+        )
 
     async def link_source_connections_to_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -5293,9 +5842,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/solutions/{solution_id}/source-connections", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/source-connections",
+                json=body,
+            ),
+        )
 
     async def unlink_source_connections_from_solution(
         self, solution_id: str, body: dict[str, Any]
@@ -5309,9 +5863,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The updated solution.
         """
-        return cast(dict[str, Any], await self.request(
-            "DELETE", f"/solutions/{solution_id}/source-connections", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "DELETE",
+                f"/solutions/{solution_id}/source-connections",
+                json=body,
+            ),
+        )
 
     async def list_solution_conversations(
         self, solution_id: str
@@ -5324,9 +5883,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             List of conversations.
         """
-        return cast(list[dict[str, Any]], await self.request(
-            "GET", f"/solutions/{solution_id}/conversations",
-        ))
+        return cast(
+            list[dict[str, Any]],
+            await self.request(
+                "GET",
+                f"/solutions/{solution_id}/conversations",
+            ),
+        )
 
     async def add_solution_conversation_turn(
         self, solution_id: str, body: dict[str, Any]
@@ -5340,9 +5903,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The conversation response.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/solutions/{solution_id}/conversations", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/conversations",
+                json=body,
+            ),
+        )
 
     async def mark_solution_conversation_turn(
         self, solution_id: str, conversation_id: str, body: dict[str, Any]
@@ -5355,7 +5923,8 @@ class AsyncSeclai(_SeclaiBase):
             body: Acceptance/rejection payload.
         """
         await self.request(
-            "PATCH", f"/solutions/{solution_id}/conversations/{conversation_id}",
+            "PATCH",
+            f"/solutions/{solution_id}/conversations/{conversation_id}",
             json=body,
         )
 
@@ -5371,9 +5940,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated plan with proposed actions.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/solutions/{solution_id}/ai-assistant/generate", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/generate",
+                json=body,
+            ),
+        )
 
     async def generate_solution_ai_knowledge_base(
         self, solution_id: str, body: dict[str, Any]
@@ -5387,9 +5961,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated knowledge base plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/solutions/{solution_id}/ai-assistant/knowledge-base", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/knowledge-base",
+                json=body,
+            ),
+        )
 
     async def generate_solution_ai_source(
         self, solution_id: str, body: dict[str, Any]
@@ -5403,9 +5982,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated source plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/solutions/{solution_id}/ai-assistant/source", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/source",
+                json=body,
+            ),
+        )
 
     async def accept_solution_ai_plan(
         self, solution_id: str, conversation_id: str, body: dict[str, Any]
@@ -5420,11 +6004,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Result of applying the plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST",
-            f"/solutions/{solution_id}/ai-assistant/{conversation_id}/accept",
-            json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/solutions/{solution_id}/ai-assistant/{conversation_id}/accept",
+                json=body,
+            ),
+        )
 
     async def decline_solution_ai_plan(
         self, solution_id: str, conversation_id: str
@@ -5442,9 +6029,7 @@ class AsyncSeclai(_SeclaiBase):
 
     # ── Governance AI ─────────────────────────────────────────────────────────
 
-    async def generate_governance_ai_plan(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def generate_governance_ai_plan(self, body: dict[str, Any]) -> dict[str, Any]:
         """Use the AI assistant to generate a governance plan.
 
         Args:
@@ -5453,9 +6038,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated governance plan with proposed actions.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", "/governance/ai-assistant", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                "/governance/ai-assistant",
+                json=body,
+            ),
+        )
 
     async def list_governance_ai_conversations(self) -> list[dict[str, Any]]:
         """List governance AI assistant conversations.
@@ -5463,13 +6053,15 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             List of governance conversations.
         """
-        return cast(list[dict[str, Any]], await self.request(
-            "GET", "/governance/ai-assistant/conversations",
-        ))
+        return cast(
+            list[dict[str, Any]],
+            await self.request(
+                "GET",
+                "/governance/ai-assistant/conversations",
+            ),
+        )
 
-    async def accept_governance_ai_plan(
-        self, conversation_id: str
-    ) -> dict[str, Any]:
+    async def accept_governance_ai_plan(self, conversation_id: str) -> dict[str, Any]:
         """Accept an AI-generated governance plan.
 
         Args:
@@ -5478,9 +6070,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Result of applying the governance plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/governance/ai-assistant/{conversation_id}/accept",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/governance/ai-assistant/{conversation_id}/accept",
+            ),
+        )
 
     async def decline_governance_ai_plan(self, conversation_id: str) -> None:
         """Decline an AI-generated governance plan.
@@ -5489,7 +6085,8 @@ class AsyncSeclai(_SeclaiBase):
             conversation_id: Conversation identifier.
         """
         await self.request(
-            "POST", f"/governance/ai-assistant/{conversation_id}/decline",
+            "POST",
+            f"/governance/ai-assistant/{conversation_id}/decline",
         )
 
     # ── Alerts ────────────────────────────────────────────────────────────────
@@ -5514,8 +6111,11 @@ class AsyncSeclai(_SeclaiBase):
             Paginated list of alerts.
         """
         return await self.request(
-            "GET", "/alerts",
-            params=_strip_none({"page": page, "limit": limit, "status": status, "severity": severity}),
+            "GET",
+            "/alerts",
+            params=_strip_none(
+                {"page": page, "limit": limit, "status": status, "severity": severity}
+            ),
         )
 
     async def get_alert(self, alert_id: str) -> JSONValue:
@@ -5543,9 +6143,7 @@ class AsyncSeclai(_SeclaiBase):
         """
         return await self.request("POST", f"/alerts/{alert_id}/status", json=body)
 
-    async def add_alert_comment(
-        self, alert_id: str, body: dict[str, Any]
-    ) -> JSONValue:
+    async def add_alert_comment(self, alert_id: str, body: dict[str, Any]) -> JSONValue:
         """Add a comment to an alert.
 
         Args:
@@ -5581,9 +6179,7 @@ class AsyncSeclai(_SeclaiBase):
 
     # ── Alert Configs ─────────────────────────────────────────────────────────
 
-    async def list_alert_configs(
-        self, *, page: int = 1, limit: int = 50
-    ) -> JSONValue:
+    async def list_alert_configs(self, *, page: int = 1, limit: int = 50) -> JSONValue:
         """List alert configurations.
 
         Args:
@@ -5594,7 +6190,8 @@ class AsyncSeclai(_SeclaiBase):
             Paginated list of alert configurations.
         """
         return await self.request(
-            "GET", "/alerts/configs",
+            "GET",
+            "/alerts/configs",
             params=_strip_none({"page": page, "limit": limit}),
         )
 
@@ -5650,9 +6247,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Alert preferences for the organization.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/alerts/organization-preferences/list",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/alerts/organization-preferences/list",
+            ),
+        )
 
     async def update_organization_alert_preference(
         self, organization_id: str, alert_type: str, body: dict[str, Any]
@@ -5675,9 +6276,7 @@ class AsyncSeclai(_SeclaiBase):
 
     # ── Model Alerts ──────────────────────────────────────────────────────────
 
-    async def list_model_alerts(
-        self, *, page: int = 1, limit: int = 50
-    ) -> JSONValue:
+    async def list_model_alerts(self, *, page: int = 1, limit: int = 50) -> JSONValue:
         """List model alerts.
 
         Args:
@@ -5688,7 +6287,8 @@ class AsyncSeclai(_SeclaiBase):
             Paginated list of model alerts.
         """
         return await self.request(
-            "GET", "/models/alerts",
+            "GET",
+            "/models/alerts",
             params=_strip_none({"page": page, "limit": limit}),
         )
 
@@ -5745,8 +6345,11 @@ class AsyncSeclai(_SeclaiBase):
             Search results.
         """
         return await self.request(
-            "GET", "/search",
-            params=_strip_none({"query": query, "limit": limit, "entity_type": entity_type}),
+            "GET",
+            "/search",
+            params=_strip_none(
+                {"query": query, "limit": limit, "entity_type": entity_type}
+            ),
         )
 
     # ── Top-level AI Assistant ─────────────────────────────────────────────────
@@ -5760,11 +6363,12 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Feedback response.
         """
-        return cast(dict[str, Any], await self.request("POST", "/ai-assistant/feedback", json=body))
+        return cast(
+            dict[str, Any],
+            await self.request("POST", "/ai-assistant/feedback", json=body),
+        )
 
-    async def ai_assistant_knowledge_base(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def ai_assistant_knowledge_base(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a knowledge base plan via the top-level AI assistant.
 
         Args:
@@ -5773,9 +6377,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", "/ai-assistant/knowledge-base", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                "/ai-assistant/knowledge-base",
+                json=body,
+            ),
+        )
 
     async def ai_assistant_source(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a source plan via the top-level AI assistant.
@@ -5786,9 +6395,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", "/ai-assistant/source", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                "/ai-assistant/source",
+                json=body,
+            ),
+        )
 
     async def ai_assistant_solution(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a solution plan via the top-level AI assistant.
@@ -5799,13 +6413,16 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", "/ai-assistant/solution", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                "/ai-assistant/solution",
+                json=body,
+            ),
+        )
 
-    async def ai_assistant_memory_bank(
-        self, body: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def ai_assistant_memory_bank(self, body: dict[str, Any]) -> dict[str, Any]:
         """Generate a memory bank plan via the top-level AI assistant.
 
         Args:
@@ -5814,9 +6431,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Generated plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", "/ai-assistant/memory-bank", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                "/ai-assistant/memory-bank",
+                json=body,
+            ),
+        )
 
     async def get_ai_assistant_memory_bank_history(self) -> dict[str, Any]:
         """Get the last AI assistant memory bank conversation.
@@ -5824,9 +6446,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Last conversation.
         """
-        return cast(dict[str, Any], await self.request(
-            "GET", "/ai-assistant/memory-bank/last-conversation",
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/ai-assistant/memory-bank/last-conversation",
+            ),
+        )
 
     async def accept_ai_assistant_plan(
         self, conversation_id: str, body: dict[str, Any]
@@ -5840,9 +6466,14 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             Result of applying the plan.
         """
-        return cast(dict[str, Any], await self.request(
-            "POST", f"/ai-assistant/{conversation_id}/accept", json=body,
-        ))
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "POST",
+                f"/ai-assistant/{conversation_id}/accept",
+                json=body,
+            ),
+        )
 
     async def decline_ai_assistant_plan(self, conversation_id: str) -> None:
         """Decline a top-level AI assistant plan.
@@ -5865,7 +6496,9 @@ class AsyncSeclai(_SeclaiBase):
             Acceptance result.
         """
         return await self.request(
-            "PATCH", f"/ai-assistant/memory-bank/{conversation_id}", json=body,
+            "PATCH",
+            f"/ai-assistant/memory-bank/{conversation_id}",
+            json=body,
         )
 
     # ── Pagination helper ─────────────────────────────────────────────────────
@@ -5878,7 +6511,7 @@ class AsyncSeclai(_SeclaiBase):
         params: dict[str, Any] | None = None,
         limit: int = 50,
         items_key: str = "data",
-    ) -> AsyncGenerator[dict[str, Any], None]:
+    ) -> AsyncGenerator[dict[str, Any]]:
         """Auto-paginate a list endpoint, yielding items lazily.
 
         Fetches pages sequentially until a page returns fewer items than ``limit``
@@ -5907,7 +6540,7 @@ class AsyncSeclai(_SeclaiBase):
             if not isinstance(items, list):
                 break
             for item in items:
-                yield item
+                yield cast(dict[str, Any], item)
             if len(items) < limit:
                 break
             page += 1
@@ -5945,7 +6578,9 @@ class AsyncSeclai(_SeclaiBase):
         run = await self.run_agent(agent_id, body)
         while run.status not in ("completed", "failed"):
             await asyncio.sleep(poll_interval)
-            run = await self.get_agent_run(run.run_id, include_step_outputs=include_step_outputs)
+            run = await self.get_agent_run(
+                run.run_id, include_step_outputs=include_step_outputs
+            )
         return run
 
     async def run_streaming_agent(
@@ -5955,7 +6590,7 @@ class AsyncSeclai(_SeclaiBase):
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
-    ) -> AsyncGenerator[tuple[str, dict[str, Any]], None]:
+    ) -> AsyncGenerator[tuple[str, dict[str, Any]]]:
         """Run an agent via SSE streaming and yield events as they arrive.
 
         Use ``async for event_type, data in client.run_streaming_agent(...)`` to
@@ -5978,14 +6613,20 @@ class AsyncSeclai(_SeclaiBase):
         import json as _json
 
         path = f"/agents/{agent_id}/runs/stream"
-        merged_headers = _merge_request_headers(options=self._options, request_headers=headers)
+        merged_headers = _merge_request_headers(
+            options=self._options, request_headers=headers
+        )
         merged_headers.setdefault("accept", "text/event-stream")
         timeout_seconds = self._options.timeout if timeout is None else timeout
         start = time.monotonic()
 
         try:
             async with self._client.stream(
-                "POST", path, json=body, headers=merged_headers, timeout=timeout_seconds,
+                "POST",
+                path,
+                json=body,
+                headers=merged_headers,
+                timeout=timeout_seconds,
             ) as response:
                 _raise_for_status(response)
                 current_event: str | None = None
@@ -6015,10 +6656,10 @@ class AsyncSeclai(_SeclaiBase):
                     if line.startswith(":"):
                         continue
                     if line.startswith("event:"):
-                        current_event = line[len("event:"):].strip() or None
+                        current_event = line[len("event:") :].strip() or None
                         continue
                     if line.startswith("data:"):
-                        data_lines.append(line[len("data:"):].lstrip())
+                        data_lines.append(line[len("data:") :].lstrip())
                         continue
 
                 if current_event and data_lines:

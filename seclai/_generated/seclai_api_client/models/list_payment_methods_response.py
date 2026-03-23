@@ -60,7 +60,9 @@ class ListPaymentMethodsResponse:
         payment_methods = []
         _payment_methods = d.pop("payment_methods")
         for payment_methods_item_data in _payment_methods:
-            payment_methods_item = PaymentMethodResponse.from_dict(payment_methods_item_data)
+            payment_methods_item = PaymentMethodResponse.from_dict(
+                payment_methods_item_data
+            )
 
             payment_methods.append(payment_methods_item)
 

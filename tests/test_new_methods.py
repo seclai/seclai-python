@@ -12,12 +12,12 @@ from typing import Any
 import httpx
 import pytest
 
-from seclai import AsyncSeclai, Seclai, SeclaiError
-
+from seclai import AsyncSeclai, Seclai
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _sync_client(handler) -> Seclai:
     transport = httpx.MockTransport(handler)
@@ -27,7 +27,9 @@ def _sync_client(handler) -> Seclai:
 
 def _async_client(handler) -> AsyncSeclai:
     transport = httpx.MockTransport(handler)
-    http_client = httpx.AsyncClient(base_url="https://example.invalid", transport=transport)
+    http_client = httpx.AsyncClient(
+        base_url="https://example.invalid", transport=transport
+    )
     return AsyncSeclai(api_key="test", http_client=http_client)
 
 
@@ -41,9 +43,10 @@ def _json_response(body: Any = None, status: int = 200) -> httpx.Response:
 # Agents
 # ---------------------------------------------------------------------------
 
+
 class TestAgents:
     def test_list_agents(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -59,7 +62,7 @@ class TestAgents:
         assert result == {"items": [], "total": 0}
 
     def test_create_agent(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -73,7 +76,7 @@ class TestAgents:
         assert result["id"] == "a1"
 
     def test_get_agent(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -86,7 +89,7 @@ class TestAgents:
         assert result["id"] == "a1"
 
     def test_update_agent(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -101,7 +104,7 @@ class TestAgents:
         assert result["name"] == "Updated"
 
     def test_delete_agent(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -117,9 +120,10 @@ class TestAgents:
 # Agent Definitions
 # ---------------------------------------------------------------------------
 
+
 class TestAgentDefinitions:
     def test_get_agent_definition(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -132,7 +136,7 @@ class TestAgentDefinitions:
         assert result == {"steps": []}
 
     def test_update_agent_definition(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -142,7 +146,7 @@ class TestAgentDefinitions:
 
         client = _sync_client(handler)
         body = {"change_id": "c1", "steps": [{"type": "llm"}]}
-        result = client.update_agent_definition("a1", body)
+        client.update_agent_definition("a1", body)
         assert seen["method"] == "PUT"
         assert seen["path"] == "/agents/a1/definition"
 
@@ -151,9 +155,10 @@ class TestAgentDefinitions:
 # Agent Runs (additional)
 # ---------------------------------------------------------------------------
 
+
 class TestAgentRunsAdditional:
     def test_search_agent_runs(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -162,11 +167,15 @@ class TestAgentRunsAdditional:
             return _json_response({"results": []})
 
         client = _sync_client(handler)
-        result = client.search_agent_runs({"query": "test"})
-        assert seen == {"method": "POST", "path": "/agents/runs/search", "body": {"query": "test"}}
+        client.search_agent_runs({"query": "test"})
+        assert seen == {
+            "method": "POST",
+            "path": "/agents/runs/search",
+            "body": {"query": "test"},
+        }
 
     def test_cancel_agent_run(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -174,7 +183,7 @@ class TestAgentRunsAdditional:
             return _json_response({"run_id": "r1", "status": "cancelled"})
 
         client = _sync_client(handler)
-        result = client.cancel_agent_run("r1")
+        client.cancel_agent_run("r1")
         assert seen == {"method": "POST", "path": "/agents/runs/r1/cancel"}
 
 
@@ -182,9 +191,10 @@ class TestAgentRunsAdditional:
 # Agent Input Uploads
 # ---------------------------------------------------------------------------
 
+
 class TestAgentInputUploads:
     def test_upload_agent_input(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -201,7 +211,7 @@ class TestAgentInputUploads:
         assert result["upload_id"] == "u1"
 
     def test_get_agent_input_upload_status(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -209,7 +219,7 @@ class TestAgentInputUploads:
             return _json_response({"upload_id": "u1", "status": "completed"})
 
         client = _sync_client(handler)
-        result = client.get_agent_input_upload_status("a1", "u1")
+        client.get_agent_input_upload_status("a1", "u1")
         assert seen == {"method": "GET", "path": "/agents/a1/input-uploads/u1"}
 
 
@@ -217,9 +227,10 @@ class TestAgentInputUploads:
 # Agent AI Assistant
 # ---------------------------------------------------------------------------
 
+
 class TestAgentAIAssistant:
     def test_generate_agent_steps(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -227,11 +238,14 @@ class TestAgentAIAssistant:
             return _json_response({"steps": []})
 
         client = _sync_client(handler)
-        result = client.generate_agent_steps("a1", {"user_input": "Build a chatbot"})
-        assert seen == {"method": "POST", "path": "/agents/a1/ai-assistant/generate-steps"}
+        client.generate_agent_steps("a1", {"user_input": "Build a chatbot"})
+        assert seen == {
+            "method": "POST",
+            "path": "/agents/a1/ai-assistant/generate-steps",
+        }
 
     def test_generate_step_config(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -243,7 +257,7 @@ class TestAgentAIAssistant:
         assert seen == {"method": "POST", "path": "/agents/a1/ai-assistant/step-config"}
 
     def test_get_agent_ai_conversation_history(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -254,7 +268,7 @@ class TestAgentAIAssistant:
         assert seen["path"] == "/agents/a1/ai-assistant/conversations"
 
     def test_mark_agent_ai_suggestion(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -270,9 +284,10 @@ class TestAgentAIAssistant:
 # Agent Evaluations
 # ---------------------------------------------------------------------------
 
+
 class TestAgentEvaluations:
     def test_list_evaluation_criteria(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -283,7 +298,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/a1/evaluation-criteria"
 
     def test_create_evaluation_criteria(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -295,7 +310,7 @@ class TestAgentEvaluations:
         assert seen == {"method": "POST", "path": "/agents/a1/evaluation-criteria"}
 
     def test_get_evaluation_criteria(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -306,7 +321,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/evaluation-criteria/ec1"
 
     def test_update_evaluation_criteria(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -318,7 +333,7 @@ class TestAgentEvaluations:
         assert seen == {"method": "PATCH", "path": "/agents/evaluation-criteria/ec1"}
 
     def test_delete_evaluation_criteria(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -330,7 +345,7 @@ class TestAgentEvaluations:
         assert seen == {"method": "DELETE", "path": "/agents/evaluation-criteria/ec1"}
 
     def test_get_evaluation_criteria_summary(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -341,7 +356,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/evaluation-criteria/ec1/summary"
 
     def test_list_evaluation_results(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -352,7 +367,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/evaluation-criteria/ec1/results"
 
     def test_create_evaluation_result(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -361,10 +376,13 @@ class TestAgentEvaluations:
 
         client = _sync_client(handler)
         client.create_evaluation_result("ec1", {"run_id": "r1", "score": 0.9})
-        assert seen == {"method": "POST", "path": "/agents/evaluation-criteria/ec1/results"}
+        assert seen == {
+            "method": "POST",
+            "path": "/agents/evaluation-criteria/ec1/results",
+        }
 
     def test_list_compatible_runs(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -375,7 +393,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/evaluation-criteria/ec1/compatible-runs"
 
     def test_test_draft_evaluation(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -384,10 +402,13 @@ class TestAgentEvaluations:
 
         client = _sync_client(handler)
         client.test_draft_evaluation("a1", {"criteria": {}, "run_id": "r1"})
-        assert seen == {"method": "POST", "path": "/agents/a1/evaluation-criteria/test-draft"}
+        assert seen == {
+            "method": "POST",
+            "path": "/agents/a1/evaluation-criteria/test-draft",
+        }
 
     def test_list_agent_evaluation_results(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -398,7 +419,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/a1/evaluation-results"
 
     def test_list_run_evaluation_results(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -409,7 +430,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/a1/runs/r1/evaluation-results"
 
     def test_list_evaluation_runs(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -420,7 +441,7 @@ class TestAgentEvaluations:
         assert seen["path"] == "/agents/a1/evaluation-runs"
 
     def test_get_non_manual_evaluation_summary(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -437,9 +458,10 @@ class TestAgentEvaluations:
 # Knowledge Bases
 # ---------------------------------------------------------------------------
 
+
 class TestKnowledgeBases:
     def test_list_knowledge_bases(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -451,7 +473,7 @@ class TestKnowledgeBases:
         assert seen == {"method": "GET", "path": "/knowledge_bases"}
 
     def test_create_knowledge_base(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -463,7 +485,7 @@ class TestKnowledgeBases:
         assert seen == {"method": "POST", "path": "/knowledge_bases"}
 
     def test_get_knowledge_base(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -474,7 +496,7 @@ class TestKnowledgeBases:
         assert seen["path"] == "/knowledge_bases/kb1"
 
     def test_update_knowledge_base(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -486,7 +508,7 @@ class TestKnowledgeBases:
         assert seen == {"method": "PUT", "path": "/knowledge_bases/kb1"}
 
     def test_delete_knowledge_base(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -502,9 +524,10 @@ class TestKnowledgeBases:
 # Memory Banks
 # ---------------------------------------------------------------------------
 
+
 class TestMemoryBanks:
     def test_list_memory_banks(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -515,7 +538,7 @@ class TestMemoryBanks:
         assert seen["path"] == "/memory_banks"
 
     def test_create_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -527,7 +550,7 @@ class TestMemoryBanks:
         assert seen == {"method": "POST", "path": "/memory_banks"}
 
     def test_get_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -538,7 +561,7 @@ class TestMemoryBanks:
         assert seen["path"] == "/memory_banks/mb1"
 
     def test_update_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -550,7 +573,7 @@ class TestMemoryBanks:
         assert seen == {"method": "PUT", "path": "/memory_banks/mb1"}
 
     def test_delete_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -562,7 +585,7 @@ class TestMemoryBanks:
         assert seen == {"method": "DELETE", "path": "/memory_banks/mb1"}
 
     def test_get_agents_using_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -573,7 +596,7 @@ class TestMemoryBanks:
         assert seen["path"] == "/memory_banks/mb1/agents"
 
     def test_get_memory_bank_stats(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -584,7 +607,7 @@ class TestMemoryBanks:
         assert seen["path"] == "/memory_banks/mb1/stats"
 
     def test_compact_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -596,7 +619,7 @@ class TestMemoryBanks:
         assert seen == {"method": "POST", "path": "/memory_banks/mb1/compact"}
 
     def test_delete_memory_bank_source(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -608,7 +631,7 @@ class TestMemoryBanks:
         assert seen == {"method": "DELETE", "path": "/memory_banks/mb1/source"}
 
     def test_test_memory_bank_compaction(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -620,7 +643,7 @@ class TestMemoryBanks:
         assert seen == {"method": "POST", "path": "/memory_banks/mb1/test-compaction"}
 
     def test_test_compaction_prompt_standalone(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -632,7 +655,7 @@ class TestMemoryBanks:
         assert seen == {"method": "POST", "path": "/memory_banks/test-compaction"}
 
     def test_list_memory_bank_templates(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -643,7 +666,7 @@ class TestMemoryBanks:
         assert seen["path"] == "/memory_banks/templates"
 
     def test_generate_memory_bank_config(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -659,9 +682,10 @@ class TestMemoryBanks:
 # Sources (additional)
 # ---------------------------------------------------------------------------
 
+
 class TestSourcesAdditional:
     def test_create_source(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -673,7 +697,7 @@ class TestSourcesAdditional:
         assert seen == {"method": "POST", "path": "/sources"}
 
     def test_get_source(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -684,7 +708,7 @@ class TestSourcesAdditional:
         assert seen["path"] == "/sources/s1"
 
     def test_update_source(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -696,7 +720,7 @@ class TestSourcesAdditional:
         assert seen == {"method": "PUT", "path": "/sources/s1"}
 
     def test_delete_source(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -708,7 +732,7 @@ class TestSourcesAdditional:
         assert seen == {"method": "DELETE", "path": "/sources/s1"}
 
     def test_upload_inline_text_to_source(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -724,9 +748,10 @@ class TestSourcesAdditional:
 # Source Exports
 # ---------------------------------------------------------------------------
 
+
 class TestSourceExports:
     def test_list_source_exports(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -737,7 +762,7 @@ class TestSourceExports:
         assert seen["path"] == "/sources/s1/exports"
 
     def test_create_source_export(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -749,7 +774,7 @@ class TestSourceExports:
         assert seen == {"method": "POST", "path": "/sources/s1/exports"}
 
     def test_get_source_export(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -760,7 +785,7 @@ class TestSourceExports:
         assert seen["path"] == "/sources/s1/exports/e1"
 
     def test_cancel_source_export(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -772,7 +797,7 @@ class TestSourceExports:
         assert seen == {"method": "POST", "path": "/sources/s1/exports/e1/cancel"}
 
     def test_delete_source_export(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -784,7 +809,7 @@ class TestSourceExports:
         assert seen == {"method": "DELETE", "path": "/sources/s1/exports/e1"}
 
     def test_download_source_export(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -797,7 +822,7 @@ class TestSourceExports:
         assert resp.content == b"csv-data"
 
     def test_estimate_source_export(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -813,9 +838,10 @@ class TestSourceExports:
 # Source Embedding Migrations
 # ---------------------------------------------------------------------------
 
+
 class TestSourceEmbeddingMigrations:
     def test_get_source_embedding_migration(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -826,7 +852,7 @@ class TestSourceEmbeddingMigrations:
         assert seen["path"] == "/sources/s1/embedding-migration"
 
     def test_start_source_embedding_migration(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -838,7 +864,7 @@ class TestSourceEmbeddingMigrations:
         assert seen == {"method": "POST", "path": "/sources/s1/embedding-migration"}
 
     def test_cancel_source_embedding_migration(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -847,16 +873,20 @@ class TestSourceEmbeddingMigrations:
 
         client = _sync_client(handler)
         client.cancel_source_embedding_migration("s1")
-        assert seen == {"method": "POST", "path": "/sources/s1/embedding-migration/cancel"}
+        assert seen == {
+            "method": "POST",
+            "path": "/sources/s1/embedding-migration/cancel",
+        }
 
 
 # ---------------------------------------------------------------------------
 # Content (additional)
 # ---------------------------------------------------------------------------
 
+
 class TestContentAdditional:
     def test_replace_content_with_inline_text(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -872,9 +902,10 @@ class TestContentAdditional:
 # Solutions
 # ---------------------------------------------------------------------------
 
+
 class TestSolutions:
     def test_list_solutions(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -885,7 +916,7 @@ class TestSolutions:
         assert seen["path"] == "/solutions"
 
     def test_create_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -897,7 +928,7 @@ class TestSolutions:
         assert seen == {"method": "POST", "path": "/solutions"}
 
     def test_get_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -908,7 +939,7 @@ class TestSolutions:
         assert seen["path"] == "/solutions/sol1"
 
     def test_update_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -920,7 +951,7 @@ class TestSolutions:
         assert seen == {"method": "PATCH", "path": "/solutions/sol1"}
 
     def test_delete_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -932,7 +963,7 @@ class TestSolutions:
         assert seen == {"method": "DELETE", "path": "/solutions/sol1"}
 
     def test_link_agents_to_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -944,7 +975,7 @@ class TestSolutions:
         assert seen == {"method": "POST", "path": "/solutions/sol1/agents"}
 
     def test_unlink_agents_from_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -956,7 +987,7 @@ class TestSolutions:
         assert seen == {"method": "DELETE", "path": "/solutions/sol1/agents"}
 
     def test_link_knowledge_bases_to_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -968,7 +999,7 @@ class TestSolutions:
         assert seen == {"method": "POST", "path": "/solutions/sol1/knowledge-bases"}
 
     def test_unlink_knowledge_bases_from_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -980,7 +1011,7 @@ class TestSolutions:
         assert seen == {"method": "DELETE", "path": "/solutions/sol1/knowledge-bases"}
 
     def test_link_source_connections_to_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -992,7 +1023,7 @@ class TestSolutions:
         assert seen == {"method": "POST", "path": "/solutions/sol1/source-connections"}
 
     def test_generate_solution_ai_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1001,10 +1032,13 @@ class TestSolutions:
 
         client = _sync_client(handler)
         client.generate_solution_ai_plan("sol1", {"user_input": "Build it"})
-        assert seen == {"method": "POST", "path": "/solutions/sol1/ai-assistant/generate"}
+        assert seen == {
+            "method": "POST",
+            "path": "/solutions/sol1/ai-assistant/generate",
+        }
 
     def test_accept_solution_ai_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1013,10 +1047,13 @@ class TestSolutions:
 
         client = _sync_client(handler)
         client.accept_solution_ai_plan("sol1", "c1", {})
-        assert seen == {"method": "POST", "path": "/solutions/sol1/ai-assistant/c1/accept"}
+        assert seen == {
+            "method": "POST",
+            "path": "/solutions/sol1/ai-assistant/c1/accept",
+        }
 
     def test_decline_solution_ai_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1025,16 +1062,20 @@ class TestSolutions:
 
         client = _sync_client(handler)
         client.decline_solution_ai_plan("sol1", "c1")
-        assert seen == {"method": "POST", "path": "/solutions/sol1/ai-assistant/c1/decline"}
+        assert seen == {
+            "method": "POST",
+            "path": "/solutions/sol1/ai-assistant/c1/decline",
+        }
 
 
 # ---------------------------------------------------------------------------
 # Governance AI
 # ---------------------------------------------------------------------------
 
+
 class TestGovernanceAI:
     def test_generate_governance_ai_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1046,7 +1087,7 @@ class TestGovernanceAI:
         assert seen == {"method": "POST", "path": "/governance/ai-assistant"}
 
     def test_list_governance_ai_conversations(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1057,7 +1098,7 @@ class TestGovernanceAI:
         assert seen["path"] == "/governance/ai-assistant/conversations"
 
     def test_accept_governance_ai_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1069,7 +1110,7 @@ class TestGovernanceAI:
         assert seen == {"method": "POST", "path": "/governance/ai-assistant/c1/accept"}
 
     def test_decline_governance_ai_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1085,9 +1126,10 @@ class TestGovernanceAI:
 # Alerts
 # ---------------------------------------------------------------------------
 
+
 class TestAlerts:
     def test_list_alerts(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1098,7 +1140,7 @@ class TestAlerts:
         assert seen["path"] == "/alerts"
 
     def test_get_alert(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1109,7 +1151,7 @@ class TestAlerts:
         assert seen["path"] == "/alerts/al1"
 
     def test_change_alert_status(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1121,7 +1163,7 @@ class TestAlerts:
         assert seen == {"method": "POST", "path": "/alerts/al1/status"}
 
     def test_add_alert_comment(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1133,7 +1175,7 @@ class TestAlerts:
         assert seen == {"method": "POST", "path": "/alerts/al1/comments"}
 
     def test_subscribe_to_alert(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1145,7 +1187,7 @@ class TestAlerts:
         assert seen == {"method": "POST", "path": "/alerts/al1/subscribe"}
 
     def test_unsubscribe_from_alert(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1161,9 +1203,10 @@ class TestAlerts:
 # Alert Configs
 # ---------------------------------------------------------------------------
 
+
 class TestAlertConfigs:
     def test_list_alert_configs(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1174,7 +1217,7 @@ class TestAlertConfigs:
         assert seen["path"] == "/alerts/configs"
 
     def test_create_alert_config(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1186,7 +1229,7 @@ class TestAlertConfigs:
         assert seen == {"method": "POST", "path": "/alerts/configs"}
 
     def test_get_alert_config(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1197,7 +1240,7 @@ class TestAlertConfigs:
         assert seen["path"] == "/alerts/configs/ac1"
 
     def test_update_alert_config(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1209,7 +1252,7 @@ class TestAlertConfigs:
         assert seen == {"method": "PATCH", "path": "/alerts/configs/ac1"}
 
     def test_delete_alert_config(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1225,9 +1268,10 @@ class TestAlertConfigs:
 # Alert Preferences
 # ---------------------------------------------------------------------------
 
+
 class TestAlertPreferences:
     def test_list_organization_alert_preferences(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1238,7 +1282,7 @@ class TestAlertPreferences:
         assert seen["path"] == "/alerts/organization-preferences/list"
 
     def test_update_organization_alert_preference(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1246,7 +1290,9 @@ class TestAlertPreferences:
             return _json_response({"ok": True})
 
         client = _sync_client(handler)
-        client.update_organization_alert_preference("org1", "anomaly", {"enabled": True})
+        client.update_organization_alert_preference(
+            "org1", "anomaly", {"enabled": True}
+        )
         assert seen == {
             "method": "PATCH",
             "path": "/alerts/organization-preferences/org1/anomaly",
@@ -1257,9 +1303,10 @@ class TestAlertPreferences:
 # Model Alerts
 # ---------------------------------------------------------------------------
 
+
 class TestModelAlerts:
     def test_list_model_alerts(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1270,7 +1317,7 @@ class TestModelAlerts:
         assert seen["path"] == "/models/alerts"
 
     def test_mark_all_model_alerts_read(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1282,7 +1329,7 @@ class TestModelAlerts:
         assert seen == {"method": "POST", "path": "/models/alerts/mark-all-read"}
 
     def test_get_unread_model_alert_count(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1293,7 +1340,7 @@ class TestModelAlerts:
         assert seen["path"] == "/models/alerts/unread-count"
 
     def test_mark_model_alert_read(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1309,9 +1356,10 @@ class TestModelAlerts:
 # Models
 # ---------------------------------------------------------------------------
 
+
 class TestModels:
     def test_get_model_recommendations(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1326,9 +1374,10 @@ class TestModels:
 # Search
 # ---------------------------------------------------------------------------
 
+
 class TestSearch:
     def test_search(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1345,12 +1394,15 @@ class TestSearch:
 # High-level: run_streaming_agent (new generator)
 # ---------------------------------------------------------------------------
 
+
 class TestRunStreamingAgent:
     def test_run_streaming_agent_generator(self) -> None:
         def handler(req: httpx.Request) -> httpx.Response:
             assert req.url.path == "/agents/a1/runs/stream"
             init_data = json.dumps({"run_id": "r1", "status": "processing"})
-            done_data = json.dumps({"run_id": "r1", "status": "completed", "output": "ok"})
+            done_data = json.dumps(
+                {"run_id": "r1", "status": "completed", "output": "ok"}
+            )
             content = (
                 f"event: init\ndata: {init_data}\n\n"
                 f"event: done\ndata: {done_data}\n\n"
@@ -1364,7 +1416,11 @@ class TestRunStreamingAgent:
         client = _sync_client(handler)
         from seclai import AgentRunStreamRequest
 
-        events = list(client.run_streaming_agent("a1", AgentRunStreamRequest(input="hi", metadata={})))
+        events = list(
+            client.run_streaming_agent(
+                "a1", AgentRunStreamRequest(input="hi", metadata={})
+            )
+        )
         assert len(events) == 2
         assert events[0][0] == "init"
         assert events[1][0] == "done"
@@ -1375,10 +1431,11 @@ class TestRunStreamingAgent:
 # Async counterparts (spot-check a few resource areas)
 # ---------------------------------------------------------------------------
 
+
 class TestAsyncMethods:
     @pytest.mark.asyncio
     async def test_async_list_agents(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1392,7 +1449,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_create_agent(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1406,7 +1463,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_delete_agent(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1419,7 +1476,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_list_knowledge_bases(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1431,7 +1488,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_create_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1439,12 +1496,12 @@ class TestAsyncMethods:
             return _json_response({"id": "sol1"})
 
         client = _async_client(handler)
-        result = await client.create_solution({"name": "Sol"})
+        await client.create_solution({"name": "Sol"})
         assert seen == {"method": "POST", "path": "/solutions"}
 
     @pytest.mark.asyncio
     async def test_async_list_alerts(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1456,7 +1513,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_search(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1470,7 +1527,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_create_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1483,7 +1540,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_generate_governance_ai_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1496,7 +1553,7 @@ class TestAsyncMethods:
 
     @pytest.mark.asyncio
     async def test_async_cancel_agent_run(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1525,7 +1582,12 @@ class TestAsyncMethods:
         client = _async_client(handler)
         from seclai import AgentRunStreamRequest
 
-        events = [ev async for ev in client.run_streaming_agent("a1", AgentRunStreamRequest(input="hi", metadata={}))]
+        events = [
+            ev
+            async for ev in client.run_streaming_agent(
+                "a1", AgentRunStreamRequest(input="hi", metadata={})
+            )
+        ]
         assert len(events) == 2
         assert events[0][0] == "init"
         assert events[1][0] == "done"
@@ -1535,9 +1597,10 @@ class TestAsyncMethods:
 # Top-level AI Assistant
 # ---------------------------------------------------------------------------
 
+
 class TestTopLevelAIAssistant:
     def test_submit_ai_feedback(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1549,7 +1612,7 @@ class TestTopLevelAIAssistant:
         assert seen == {"method": "POST", "path": "/ai-assistant/feedback"}
 
     def test_ai_assistant_knowledge_base(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1561,7 +1624,7 @@ class TestTopLevelAIAssistant:
         assert seen == {"method": "POST", "path": "/ai-assistant/knowledge-base"}
 
     def test_ai_assistant_source(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1573,7 +1636,7 @@ class TestTopLevelAIAssistant:
         assert seen == {"method": "POST", "path": "/ai-assistant/source"}
 
     def test_ai_assistant_solution(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1585,7 +1648,7 @@ class TestTopLevelAIAssistant:
         assert seen == {"method": "POST", "path": "/ai-assistant/solution"}
 
     def test_ai_assistant_memory_bank(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1597,7 +1660,7 @@ class TestTopLevelAIAssistant:
         assert seen == {"method": "POST", "path": "/ai-assistant/memory-bank"}
 
     def test_get_ai_assistant_memory_bank_history(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1608,7 +1671,7 @@ class TestTopLevelAIAssistant:
         assert seen["path"] == "/ai-assistant/memory-bank/last-conversation"
 
     def test_accept_ai_assistant_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1620,7 +1683,7 @@ class TestTopLevelAIAssistant:
         assert seen == {"method": "POST", "path": "/ai-assistant/c1/accept"}
 
     def test_decline_ai_assistant_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1632,7 +1695,7 @@ class TestTopLevelAIAssistant:
         assert seen == {"method": "POST", "path": "/ai-assistant/c1/decline"}
 
     def test_accept_ai_memory_bank_suggestion(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1648,10 +1711,11 @@ class TestTopLevelAIAssistant:
 # Top-level AI Assistant (async)
 # ---------------------------------------------------------------------------
 
+
 class TestAsyncTopLevelAIAssistant:
     @pytest.mark.asyncio
     async def test_async_submit_ai_feedback(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1664,7 +1728,7 @@ class TestAsyncTopLevelAIAssistant:
 
     @pytest.mark.asyncio
     async def test_async_ai_assistant_knowledge_base(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
@@ -1676,7 +1740,7 @@ class TestAsyncTopLevelAIAssistant:
 
     @pytest.mark.asyncio
     async def test_async_accept_ai_assistant_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1689,7 +1753,7 @@ class TestAsyncTopLevelAIAssistant:
 
     @pytest.mark.asyncio
     async def test_async_decline_ai_assistant_plan(self) -> None:
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
@@ -1704,6 +1768,7 @@ class TestAsyncTopLevelAIAssistant:
 # ---------------------------------------------------------------------------
 # Pagination helper
 # ---------------------------------------------------------------------------
+
 
 class TestPagination:
     def test_paginate_single_page(self) -> None:
@@ -1782,6 +1847,7 @@ class TestPagination:
 # Error edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestErrorEdgeCases:
     def test_non_json_error_response(self) -> None:
         """Non-JSON 500 response should still raise SeclaiAPIStatusError."""
@@ -1797,6 +1863,7 @@ class TestErrorEdgeCases:
 
     def test_empty_204_returns_none(self) -> None:
         """A 204 No Content should return None from request()."""
+
         def handler(req: httpx.Request) -> httpx.Response:
             return httpx.Response(status_code=204)
 
@@ -1806,6 +1873,7 @@ class TestErrorEdgeCases:
 
     def test_text_response_returned_as_string(self) -> None:
         """Non-JSON 200 should return text content."""
+
         def handler(req: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 status_code=200,
@@ -1819,7 +1887,7 @@ class TestErrorEdgeCases:
 
     def test_strip_none_removes_none_values(self) -> None:
         """_strip_none should remove None values but keep others."""
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["params"] = dict(req.url.params)
@@ -1832,7 +1900,7 @@ class TestErrorEdgeCases:
 
     def test_request_passes_custom_headers(self) -> None:
         """Per-request headers should be merged."""
-        seen: dict = {}
+        seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["x-custom"] = req.headers.get("x-custom")

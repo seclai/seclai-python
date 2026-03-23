@@ -5,13 +5,15 @@ import shutil
 import sys
 from pathlib import Path
 
-
 DOCS_LATEST = "https://seclai.github.io/seclai-python/latest/"
 
 
 def main() -> int:
     if len(sys.argv) != 2 or sys.argv[1] not in {"apply", "restore"}:
-        print("Usage: python scripts/set-readme-version.py <apply|restore>", file=sys.stderr)
+        print(
+            "Usage: python scripts/set-readme-version.py <apply|restore>",
+            file=sys.stderr,
+        )
         return 2
 
     mode = sys.argv[1]

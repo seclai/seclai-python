@@ -7,7 +7,9 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
-    from ..models.agent_run_stream_request_metadata_type_0 import AgentRunStreamRequestMetadataType0
+    from ..models.agent_run_stream_request_metadata_type_0 import (
+        AgentRunStreamRequestMetadataType0,
+    )
 
 
 T = TypeVar("T", bound="AgentRunStreamRequest")
@@ -27,7 +29,9 @@ class AgentRunStreamRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.agent_run_stream_request_metadata_type_0 import AgentRunStreamRequestMetadataType0
+        from ..models.agent_run_stream_request_metadata_type_0 import (
+            AgentRunStreamRequestMetadataType0,
+        )
 
         input_: None | str
         input_ = self.input_
@@ -51,7 +55,9 @@ class AgentRunStreamRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.agent_run_stream_request_metadata_type_0 import AgentRunStreamRequestMetadataType0
+        from ..models.agent_run_stream_request_metadata_type_0 import (
+            AgentRunStreamRequestMetadataType0,
+        )
 
         d = dict(src_dict)
 

@@ -10,7 +10,10 @@ from attrs import field as _attrs_field
 from .. import types
 from ..types import UNSET, File, Unset
 
-T = TypeVar("T", bound="BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost")
+T = TypeVar(
+    "T",
+    bound="BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost",
+)
 
 
 @_attrs_define
@@ -61,9 +64,13 @@ class BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost
 
         if not isinstance(self.metadata, Unset):
             if isinstance(self.metadata, str):
-                files.append(("metadata", (None, str(self.metadata).encode(), "text/plain")))
+                files.append(
+                    ("metadata", (None, str(self.metadata).encode(), "text/plain"))
+                )
             else:
-                files.append(("metadata", (None, str(self.metadata).encode(), "text/plain")))
+                files.append(
+                    ("metadata", (None, str(self.metadata).encode(), "text/plain"))
+                )
 
         if not isinstance(self.title, Unset):
             files.append(("title", (None, str(self.title).encode(), "text/plain")))
@@ -95,7 +102,9 @@ class BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost
             title=title,
         )
 
-        body_upload_file_to_content_api_contents_source_connection_content_version_upload_post.additional_properties = d
+        body_upload_file_to_content_api_contents_source_connection_content_version_upload_post.additional_properties = (
+            d
+        )
         return body_upload_file_to_content_api_contents_source_connection_content_version_upload_post
 
     @property

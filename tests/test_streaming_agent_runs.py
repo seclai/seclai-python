@@ -1,4 +1,3 @@
-import asyncio
 import json
 import threading
 import time
@@ -36,8 +35,8 @@ def test_run_streaming_agent_and_wait_parses_done() -> None:
 
         content = (
             b": keepalive\n\n"
-            + f"event: init\ndata: {init_data}\n\n".encode("utf-8")
-            + f"event: done\ndata: {done_data}\n\n".encode("utf-8")
+            + f"event: init\ndata: {init_data}\n\n".encode()
+            + f"event: done\ndata: {done_data}\n\n".encode()
         )
         return httpx.Response(
             status_code=200,
@@ -69,8 +68,8 @@ async def test_async_run_streaming_agent_and_wait_parses_done() -> None:
 
         content = (
             b": keepalive\n\n"
-            + f"event: init\ndata: {init_data}\n\n".encode("utf-8")
-            + f"event: done\ndata: {done_data}\n\n".encode("utf-8")
+            + f"event: init\ndata: {init_data}\n\n".encode()
+            + f"event: done\ndata: {done_data}\n\n".encode()
         )
         return httpx.Response(
             status_code=200,
@@ -79,7 +78,9 @@ async def test_async_run_streaming_agent_and_wait_parses_done() -> None:
         )
 
     transport = httpx.MockTransport(handler)
-    http_client = httpx.AsyncClient(base_url="https://example.invalid", transport=transport)
+    http_client = httpx.AsyncClient(
+        base_url="https://example.invalid", transport=transport
+    )
 
     async with AsyncSeclai(api_key="test", http_client=http_client) as client:
         res = await client.run_streaming_agent_and_wait(
@@ -131,4 +132,3 @@ def test_run_streaming_agent_and_wait_times_out() -> None:
     finally:
         server.shutdown()
         server.server_close()
-
