@@ -160,7 +160,11 @@ def test_bearer_token_on_typed_method_sync(monkeypatch: pytest.MonkeyPatch) -> N
     # Also wire mock transport into the generated client used by typed methods
     gc = client._generated_client()
     gc.set_httpx_client(
-        httpx.Client(transport=transport, base_url="https://example.invalid", headers=dict(gc._headers))
+        httpx.Client(
+            transport=transport,
+            base_url="https://example.invalid",
+            headers=dict(gc._headers),
+        )
     )
     result = client.list_sources()
     assert result.data == []
@@ -200,7 +204,11 @@ def test_bearer_provider_on_typed_method_sync(monkeypatch: pytest.MonkeyPatch) -
     # Also wire mock transport into the generated client used by typed methods
     gc = client._generated_client()
     gc.set_httpx_client(
-        httpx.Client(transport=transport, base_url="https://example.invalid", headers=dict(gc._headers))
+        httpx.Client(
+            transport=transport,
+            base_url="https://example.invalid",
+            headers=dict(gc._headers),
+        )
     )
     client.list_sources()
     client.list_sources()

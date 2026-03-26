@@ -436,7 +436,9 @@ class _SeclaiBase:
         gc = self._generated_client()
         if self._options.auth_state.mode in ("bearer_provider", "sso"):
             try:
-                auth_headers = await resolve_auth_headers_async(self._options.auth_state)
+                auth_headers = await resolve_auth_headers_async(
+                    self._options.auth_state
+                )
             except (RuntimeError, TypeError) as exc:
                 raise SeclaiConfigurationError(str(exc)) from exc
             gc.with_headers(auth_headers)

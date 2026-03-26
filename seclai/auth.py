@@ -129,7 +129,9 @@ class AuthState:
     sso_profile: SsoProfile | None = None
     config_dir: str | None = None
     auto_refresh: bool = True
-    _sync_refresh_lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _sync_refresh_lock: threading.Lock = field(
+        default_factory=threading.Lock, repr=False
+    )
     _async_refresh_lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
 
 
@@ -285,9 +287,7 @@ def _parse_refresh_response(
     data: dict[str, Any], profile: SsoProfile, refresh_token_value: str
 ) -> SsoCacheEntry:
     """Parse a Cognito token response into an SsoCacheEntry."""
-    expires_at = (
-        datetime.now(UTC) + timedelta(seconds=data["expires_in"])
-    ).isoformat()
+    expires_at = (datetime.now(UTC) + timedelta(seconds=data["expires_in"])).isoformat()
 
     return SsoCacheEntry(
         access_token=data["access_token"],
@@ -525,7 +525,7 @@ async def resolve_auth_headers_async(state: AuthState) -> dict[str, str]:
     elif state.mode == "bearer_provider":
         token = state.access_token_provider()  # type: ignore[misc]
         if hasattr(token, "__await__"):
-            token = await token  # type: ignore[misc]
+            token = await token
         headers["authorization"] = f"Bearer {token}"
     elif state.mode == "sso":
         token = await _resolve_sso_token_async(state)
