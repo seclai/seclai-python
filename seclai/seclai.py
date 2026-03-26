@@ -260,6 +260,8 @@ def _merge_request_headers(
             auth_headers = resolve_auth_headers_sync(options.auth_state)
         except (RuntimeError, TypeError) as exc:
             raise SeclaiConfigurationError(str(exc)) from exc
+        except Exception as exc:
+            raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
         merged.update(auth_headers)
     if request_headers:
         merged.update(request_headers)
@@ -282,6 +284,8 @@ async def _merge_request_headers_async(
             auth_headers = await resolve_auth_headers_async(options.auth_state)
         except (RuntimeError, TypeError) as exc:
             raise SeclaiConfigurationError(str(exc)) from exc
+        except Exception as exc:
+            raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
         merged.update(auth_headers)
     if request_headers:
         merged.update(request_headers)
@@ -423,8 +427,22 @@ class _SeclaiBase:
                 auth_headers = resolve_auth_headers_sync(self._options.auth_state)
             except (RuntimeError, TypeError) as exc:
                 raise SeclaiConfigurationError(str(exc)) from exc
-            gc.with_headers(auth_headers)
-        return gc
+            except Exception as exc:
+                raise SeclaiConfigurationError(
+                    f"Auth resolution failed: {exc}"
+                ) from exc
+            # with_headers() mutates existing httpx clients in-place and
+            # returns an evolved copy with updated _headers.  We keep the
+            # original instance (preserving any user-set httpx client) but
+            # store the evolved copy so get_httpx_client() will use the
+            # refreshed headers when it lazily creates an httpx.Client.
+            evolved = gc.with_headers(auth_headers)
+            self._generated_client_instance = evolved
+            # Re-attach the existing httpx client to the evolved instance
+            # so pre-configured transports (e.g. in tests) aren't lost.
+            if gc._client is not None:
+                evolved.set_httpx_client(gc._client)
+        return self._generated_client_instance  # type: ignore[return-value]
 
     async def _async_generated_client(self) -> GeneratedClient:
         """Return the generated client with dynamic auth headers applied (async).
@@ -441,8 +459,15 @@ class _SeclaiBase:
                 )
             except (RuntimeError, TypeError) as exc:
                 raise SeclaiConfigurationError(str(exc)) from exc
-            gc.with_headers(auth_headers)
-        return gc
+            except Exception as exc:
+                raise SeclaiConfigurationError(
+                    f"Auth resolution failed: {exc}"
+                ) from exc
+            evolved = gc.with_headers(auth_headers)
+            self._generated_client_instance = evolved
+            if gc._async_client is not None:
+                evolved.set_async_httpx_client(gc._async_client)
+        return self._generated_client_instance  # type: ignore[return-value]
 
     def _build_url(self, path: str) -> str:
         """Build an absolute URL string from a request path.

@@ -3,7 +3,9 @@
 This module implements the credential provider chain used by :class:`Seclai`
 and :class:`AsyncSeclai`.
 
-Internal — not part of the public API surface.
+The data classes :class:`SsoProfile` and :class:`SsoCacheEntry` are re-exported
+from the top-level package as public API for callers that need to interact with
+cached SSO tokens directly. All other symbols in this module are internal.
 """
 
 from __future__ import annotations
