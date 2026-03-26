@@ -34,6 +34,20 @@ from .seclai import (
     SeclaiStreamingError,
 )
 
+from .auth import (
+    SsoProfile,
+    SsoCacheEntry,
+    is_token_valid,
+    load_sso_profile,
+    read_sso_cache,
+    write_sso_cache,
+    delete_sso_cache,
+    cache_file_name,
+    resolve_config_dir,
+    refresh_token_sync,
+    refresh_token_async,
+)
+
 __all__ = [
     "AgentRunStreamRequest",
     "AsyncSeclai",
@@ -44,4 +58,15 @@ __all__ = [
     "SeclaiConfigurationError",
     "SeclaiError",
     "SeclaiStreamingError",
+    "SsoProfile",
+    "SsoCacheEntry",
+    "is_token_valid",
+    "load_sso_profile",
+    "read_sso_cache",
+    "write_sso_cache",
+    "delete_sso_cache",
+    "cache_file_name",
+    "resolve_config_dir",
+    "refresh_token_sync",
+    "refresh_token_async",
 ]

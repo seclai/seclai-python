@@ -68,24 +68,58 @@ asyncio.run(main())
 
 | Option | Environment variable | Default |
 | --- | --- | --- |
-| `api_key` | `SECLAI_API_KEY` | *required* |
+| `api_key` | `SECLAI_API_KEY` | — |
+| `access_token` | — | — |
+| `profile` | `SECLAI_PROFILE` | `"default"` |
+| `config_dir` | `SECLAI_CONFIG_DIR` | `~/.seclai` |
+| `auto_refresh` | — | `True` |
+| `account_id` | — | — |
 | `timeout` | — | `30.0` (seconds) |
 | `api_key_header` | — | `x-api-key` |
 | `default_headers` | — | `None` |
 | `http_client` | — | `None` (auto-created `httpx.Client`) |
 
-```python
-client = Seclai(
-    api_key="...",
-    timeout=60.0,
-    default_headers={"x-custom": "value"},
-)
-```
-
 Set `SECLAI_API_URL` to point at a different API host (e.g., staging):
 
 ```bash
 export SECLAI_API_URL="https://staging-api.seclai.com"
+```
+
+### Authentication
+
+Credentials are resolved via a chain (first match wins):
+
+1. Explicit `api_key` option
+2. Explicit `access_token` option (string or callable)
+3. `SECLAI_API_KEY` environment variable
+4. SSO profile from `~/.seclai/config` with cached tokens in `~/.seclai/sso/cache/`
+
+```python
+# API key
+client = Seclai(api_key="sk-...")
+
+# Static bearer token
+client = Seclai(access_token="eyJhbGciOi...")
+
+# Dynamic bearer token provider (sync or async callable)
+client = Seclai(access_token=lambda: get_token_from_vault())
+
+# Async provider with AsyncSeclai
+client = AsyncSeclai(access_token=get_token_async)
+
+# SSO profile (uses cached tokens, auto-refreshes)
+client = Seclai(profile="my-profile")
+
+# Environment variable (no options needed)
+# export SECLAI_API_KEY="sk-..."
+client = Seclai()
+```
+
+To set up SSO authentication, install the [Seclai CLI](https://pypi.org/project/seclai/) and run:
+
+```bash
+seclai configure sso    # set up an SSO profile
+seclai auth login       # authenticate via browser
 ```
 
 ## API documentation
