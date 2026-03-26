@@ -41,7 +41,7 @@ import logging
 import mimetypes
 import os
 import time
-from collections.abc import AsyncGenerator, Generator, Mapping
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Mapping
 from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
@@ -62,6 +62,12 @@ from seclai._generated.models.file_upload_response import FileUploadResponse
 from seclai._generated.models.http_validation_error import HTTPValidationError
 from seclai._generated.models.source_list_response import SourceListResponse
 from seclai._generated.types import Response as OpenAPIResponse
+from seclai.auth import (
+    AuthState,
+    resolve_auth_headers_async,
+    resolve_auth_headers_sync,
+    resolve_credential_chain,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +149,7 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
         response_text: str | None,
         validation_error: HTTPValidationError,
     ) -> None:
+        """Initialize with validation error details."""
         super().__init__(
             message=message,
             status_code=status_code,
@@ -162,12 +169,14 @@ class SeclaiStreamingError(SeclaiError):
     """
 
     def __init__(self, message: str, *, run_id: str | None = None) -> None:
+        """Initialize with stream error message and optional run ID."""
         super().__init__(message)
         self.message = message
         self.run_id = run_id
 
 
 def _guess_mime_type(file_name: str | None) -> str | None:
+    """Guess the MIME type from a filename, or return ``None``."""
     if not file_name:
         return None
     guessed, _ = mimetypes.guess_type(file_name)
@@ -195,13 +204,13 @@ class ClientOptions:
     All values are resolved at construction time and immutable thereafter.
 
     Attributes:
-        api_key: Resolved API key.
+        auth_state: Resolved authentication state.
         timeout: Request timeout in seconds.
         api_key_header: HTTP header name used to transmit the API key.
         default_headers: Extra headers included on every request.
     """
 
-    api_key: str
+    auth_state: AuthState
     timeout: float
     api_key_header: str
     default_headers: Mapping[str, str]
@@ -209,15 +218,27 @@ class ClientOptions:
 
 def _build_default_headers(
     *,
-    api_key: str,
-    api_key_header: str,
+    auth_state: AuthState,
     default_headers: Mapping[str, str] | None,
 ) -> dict[str, str]:
-    """Build default request headers including API key auth and user-agent."""
+    """Build default request headers including auth and user-agent."""
     headers: dict[str, str] = {
-        api_key_header: api_key,
         "user-agent": "seclai-python",
     }
+    # Add static auth headers (for api_key and bearer_static modes).
+    # Dynamic modes (bearer_provider, sso) are resolved per-request.
+    if auth_state.mode == "api_key":
+        headers[auth_state.api_key_header] = auth_state.api_key  # type: ignore[assignment]
+    elif auth_state.mode == "bearer_static":
+        headers["authorization"] = f"Bearer {auth_state.access_token}"
+    # X-Account-Id is only meaningful for bearer/SSO modes.
+    # For api_key mode the key's account is always used.
+    if auth_state.account_id and auth_state.mode in (
+        "bearer_static",
+        "bearer_provider",
+        "sso",
+    ):
+        headers["x-account-id"] = auth_state.account_id
     if default_headers:
         headers.update(default_headers)
     return headers
@@ -228,12 +249,44 @@ def _merge_request_headers(
     options: ClientOptions,
     request_headers: Mapping[str, str] | None,
 ) -> dict[str, str]:
-    """Merge client default headers with per-request overrides."""
+    """Merge client default headers with per-request overrides including dynamic auth."""
     merged = _build_default_headers(
-        api_key=options.api_key,
-        api_key_header=options.api_key_header,
+        auth_state=options.auth_state,
         default_headers=options.default_headers,
     )
+    # For dynamic auth modes, resolve per-request headers
+    if options.auth_state.mode in ("bearer_provider", "sso"):
+        try:
+            auth_headers = resolve_auth_headers_sync(options.auth_state)
+        except (RuntimeError, TypeError) as exc:
+            raise SeclaiConfigurationError(str(exc)) from exc
+        except Exception as exc:
+            raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
+        merged.update(auth_headers)
+    if request_headers:
+        merged.update(request_headers)
+    return merged
+
+
+async def _merge_request_headers_async(
+    *,
+    options: ClientOptions,
+    request_headers: Mapping[str, str] | None,
+) -> dict[str, str]:
+    """Merge client default headers with per-request overrides including dynamic auth (async)."""
+    merged = _build_default_headers(
+        auth_state=options.auth_state,
+        default_headers=options.default_headers,
+    )
+    # For dynamic auth modes, resolve per-request headers asynchronously
+    if options.auth_state.mode in ("bearer_provider", "sso"):
+        try:
+            auth_headers = await resolve_auth_headers_async(options.auth_state)
+        except (RuntimeError, TypeError) as exc:
+            raise SeclaiConfigurationError(str(exc)) from exc
+        except Exception as exc:
+            raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
+        merged.update(auth_headers)
     if request_headers:
         merged.update(request_headers)
     return merged
@@ -259,7 +312,7 @@ def _raise_for_status(response: httpx.Response) -> None:
 class _SeclaiBase:
     """Shared implementation for Seclai sync/async clients.
 
-    This class centralizes API key resolution, option storage, and configuration of
+    This class centralizes credential resolution, option storage, and configuration of
     the generated OpenAPI client.
     """
 
@@ -267,24 +320,62 @@ class _SeclaiBase:
         self,
         *,
         api_key: str | None,
+        access_token: str | Callable[[], str | Awaitable[str]] | None,
         timeout: float,
         api_key_header: str,
         default_headers: Mapping[str, str] | None,
+        profile: str | None,
+        config_dir: str | None,
+        auto_refresh: bool,
+        account_id: str | None,
     ) -> None:
         """Initialize shared client state.
 
         Args:
-            api_key: API key used for authentication. If omitted, `SECLAI_API_KEY` is used.
+            api_key: API key used for authentication. If omitted, ``SECLAI_API_KEY`` is used.
+            access_token: Static bearer token string or a provider callable.
+                Mutually exclusive with ``api_key``.
             timeout: Request timeout (seconds).
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
+            profile: SSO profile name from ``~/.seclai/config``.
+            config_dir: Override the config directory path.
+            auto_refresh: Whether to auto-refresh expired SSO tokens. Defaults to ``True``.
+            account_id: Target organization account ID (``X-Account-Id`` header).
 
         Raises:
-            SeclaiConfigurationError: If no API key is provided and `SECLAI_API_KEY` is not set.
+            SeclaiConfigurationError: If no credentials are found or if both ``api_key``
+                and ``access_token`` are provided.
         """
-        resolved_key = _resolve_api_key(api_key)
+        if api_key and access_token:
+            raise SeclaiConfigurationError(
+                "Provide either api_key or access_token, not both."
+            )
+
+        # Determine access_token vs provider
+        access_token_str: str | None = None
+        access_token_provider: Callable[[], str | Awaitable[str]] | None = None
+        if callable(access_token):
+            access_token_provider = access_token
+        elif isinstance(access_token, str):
+            access_token_str = access_token
+
+        try:
+            auth_state = resolve_credential_chain(
+                api_key=api_key,
+                access_token=access_token_str,
+                access_token_provider=access_token_provider,
+                profile=profile,
+                config_dir=config_dir,
+                auto_refresh=auto_refresh,
+                account_id=account_id,
+                api_key_header=api_key_header,
+            )
+        except RuntimeError as e:
+            raise SeclaiConfigurationError(str(e)) from e
+
         self._options = ClientOptions(
-            api_key=resolved_key,
+            auth_state=auth_state,
             timeout=timeout,
             api_key_header=api_key_header,
             default_headers=default_headers or {},
@@ -294,19 +385,18 @@ class _SeclaiBase:
         self._owns_generated_client = False
 
     @property
-    def api_key(self) -> str:
-        """Return the resolved API key used for authentication."""
-        return self._options.api_key
+    def api_key(self) -> str | None:
+        """Return the resolved API key used for authentication, or ``None`` for bearer auth."""
+        return self._options.auth_state.api_key
 
     def _default_headers(self) -> dict[str, str]:
         """Build default request headers for the underlying HTTP clients.
 
         Returns:
-            A header dictionary containing API key auth, user-agent, and any configured defaults.
+            A header dictionary containing auth, user-agent, and any configured defaults.
         """
         return _build_default_headers(
-            api_key=self._options.api_key,
-            api_key_header=self._options.api_key_header,
+            auth_state=self._options.auth_state,
             default_headers=self._options.default_headers,
         )
 
@@ -323,6 +413,61 @@ class _SeclaiBase:
             )
             self._owns_generated_client = True
         return self._generated_client_instance
+
+    def _sync_generated_client(self) -> GeneratedClient:
+        """Return the generated client with dynamic auth headers applied (sync).
+
+        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
+        and updates the generated client before returning it. For static modes
+        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        """
+        gc = self._generated_client()
+        if self._options.auth_state.mode in ("bearer_provider", "sso"):
+            try:
+                auth_headers = resolve_auth_headers_sync(self._options.auth_state)
+            except (RuntimeError, TypeError) as exc:
+                raise SeclaiConfigurationError(str(exc)) from exc
+            except Exception as exc:
+                raise SeclaiConfigurationError(
+                    f"Auth resolution failed: {exc}"
+                ) from exc
+            # with_headers() mutates existing httpx clients in-place and
+            # returns an evolved copy with updated _headers.  We keep the
+            # original instance (preserving any user-set httpx client) but
+            # store the evolved copy so get_httpx_client() will use the
+            # refreshed headers when it lazily creates an httpx.Client.
+            evolved = gc.with_headers(auth_headers)
+            self._generated_client_instance = evolved
+            # Re-attach the existing httpx client to the evolved instance
+            # so pre-configured transports (e.g. in tests) aren't lost.
+            if gc._client is not None:
+                evolved.set_httpx_client(gc._client)
+        return self._generated_client_instance  # type: ignore[return-value]
+
+    async def _async_generated_client(self) -> GeneratedClient:
+        """Return the generated client with dynamic auth headers applied (async).
+
+        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
+        and updates the generated client before returning it. For static modes
+        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        """
+        gc = self._generated_client()
+        if self._options.auth_state.mode in ("bearer_provider", "sso"):
+            try:
+                auth_headers = await resolve_auth_headers_async(
+                    self._options.auth_state
+                )
+            except (RuntimeError, TypeError) as exc:
+                raise SeclaiConfigurationError(str(exc)) from exc
+            except Exception as exc:
+                raise SeclaiConfigurationError(
+                    f"Auth resolution failed: {exc}"
+                ) from exc
+            evolved = gc.with_headers(auth_headers)
+            self._generated_client_instance = evolved
+            if gc._async_client is not None:
+                evolved.set_async_httpx_client(gc._async_client)
+        return self._generated_client_instance  # type: ignore[return-value]
 
     def _build_url(self, path: str) -> str:
         """Build an absolute URL string from a request path.
@@ -401,28 +546,51 @@ class Seclai(_SeclaiBase):
         self,
         *,
         api_key: str | None = None,
+        access_token: str | Callable[[], str] | None = None,
         timeout: float = 30.0,
         api_key_header: str = "x-api-key",
         default_headers: Mapping[str, str] | None = None,
         http_client: httpx.Client | None = None,
+        profile: str | None = None,
+        config_dir: str | None = None,
+        auto_refresh: bool = True,
+        account_id: str | None = None,
     ) -> None:
         """Create a synchronous Seclai client.
 
+        Credentials are resolved via a chain (first match wins):
+
+        1. Explicit ``api_key``
+        2. Explicit ``access_token`` (static string or provider callable)
+        3. ``SECLAI_API_KEY`` environment variable
+        4. SSO profile from ``~/.seclai/config`` + cached tokens
+
         Args:
-            api_key: API key used for authentication. If omitted, `SECLAI_API_KEY` is used.
+            api_key: API key used for authentication. If omitted, ``SECLAI_API_KEY`` is used.
+            access_token: Static bearer token string or a callable returning one.
+                Mutually exclusive with ``api_key``.
             timeout: Request timeout (seconds).
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
-            http_client: Optional pre-configured `httpx.Client` to use.
+            http_client: Optional pre-configured ``httpx.Client`` to use.
+            profile: SSO profile name from ``~/.seclai/config``.
+            config_dir: Override the config directory path.
+            auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
+            account_id: Target organization account ID (``X-Account-Id`` header).
 
         Raises:
-            SeclaiConfigurationError: If no API key is provided and `SECLAI_API_KEY` is not set.
+            SeclaiConfigurationError: If no credentials are found.
         """
         super().__init__(
             api_key=api_key,
+            access_token=access_token,
             timeout=timeout,
             api_key_header=api_key_header,
             default_headers=default_headers,
+            profile=profile,
+            config_dir=config_dir,
+            auto_refresh=auto_refresh,
+            account_id=account_id,
         )
         self._client = http_client or httpx.Client(
             base_url=SECLAI_API_URL,
@@ -522,7 +690,7 @@ class Seclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs"
         response = sync_detailed(
-            agent_id=agent_id, client=self._generated_client(), body=body
+            agent_id=agent_id, client=self._sync_generated_client(), body=body
         )
         self._raise_for_openapi_response(
             method="POST",
@@ -694,7 +862,7 @@ class Seclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs"
         response = sync_detailed(
             agent_id=agent_id,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             page=page,
             limit=limit,
         )
@@ -769,7 +937,7 @@ class Seclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = sync_detailed(
             run_id=run_id,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
@@ -833,7 +1001,7 @@ class Seclai(_SeclaiBase):
         )
 
         path = f"/agents/runs/{run_id}"
-        response = sync_detailed(run_id=run_id, client=self._generated_client())
+        response = sync_detailed(run_id=run_id, client=self._sync_generated_client())
         self._raise_for_openapi_response(
             method="DELETE",
             path=path,
@@ -890,7 +1058,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             start=start,
             end=end,
         )
@@ -939,7 +1107,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -979,7 +1147,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}/embeddings"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             page=page,
             limit=limit,
         )
@@ -1042,7 +1210,7 @@ class Seclai(_SeclaiBase):
 
         path = "/sources/"
         response = sync_detailed(
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             page=page,
             limit=limit,
             sort=sort,
@@ -1338,7 +1506,7 @@ class Seclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = sync_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=self._generated_client(),
+                client=self._sync_generated_client(),
                 body=body,
             )
             self._raise_for_openapi_response(
@@ -3562,28 +3730,51 @@ class AsyncSeclai(_SeclaiBase):
         self,
         *,
         api_key: str | None = None,
+        access_token: str | Callable[[], str | Awaitable[str]] | None = None,
         timeout: float = 30.0,
         api_key_header: str = "x-api-key",
         default_headers: Mapping[str, str] | None = None,
         http_client: httpx.AsyncClient | None = None,
+        profile: str | None = None,
+        config_dir: str | None = None,
+        auto_refresh: bool = True,
+        account_id: str | None = None,
     ) -> None:
         """Create an asynchronous Seclai client.
 
+        Credentials are resolved via a chain (first match wins):
+
+        1. Explicit ``api_key``
+        2. Explicit ``access_token`` (static string or provider callable)
+        3. ``SECLAI_API_KEY`` environment variable
+        4. SSO profile from ``~/.seclai/config`` + cached tokens
+
         Args:
-            api_key: API key used for authentication. If omitted, `SECLAI_API_KEY` is used.
+            api_key: API key used for authentication. If omitted, ``SECLAI_API_KEY`` is used.
+            access_token: Static bearer token string or a callable returning one
+                (sync or async). Mutually exclusive with ``api_key``.
             timeout: Request timeout (seconds).
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
-            http_client: Optional pre-configured `httpx.AsyncClient` to use.
+            http_client: Optional pre-configured ``httpx.AsyncClient`` to use.
+            profile: SSO profile name from ``~/.seclai/config``.
+            config_dir: Override the config directory path.
+            auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
+            account_id: Target organization account ID (``X-Account-Id`` header).
 
         Raises:
-            SeclaiConfigurationError: If no API key is provided and `SECLAI_API_KEY` is not set.
+            SeclaiConfigurationError: If no credentials are found.
         """
         super().__init__(
             api_key=api_key,
+            access_token=access_token,
             timeout=timeout,
             api_key_header=api_key_header,
             default_headers=default_headers,
+            profile=profile,
+            config_dir=config_dir,
+            auto_refresh=auto_refresh,
+            account_id=account_id,
         )
         self._client = http_client or httpx.AsyncClient(
             base_url=SECLAI_API_URL,
@@ -3649,7 +3840,7 @@ class AsyncSeclai(_SeclaiBase):
             path,
             params=params,
             json=json,
-            headers=_merge_request_headers(
+            headers=await _merge_request_headers_async(
                 options=self._options, request_headers=headers
             ),
         )
@@ -3683,7 +3874,7 @@ class AsyncSeclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
-            agent_id=agent_id, client=self._generated_client(), body=body
+            agent_id=agent_id, client=(await self._async_generated_client()), body=body
         )
         self._raise_for_openapi_response(
             method="POST",
@@ -3729,7 +3920,7 @@ class AsyncSeclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs/stream"
 
-        merged_headers = _merge_request_headers(
+        merged_headers = await _merge_request_headers_async(
             options=self._options, request_headers=headers
         )
         merged_headers.setdefault("accept", "text/event-stream")
@@ -3840,7 +4031,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
             agent_id=agent_id,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             page=page,
             limit=limit,
         )
@@ -3915,7 +4106,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
             run_id=run_id,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
@@ -3983,7 +4174,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
             run_id=run_id,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -4041,7 +4232,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             start=start,
             end=end,
         )
@@ -4090,7 +4281,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -4130,7 +4321,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}/embeddings"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             page=page,
             limit=limit,
         )
@@ -4193,7 +4384,7 @@ class AsyncSeclai(_SeclaiBase):
 
         path = "/sources/"
         response = await asyncio_detailed(
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             page=page,
             limit=limit,
             sort=sort,
@@ -4486,7 +4677,7 @@ class AsyncSeclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = await asyncio_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=self._generated_client(),
+                client=(await self._async_generated_client()),
                 body=body,
             )
             self._raise_for_openapi_response(
@@ -4678,7 +4869,7 @@ class AsyncSeclai(_SeclaiBase):
             response = await self._client.post(
                 f"/agents/{agent_id}/upload-input",
                 files={"file": payload},
-                headers=_merge_request_headers(
+                headers=await _merge_request_headers_async(
                     options=self._options, request_headers=None
                 ),
             )
@@ -6631,7 +6822,7 @@ class AsyncSeclai(_SeclaiBase):
         import json as _json
 
         path = f"/agents/{agent_id}/runs/stream"
-        merged_headers = _merge_request_headers(
+        merged_headers = await _merge_request_headers_async(
             options=self._options, request_headers=headers
         )
         merged_headers.setdefault("accept", "text/event-stream")

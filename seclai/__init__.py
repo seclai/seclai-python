@@ -22,6 +22,10 @@ All public symbols are re-exported from this package:
 - :data:`JSONValue` — recursive JSON type alias
 """
 
+from .auth import (
+    SsoCacheEntry,
+    SsoProfile,
+)
 from .seclai import (
     AgentRunStreamRequest,
     AsyncSeclai,
@@ -44,4 +48,6 @@ __all__ = [
     "SeclaiConfigurationError",
     "SeclaiError",
     "SeclaiStreamingError",
+    "SsoProfile",
+    "SsoCacheEntry",
 ]
