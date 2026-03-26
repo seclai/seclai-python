@@ -15,10 +15,11 @@ import json
 import os
 import tempfile
 import threading
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import httpx
 
@@ -260,8 +261,43 @@ def is_token_valid(entry: SsoCacheEntry) -> bool:
         expires_at = datetime.fromisoformat(entry.expires_at.replace("Z", "+00:00"))
     except ValueError:
         return False
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return now + timedelta(seconds=_EXPIRY_BUFFER_SECONDS) < expires_at
+
+
+# ── Token refresh helpers ───────────────────────────────────────────────────
+
+
+def _build_refresh_request(
+    profile: SsoProfile, refresh_token_value: str
+) -> tuple[str, dict[str, str]]:
+    """Build the token refresh URL and form body."""
+    token_url = f"https://{profile.sso_domain}/oauth2/token"
+    body = {
+        "grant_type": "refresh_token",
+        "client_id": profile.sso_client_id,
+        "refresh_token": refresh_token_value,
+    }
+    return token_url, body
+
+
+def _parse_refresh_response(
+    data: dict[str, Any], profile: SsoProfile, refresh_token_value: str
+) -> SsoCacheEntry:
+    """Parse a Cognito token response into an SsoCacheEntry."""
+    expires_at = (
+        datetime.now(UTC) + timedelta(seconds=data["expires_in"])
+    ).isoformat()
+
+    return SsoCacheEntry(
+        access_token=data["access_token"],
+        refresh_token=data.get("refresh_token", refresh_token_value),
+        id_token=data.get("id_token"),
+        expires_at=expires_at,
+        client_id=profile.sso_client_id,
+        region=profile.sso_region,
+        cognito_domain=profile.sso_domain,
+    )
 
 
 # ── Token refresh (sync) ─────────────────────────────────────────────────────
@@ -285,12 +321,7 @@ def refresh_token_sync(
     Raises:
         httpx.HTTPStatusError: If the Cognito token endpoint returns a non-2xx status.
     """
-    token_url = f"https://{profile.sso_domain}/oauth2/token"
-    body = {
-        "grant_type": "refresh_token",
-        "client_id": profile.sso_client_id,
-        "refresh_token": refresh_token_value,
-    }
+    token_url, body = _build_refresh_request(profile, refresh_token_value)
 
     client = http_client or httpx.Client()
     try:
@@ -304,22 +335,7 @@ def refresh_token_sync(
         if http_client is None:
             client.close()
 
-    data = response.json()
-    from datetime import timedelta
-
-    expires_at = (
-        datetime.now(timezone.utc) + timedelta(seconds=data["expires_in"])
-    ).isoformat()
-
-    return SsoCacheEntry(
-        access_token=data["access_token"],
-        refresh_token=data.get("refresh_token", refresh_token_value),
-        id_token=data.get("id_token"),
-        expires_at=expires_at,
-        client_id=profile.sso_client_id,
-        region=profile.sso_region,
-        cognito_domain=profile.sso_domain,
-    )
+    return _parse_refresh_response(response.json(), profile, refresh_token_value)
 
 
 # ── Token refresh (async) ────────────────────────────────────────────────────

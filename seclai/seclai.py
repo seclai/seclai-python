@@ -41,12 +41,12 @@ import logging
 import mimetypes
 import os
 import time
-from collections.abc import AsyncGenerator, Generator, Mapping
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Mapping
 from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Awaitable, BinaryIO, Callable, Self, TypedDict, cast, overload
+from typing import Any, BinaryIO, Self, TypedDict, cast, overload
 
 import httpx
 
@@ -231,7 +231,13 @@ def _build_default_headers(
         headers[auth_state.api_key_header] = auth_state.api_key  # type: ignore[assignment]
     elif auth_state.mode == "bearer_static":
         headers["authorization"] = f"Bearer {auth_state.access_token}"
-    if auth_state.account_id:
+    # X-Account-Id is only meaningful for bearer/SSO modes.
+    # For api_key mode the key's account is always used.
+    if auth_state.account_id and auth_state.mode in (
+        "bearer_static",
+        "bearer_provider",
+        "sso",
+    ):
         headers["x-account-id"] = auth_state.account_id
     if default_headers:
         headers.update(default_headers)
@@ -250,7 +256,10 @@ def _merge_request_headers(
     )
     # For dynamic auth modes, resolve per-request headers
     if options.auth_state.mode in ("bearer_provider", "sso"):
-        auth_headers = resolve_auth_headers_sync(options.auth_state)
+        try:
+            auth_headers = resolve_auth_headers_sync(options.auth_state)
+        except (RuntimeError, TypeError) as exc:
+            raise SeclaiConfigurationError(str(exc)) from exc
         merged.update(auth_headers)
     if request_headers:
         merged.update(request_headers)
@@ -269,7 +278,10 @@ async def _merge_request_headers_async(
     )
     # For dynamic auth modes, resolve per-request headers asynchronously
     if options.auth_state.mode in ("bearer_provider", "sso"):
-        auth_headers = await resolve_auth_headers_async(options.auth_state)
+        try:
+            auth_headers = await resolve_auth_headers_async(options.auth_state)
+        except (RuntimeError, TypeError) as exc:
+            raise SeclaiConfigurationError(str(exc)) from exc
         merged.update(auth_headers)
     if request_headers:
         merged.update(request_headers)
@@ -397,6 +409,38 @@ class _SeclaiBase:
             )
             self._owns_generated_client = True
         return self._generated_client_instance
+
+    def _sync_generated_client(self) -> GeneratedClient:
+        """Return the generated client with dynamic auth headers applied (sync).
+
+        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
+        and updates the generated client before returning it. For static modes
+        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        """
+        gc = self._generated_client()
+        if self._options.auth_state.mode in ("bearer_provider", "sso"):
+            try:
+                auth_headers = resolve_auth_headers_sync(self._options.auth_state)
+            except (RuntimeError, TypeError) as exc:
+                raise SeclaiConfigurationError(str(exc)) from exc
+            gc.with_headers(auth_headers)
+        return gc
+
+    async def _async_generated_client(self) -> GeneratedClient:
+        """Return the generated client with dynamic auth headers applied (async).
+
+        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
+        and updates the generated client before returning it. For static modes
+        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        """
+        gc = self._generated_client()
+        if self._options.auth_state.mode in ("bearer_provider", "sso"):
+            try:
+                auth_headers = await resolve_auth_headers_async(self._options.auth_state)
+            except (RuntimeError, TypeError) as exc:
+                raise SeclaiConfigurationError(str(exc)) from exc
+            gc.with_headers(auth_headers)
+        return gc
 
     def _build_url(self, path: str) -> str:
         """Build an absolute URL string from a request path.
@@ -619,7 +663,7 @@ class Seclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs"
         response = sync_detailed(
-            agent_id=agent_id, client=self._generated_client(), body=body
+            agent_id=agent_id, client=self._sync_generated_client(), body=body
         )
         self._raise_for_openapi_response(
             method="POST",
@@ -791,7 +835,7 @@ class Seclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs"
         response = sync_detailed(
             agent_id=agent_id,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             page=page,
             limit=limit,
         )
@@ -866,7 +910,7 @@ class Seclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = sync_detailed(
             run_id=run_id,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
@@ -930,7 +974,7 @@ class Seclai(_SeclaiBase):
         )
 
         path = f"/agents/runs/{run_id}"
-        response = sync_detailed(run_id=run_id, client=self._generated_client())
+        response = sync_detailed(run_id=run_id, client=self._sync_generated_client())
         self._raise_for_openapi_response(
             method="DELETE",
             path=path,
@@ -987,7 +1031,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             start=start,
             end=end,
         )
@@ -1036,7 +1080,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -1076,7 +1120,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}/embeddings"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             page=page,
             limit=limit,
         )
@@ -1139,7 +1183,7 @@ class Seclai(_SeclaiBase):
 
         path = "/sources/"
         response = sync_detailed(
-            client=self._generated_client(),
+            client=self._sync_generated_client(),
             page=page,
             limit=limit,
             sort=sort,
@@ -1435,7 +1479,7 @@ class Seclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = sync_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=self._generated_client(),
+                client=self._sync_generated_client(),
                 body=body,
             )
             self._raise_for_openapi_response(
@@ -3803,7 +3847,7 @@ class AsyncSeclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
-            agent_id=agent_id, client=self._generated_client(), body=body
+            agent_id=agent_id, client=(await self._async_generated_client()), body=body
         )
         self._raise_for_openapi_response(
             method="POST",
@@ -3960,7 +4004,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
             agent_id=agent_id,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             page=page,
             limit=limit,
         )
@@ -4035,7 +4079,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
             run_id=run_id,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
@@ -4103,7 +4147,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
             run_id=run_id,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -4161,7 +4205,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             start=start,
             end=end,
         )
@@ -4210,7 +4254,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -4250,7 +4294,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}/embeddings"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             page=page,
             limit=limit,
         )
@@ -4313,7 +4357,7 @@ class AsyncSeclai(_SeclaiBase):
 
         path = "/sources/"
         response = await asyncio_detailed(
-            client=self._generated_client(),
+            client=(await self._async_generated_client()),
             page=page,
             limit=limit,
             sort=sort,
@@ -4606,7 +4650,7 @@ class AsyncSeclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = await asyncio_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=self._generated_client(),
+                client=(await self._async_generated_client()),
                 body=body,
             )
             self._raise_for_openapi_response(

@@ -127,3 +127,98 @@ async def test_bearer_token_async(monkeypatch: pytest.MonkeyPatch) -> None:
     client = AsyncSeclai(access_token="async-jwt", http_client=http_client)
     assert await client.request("GET", "/ping") == {"ok": True}
     await http_client.aclose()
+
+
+# ── Bearer auth on typed (generated-client) methods ──────────────────────────
+
+
+def test_bearer_token_on_typed_method_sync(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Typed wrapper methods (list_sources etc.) must send bearer auth headers."""
+    monkeypatch.delenv("SECLAI_API_KEY", raising=False)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers.get("authorization") == "Bearer typed-jwt"
+        assert "x-api-key" not in request.headers
+        return httpx.Response(
+            200,
+            json={
+                "data": [],
+                "pagination": {
+                    "page": 1,
+                    "limit": 20,
+                    "total": 0,
+                    "pages": 0,
+                    "has_next": False,
+                    "has_prev": False,
+                },
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    http_client = httpx.Client(transport=transport, base_url="https://example.invalid")
+    client = Seclai(access_token="typed-jwt", http_client=http_client)
+    # Also wire mock transport into the generated client used by typed methods
+    gc = client._generated_client()
+    gc.set_httpx_client(
+        httpx.Client(transport=transport, base_url="https://example.invalid", headers=dict(gc._headers))
+    )
+    result = client.list_sources()
+    assert result.data == []
+
+
+def test_bearer_provider_on_typed_method_sync(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Typed wrapper methods must resolve dynamic bearer providers per-request."""
+    monkeypatch.delenv("SECLAI_API_KEY", raising=False)
+
+    call_count = 0
+
+    def provider() -> str:
+        nonlocal call_count
+        call_count += 1
+        return f"dyn-token-{call_count}"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers.get("authorization", "").startswith("Bearer dyn-token-")
+        return httpx.Response(
+            200,
+            json={
+                "data": [],
+                "pagination": {
+                    "page": 1,
+                    "limit": 20,
+                    "total": 0,
+                    "pages": 0,
+                    "has_next": False,
+                    "has_prev": False,
+                },
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    http_client = httpx.Client(transport=transport, base_url="https://example.invalid")
+    client = Seclai(access_token=provider, http_client=http_client)
+    # Also wire mock transport into the generated client used by typed methods
+    gc = client._generated_client()
+    gc.set_httpx_client(
+        httpx.Client(transport=transport, base_url="https://example.invalid", headers=dict(gc._headers))
+    )
+    client.list_sources()
+    client.list_sources()
+    assert call_count == 2
+
+
+# ── X-Account-Id only for bearer/SSO ─────────────────────────────────────────
+
+
+def test_account_id_not_sent_for_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """X-Account-Id should NOT be sent when using api_key auth."""
+    monkeypatch.delenv("SECLAI_API_KEY", raising=False)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert "x-account-id" not in request.headers
+        return httpx.Response(200, json={"ok": True})
+
+    transport = httpx.MockTransport(handler)
+    http_client = httpx.Client(transport=transport, base_url="https://example.invalid")
+    client = Seclai(api_key="k", account_id="acct-123", http_client=http_client)
+    assert client.request("GET", "/ping") == {"ok": True}

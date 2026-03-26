@@ -97,19 +97,29 @@ Credentials are resolved via a chain (first match wins):
 ```python
 # API key
 client = Seclai(api_key="sk-...")
+```
 
+```python
 # Static bearer token
 client = Seclai(access_token="eyJhbGciOi...")
+```
 
-# Dynamic bearer token provider (sync or async callable)
+```python
+# Dynamic bearer token provider (sync callable, called per request)
 client = Seclai(access_token=lambda: get_token_from_vault())
+```
 
-# Async provider with AsyncSeclai
+```python
+# Async provider — use AsyncSeclai for async callables
 client = AsyncSeclai(access_token=get_token_async)
+```
 
+```python
 # SSO profile (uses cached tokens, auto-refreshes)
 client = Seclai(profile="my-profile")
+```
 
+```python
 # Environment variable (no options needed)
 # export SECLAI_API_KEY="sk-..."
 client = Seclai()
