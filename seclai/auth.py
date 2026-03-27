@@ -32,6 +32,13 @@ _EXPIRY_BUFFER_SECONDS = 30
 
 _SSO_EXPIRED_MSG = "SSO token expired. Run `seclai auth login` to re-authenticate."
 
+#: Default SSO domain (production Cognito). Override with ``SECLAI_SSO_DOMAIN`` or config file.
+DEFAULT_SSO_DOMAIN = "auth.seclai.com"
+#: Default SSO client ID (production public client). Override with ``SECLAI_SSO_CLIENT_ID`` or config file.
+DEFAULT_SSO_CLIENT_ID = "4bgf8v9qmc5puivbaqon9n5lmr"
+#: Default SSO region. Override with ``SECLAI_SSO_REGION`` or config file.
+DEFAULT_SSO_REGION = "us-west-2"
+
 
 # ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,16 +48,16 @@ class SsoProfile:
     """Resolved SSO profile settings from the config file.
 
     Attributes:
-        sso_account_id: AWS Cognito account ID.
+        sso_account_id: Account ID (resolved after login via ``/me``).
         sso_region: AWS region for the Cognito user pool.
         sso_client_id: Cognito app client ID.
         sso_domain: Cognito domain (e.g. ``"auth.example.com"``).
     """
 
-    sso_account_id: str
     sso_region: str
     sso_client_id: str
     sso_domain: str
+    sso_account_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,42 +171,51 @@ def parse_ini_config(config_path: Path) -> configparser.ConfigParser:
     return cp
 
 
-def load_sso_profile(config_dir: Path, profile_name: str) -> SsoProfile | None:
+def load_sso_profile(config_dir: Path, profile_name: str) -> SsoProfile:
     """Load and resolve an SSO profile from the config file.
 
     Non-default profiles inherit unset values from ``[default]``.
+    All profiles fall back to built-in defaults and environment variable
+    overrides (``SECLAI_SSO_DOMAIN``, ``SECLAI_SSO_CLIENT_ID``,
+    ``SECLAI_SSO_REGION``).  Always returns a valid profile.
     """
     config_path = config_dir / _CONFIG_FILE
-    if not config_path.exists():
-        return None
 
-    cp = parse_ini_config(config_path)
+    merged: dict[str, str] = {}
 
-    default_section: dict[str, str] = {}
-    if cp.has_section("default"):
-        default_section = dict(cp.items("default"))
+    if config_path.exists():
+        cp = parse_ini_config(config_path)
 
-    if profile_name == "default":
-        section = default_section
-    else:
-        section_name = f"profile {profile_name}"
-        if not cp.has_section(section_name):
-            return None
-        section = {**default_section, **dict(cp.items(section_name))}
+        default_section: dict[str, str] = {}
+        if cp.has_section("default"):
+            default_section = dict(cp.items("default"))
 
-    sso_account_id = section.get("sso_account_id")
-    sso_region = section.get("sso_region")
-    sso_client_id = section.get("sso_client_id")
-    sso_domain = section.get("sso_domain")
+        if profile_name == "default":
+            merged = default_section
+        else:
+            section_name = f"profile {profile_name}"
+            if cp.has_section(section_name):
+                merged = {**default_section, **dict(cp.items(section_name))}
 
-    if not all([sso_account_id, sso_region, sso_client_id, sso_domain]):
-        return None
+    # Environment variables override config file values
+    sso_domain = (
+        os.getenv("SECLAI_SSO_DOMAIN") or merged.get("sso_domain") or DEFAULT_SSO_DOMAIN
+    )
+    sso_client_id = (
+        os.getenv("SECLAI_SSO_CLIENT_ID")
+        or merged.get("sso_client_id")
+        or DEFAULT_SSO_CLIENT_ID
+    )
+    sso_region = (
+        os.getenv("SECLAI_SSO_REGION") or merged.get("sso_region") or DEFAULT_SSO_REGION
+    )
+    sso_account_id = merged.get("sso_account_id") or None
 
     return SsoProfile(
-        sso_account_id=sso_account_id,  # type: ignore[arg-type]
-        sso_region=sso_region,  # type: ignore[arg-type]
-        sso_client_id=sso_client_id,  # type: ignore[arg-type]
-        sso_domain=sso_domain,  # type: ignore[arg-type]
+        sso_region=sso_region,
+        sso_client_id=sso_client_id,
+        sso_domain=sso_domain,
+        sso_account_id=sso_account_id,
     )
 
 
@@ -446,27 +462,17 @@ def resolve_credential_chain(
             auto_refresh=False,
         )
 
-    # 5. SSO profile
-    try:
-        resolved_dir = resolve_config_dir(config_dir)
-        profile_name = profile or os.getenv("SECLAI_PROFILE") or "default"
-        sso = load_sso_profile(resolved_dir, profile_name)
-        if sso:
-            return AuthState(
-                mode="sso",
-                api_key_header=api_key_header,
-                account_id=account_id or sso.sso_account_id,
-                sso_profile=sso,
-                config_dir=str(resolved_dir),
-                auto_refresh=auto_refresh,
-            )
-    except (OSError, configparser.Error):
-        pass
-
-    # 6. Nothing found
-    raise RuntimeError(
-        "Missing credentials. Pass api_key=..., access_token=..., "
-        "set SECLAI_API_KEY, or run `seclai auth login`."
+    # 5. SSO profile (always available via built-in defaults)
+    resolved_dir = resolve_config_dir(config_dir)
+    profile_name = profile or os.getenv("SECLAI_PROFILE") or "default"
+    sso = load_sso_profile(resolved_dir, profile_name)
+    return AuthState(
+        mode="sso",
+        api_key_header=api_key_header,
+        account_id=account_id or sso.sso_account_id,
+        sso_profile=sso,
+        config_dir=str(resolved_dir),
+        auto_refresh=auto_refresh,
     )
 
 
