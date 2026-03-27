@@ -16,11 +16,14 @@ def test_api_key_param_takes_precedence(monkeypatch: pytest.MonkeyPatch) -> None
     assert client.api_key == "param-key"
 
 
-def test_missing_api_key_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_missing_api_key_falls_back_to_sso(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
+) -> None:
     monkeypatch.delenv("SECLAI_API_KEY", raising=False)
-    monkeypatch.setenv("SECLAI_CONFIG_DIR", "/nonexistent-seclai-dir")
-    with pytest.raises(SeclaiConfigurationError):
-        _ = Seclai()
+    monkeypatch.setenv("SECLAI_CONFIG_DIR", str(tmp_path))
+    client = Seclai()
+    # With built-in SSO defaults, client succeeds and falls back to SSO mode
+    assert client._options.auth_state.mode == "sso"
 
 
 def test_both_api_key_and_access_token_raises(monkeypatch: pytest.MonkeyPatch) -> None:

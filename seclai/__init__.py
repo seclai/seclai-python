@@ -23,6 +23,9 @@ All public symbols are re-exported from this package:
 """
 
 from .auth import (
+    DEFAULT_SSO_CLIENT_ID,
+    DEFAULT_SSO_DOMAIN,
+    DEFAULT_SSO_REGION,
     SsoCacheEntry,
     SsoProfile,
 )
@@ -41,6 +44,9 @@ from .seclai import (
 __all__ = [
     "AgentRunStreamRequest",
     "AsyncSeclai",
+    "DEFAULT_SSO_CLIENT_ID",
+    "DEFAULT_SSO_DOMAIN",
+    "DEFAULT_SSO_REGION",
     "JSONValue",
     "Seclai",
     "SeclaiAPIStatusError",

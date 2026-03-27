@@ -1599,6 +1599,27 @@ class TestAsyncMethods:
         assert events[0][0] == "init"
         assert events[1][0] == "done"
 
+    @pytest.mark.asyncio
+    async def test_async_download_source_export(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["has_api_key"] = "x-api-key" in req.headers
+            return httpx.Response(status_code=200, content=b"csv-data")
+
+        client = _async_client(handler)
+        resp = await client.download_source_export("s1", "e1")
+        assert seen == {
+            "method": "GET",
+            "path": "/sources/s1/exports/e1/download",
+            "has_api_key": True,
+        }
+        await resp.aread()
+        assert resp.content == b"csv-data"
+        await resp.aclose()
+
 
 # ---------------------------------------------------------------------------
 # Top-level AI Assistant

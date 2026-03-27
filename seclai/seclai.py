@@ -1367,7 +1367,7 @@ class Seclai(_SeclaiBase):
             # Note: openapi-python-client currently struggles with Seclai's spec for this endpoint
             # due to duplicate schema names, so we send the multipart request directly and parse
             # into our SDK model types.
-            http = self._generated_client().get_httpx_client()
+            http = self._sync_generated_client().get_httpx_client()
             raw = http.request(
                 "POST",
                 endpoint_path,
@@ -4538,7 +4538,7 @@ class AsyncSeclai(_SeclaiBase):
 
             endpoint_path = f"/sources/{source_connection_id}/upload"
 
-            http = self._generated_client().get_async_httpx_client()
+            http = (await self._async_generated_client()).get_async_httpx_client()
             raw = await http.request(
                 "POST",
                 endpoint_path,
@@ -5760,10 +5760,13 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             A streaming ``httpx.Response``. Must be closed by the caller.
         """
+        headers = await _merge_request_headers_async(
+            options=self._options, request_headers=None
+        )
         request = self._client.build_request(
             "GET",
             f"/sources/{source_id}/exports/{export_id}/download",
-            headers=_merge_request_headers(options=self._options, request_headers=None),
+            headers=headers,
         )
         response = await self._client.send(request, stream=True)
         _raise_for_status(response)
