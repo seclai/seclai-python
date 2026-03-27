@@ -28,6 +28,7 @@ def test_both_api_key_and_access_token_raises(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.delenv("SECLAI_API_KEY", raising=False)
     with pytest.raises(SeclaiConfigurationError, match="not both"):
         _ = Seclai(api_key="k", access_token="t")
+        _ = Seclai(api_key="k", access_token="t")
 
 
 def test_header_injected_sync(monkeypatch: pytest.MonkeyPatch) -> None:
