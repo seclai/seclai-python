@@ -422,20 +422,22 @@ def resolve_credential_chain(
         RuntimeError: If no credentials are found.
     """
     # 1. Explicit API key
-    if api_key:
+    stripped_api_key = api_key.strip() if api_key else ""
+    if stripped_api_key:
         return AuthState(
             mode="api_key",
-            api_key=api_key.strip(),
+            api_key=stripped_api_key,
             api_key_header=api_key_header,
             account_id=account_id,
             auto_refresh=False,
         )
 
     # 2. Static access token
-    if access_token:
+    stripped_access_token = access_token.strip() if access_token else ""
+    if stripped_access_token:
         return AuthState(
             mode="bearer_static",
-            access_token=access_token,
+            access_token=stripped_access_token,
             api_key_header=api_key_header,
             account_id=account_id,
             auto_refresh=False,
