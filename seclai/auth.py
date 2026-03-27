@@ -14,6 +14,7 @@ import asyncio
 import configparser
 import hashlib
 import json
+import logging
 import os
 import tempfile
 import threading
@@ -30,7 +31,9 @@ _SSO_CACHE_DIR = "sso/cache"
 _CONFIG_FILE = "config"
 _EXPIRY_BUFFER_SECONDS = 30
 
-_SSO_EXPIRED_MSG = "SSO token expired. Run `seclai auth login` to re-authenticate."
+_SSO_EXPIRED_MSG = (
+    "SSO token is missing or has expired. Run `seclai auth login` to authenticate."
+)
 
 #: Default SSO domain (production Cognito). Override with ``SECLAI_SSO_DOMAIN`` or config file.
 DEFAULT_SSO_DOMAIN = "auth.seclai.com"
@@ -196,6 +199,11 @@ def load_sso_profile(config_dir: Path, profile_name: str) -> SsoProfile:
             section_name = f"profile {profile_name}"
             if cp.has_section(section_name):
                 merged = {**default_section, **dict(cp.items(section_name))}
+            else:
+                logging.getLogger(__name__).warning(
+                    "SSO profile '%s' not found in config; using defaults",
+                    profile_name,
+                )
 
     # Environment variables override config file values
     sso_domain = (
@@ -415,11 +423,7 @@ def resolve_credential_chain(
     2. Explicit ``access_token`` (static string)
     3. Explicit ``access_token_provider`` (callback)
     4. ``SECLAI_API_KEY`` environment variable
-    5. SSO profile from config file + cached tokens
-    6. Error
-
-    Raises:
-        RuntimeError: If no credentials are found.
+    5. SSO profile from config file + cached tokens (always available via built-in defaults)
     """
     # 1. Explicit API key
     stripped_api_key = api_key.strip() if api_key else ""
