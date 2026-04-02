@@ -59,9 +59,9 @@ def sync_detailed(
 ) -> Response[MeResponse]:
     """Get current user identity
 
-     Returns the authenticated user's personal account ID and a list of organisations they belong to.
-    Each organisation entry includes the organisation's own id, display name, and account_id.  Useful
-    for CLI tooling that needs to let the user pick an org context.
+     Returns the authenticated user's personal account ID and a list of organizations they belong to.
+    Each organization entry includes the organization's id, name, and account_id. Useful for CLI tooling
+    that needs to let the user pick an organization context.
 
     Args:
         x_account_id (UUID | Unset):
@@ -92,9 +92,9 @@ def sync(
 ) -> MeResponse | None:
     """Get current user identity
 
-     Returns the authenticated user's personal account ID and a list of organisations they belong to.
-    Each organisation entry includes the organisation's own id, display name, and account_id.  Useful
-    for CLI tooling that needs to let the user pick an org context.
+     Returns the authenticated user's personal account ID and a list of organizations they belong to.
+    Each organization entry includes the organization's id, name, and account_id. Useful for CLI tooling
+    that needs to let the user pick an organization context.
 
     Args:
         x_account_id (UUID | Unset):
@@ -120,9 +120,9 @@ async def asyncio_detailed(
 ) -> Response[MeResponse]:
     """Get current user identity
 
-     Returns the authenticated user's personal account ID and a list of organisations they belong to.
-    Each organisation entry includes the organisation's own id, display name, and account_id.  Useful
-    for CLI tooling that needs to let the user pick an org context.
+     Returns the authenticated user's personal account ID and a list of organizations they belong to.
+    Each organization entry includes the organization's id, name, and account_id. Useful for CLI tooling
+    that needs to let the user pick an organization context.
 
     Args:
         x_account_id (UUID | Unset):
@@ -151,9 +151,9 @@ async def asyncio(
 ) -> MeResponse | None:
     """Get current user identity
 
-     Returns the authenticated user's personal account ID and a list of organisations they belong to.
-    Each organisation entry includes the organisation's own id, display name, and account_id.  Useful
-    for CLI tooling that needs to let the user pick an org context.
+     Returns the authenticated user's personal account ID and a list of organizations they belong to.
+    Each organization entry includes the organization's id, name, and account_id. Useful for CLI tooling
+    that needs to let the user pick an organization context.
 
     Args:
         x_account_id (UUID | Unset):

@@ -100,7 +100,10 @@ def sync_detailed(
     response as a file download.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only export agents belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token.
+    - When using OAuth, you may target a different organization account with `X-Account-Id`; for API
+    keys, the key's account is always used.
+    - You can only export agents belonging to the resolved account.
 
     Args:
         agent_id (str):
@@ -158,7 +161,10 @@ def sync(
     response as a file download.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only export agents belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token.
+    - When using OAuth, you may target a different organization account with `X-Account-Id`; for API
+    keys, the key's account is always used.
+    - You can only export agents belonging to the resolved account.
 
     Args:
         agent_id (str):
@@ -211,7 +217,10 @@ async def asyncio_detailed(
     response as a file download.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only export agents belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token.
+    - When using OAuth, you may target a different organization account with `X-Account-Id`; for API
+    keys, the key's account is always used.
+    - You can only export agents belonging to the resolved account.
 
     Args:
         agent_id (str):
@@ -267,7 +276,10 @@ async def asyncio(
     response as a file download.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only export agents belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token.
+    - When using OAuth, you may target a different organization account with `X-Account-Id`; for API
+    keys, the key's account is always used.
+    - You can only export agents belonging to the resolved account.
 
     Args:
         agent_id (str):
