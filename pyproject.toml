@@ -109,6 +109,7 @@ mypy = ">=1,<2"
 black = ">=24,<26"
 openapi-python-client = ">=0.25,<1"
 pdoc = ">=14,<15"
+types-python-dateutil = "^2.9.0.20260402"
 
 [tool.pytest.ini_options]
 addopts = [
