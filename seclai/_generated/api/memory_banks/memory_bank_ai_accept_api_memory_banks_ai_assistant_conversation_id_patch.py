@@ -19,7 +19,7 @@ def _get_kwargs(
     conversation_id: UUID,
     *,
     body: MemoryBankAcceptRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -84,7 +84,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | MemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatchResponseMemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatch
@@ -99,7 +99,7 @@ def sync_detailed(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:
@@ -128,7 +128,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | MemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatchResponseMemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatch
@@ -144,7 +144,7 @@ def sync(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:
@@ -168,7 +168,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | MemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatchResponseMemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatch
@@ -183,7 +183,7 @@ async def asyncio_detailed(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:
@@ -210,7 +210,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | MemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatchResponseMemoryBankAiAcceptApiMemoryBanksAiAssistantConversationIdPatch
@@ -226,7 +226,7 @@ async def asyncio(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:

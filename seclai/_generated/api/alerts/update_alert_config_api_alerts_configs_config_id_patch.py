@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -19,7 +18,7 @@ def _get_kwargs(
     config_id: str,
     *,
     body: UpdateAlertConfigRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -84,7 +83,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
@@ -98,7 +97,7 @@ def sync_detailed(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:
@@ -127,7 +126,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
@@ -142,7 +141,7 @@ def sync(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:
@@ -166,7 +165,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
@@ -180,7 +179,7 @@ async def asyncio_detailed(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:
@@ -207,7 +206,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
@@ -222,7 +221,7 @@ async def asyncio(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:

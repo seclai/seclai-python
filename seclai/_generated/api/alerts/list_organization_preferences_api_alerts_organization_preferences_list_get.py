@@ -17,7 +17,7 @@ def _get_kwargs(
     *,
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -85,7 +85,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | OrganizationAlertPreferenceListResponse]:
     """List organization alert delivery preferences
 
@@ -102,7 +102,7 @@ def sync_detailed(
         organization_id (None | Unset | UUID): Optional organization filter
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -130,7 +130,7 @@ def sync(
     client: AuthenticatedClient | Client,
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | OrganizationAlertPreferenceListResponse | None:
     """List organization alert delivery preferences
 
@@ -147,7 +147,7 @@ def sync(
         organization_id (None | Unset | UUID): Optional organization filter
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -170,7 +170,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | OrganizationAlertPreferenceListResponse]:
     """List organization alert delivery preferences
 
@@ -187,7 +187,7 @@ async def asyncio_detailed(
         organization_id (None | Unset | UUID): Optional organization filter
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -213,7 +213,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | OrganizationAlertPreferenceListResponse | None:
     """List organization alert delivery preferences
 
@@ -230,7 +230,7 @@ async def asyncio(
         organization_id (None | Unset | UUID): Optional organization filter
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

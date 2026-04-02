@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from typing import Any
-from uuid import UUID
 
 import httpx
 
@@ -17,7 +16,7 @@ def _get_kwargs(
     *,
     limit: int | Unset = 5,
     offset: int | Unset = 0,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -76,7 +75,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     limit: int | Unset = 5,
     offset: int | Unset = 0,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | MemoryBankLastConversationResponse]:
     """Fetch memory bank AI conversation history
 
@@ -89,7 +88,7 @@ def sync_detailed(
     Args:
         limit (int | Unset): Max turns. Default: 5.
         offset (int | Unset): Skip count. Default: 0.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -117,7 +116,7 @@ def sync(
     client: AuthenticatedClient | Client,
     limit: int | Unset = 5,
     offset: int | Unset = 0,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | MemoryBankLastConversationResponse | None:
     """Fetch memory bank AI conversation history
 
@@ -130,7 +129,7 @@ def sync(
     Args:
         limit (int | Unset): Max turns. Default: 5.
         offset (int | Unset): Skip count. Default: 0.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -153,7 +152,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     limit: int | Unset = 5,
     offset: int | Unset = 0,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | MemoryBankLastConversationResponse]:
     """Fetch memory bank AI conversation history
 
@@ -166,7 +165,7 @@ async def asyncio_detailed(
     Args:
         limit (int | Unset): Max turns. Default: 5.
         offset (int | Unset): Skip count. Default: 0.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -192,7 +191,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     limit: int | Unset = 5,
     offset: int | Unset = 0,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | MemoryBankLastConversationResponse | None:
     """Fetch memory bank AI conversation history
 
@@ -205,7 +204,7 @@ async def asyncio(
     Args:
         limit (int | Unset): Max turns. Default: 5.
         offset (int | Unset): Skip count. Default: 0.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

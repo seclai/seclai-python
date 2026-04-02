@@ -17,7 +17,7 @@ def _get_kwargs(
     solution_id: UUID,
     *,
     body: AiAssistantGenerateRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -73,7 +73,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AiAssistantGenerateResponse | HTTPValidationError]:
     """Generate solution plan
 
@@ -87,7 +87,7 @@ def sync_detailed(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:
@@ -116,7 +116,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AiAssistantGenerateResponse | HTTPValidationError | None:
     """Generate solution plan
 
@@ -130,7 +130,7 @@ def sync(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:
@@ -154,7 +154,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AiAssistantGenerateResponse | HTTPValidationError]:
     """Generate solution plan
 
@@ -168,7 +168,7 @@ async def asyncio_detailed(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:
@@ -195,7 +195,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AiAssistantGenerateResponse | HTTPValidationError | None:
     """Generate solution plan
 
@@ -209,7 +209,7 @@ async def asyncio(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:

@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from typing import Any
-from uuid import UUID
 
 import httpx
 
@@ -18,7 +17,7 @@ def _get_kwargs(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -91,7 +90,7 @@ def sync_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
     """List sources
 
@@ -116,7 +115,7 @@ def sync_detailed(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -150,7 +149,7 @@ def sync(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
     """List sources
 
@@ -175,7 +174,7 @@ def sync(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -204,7 +203,7 @@ async def asyncio_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
     """List sources
 
@@ -229,7 +228,7 @@ async def asyncio_detailed(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -261,7 +260,7 @@ async def asyncio(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
     """List sources
 
@@ -286,7 +285,7 @@ async def asyncio(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

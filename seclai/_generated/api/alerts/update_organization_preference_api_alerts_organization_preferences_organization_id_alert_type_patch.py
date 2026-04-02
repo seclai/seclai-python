@@ -22,7 +22,7 @@ def _get_kwargs(
     alert_type: str,
     *,
     body: UpdateOrganizationAlertPreferenceRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -80,7 +80,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateOrganizationAlertPreferenceRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | OrganizationAlertPreferenceResponse]:
     """Update organization alert delivery preference
 
@@ -96,7 +96,7 @@ def sync_detailed(
     Args:
         organization_id (UUID):
         alert_type (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateOrganizationAlertPreferenceRequest):
 
     Raises:
@@ -127,7 +127,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateOrganizationAlertPreferenceRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | OrganizationAlertPreferenceResponse | None:
     """Update organization alert delivery preference
 
@@ -143,7 +143,7 @@ def sync(
     Args:
         organization_id (UUID):
         alert_type (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateOrganizationAlertPreferenceRequest):
 
     Raises:
@@ -169,7 +169,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateOrganizationAlertPreferenceRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | OrganizationAlertPreferenceResponse]:
     """Update organization alert delivery preference
 
@@ -185,7 +185,7 @@ async def asyncio_detailed(
     Args:
         organization_id (UUID):
         alert_type (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateOrganizationAlertPreferenceRequest):
 
     Raises:
@@ -214,7 +214,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateOrganizationAlertPreferenceRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | OrganizationAlertPreferenceResponse | None:
     """Update organization alert delivery preference
 
@@ -230,7 +230,7 @@ async def asyncio(
     Args:
         organization_id (UUID):
         alert_type (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateOrganizationAlertPreferenceRequest):
 
     Raises:

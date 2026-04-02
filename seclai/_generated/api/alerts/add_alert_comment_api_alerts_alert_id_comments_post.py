@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -19,7 +18,7 @@ def _get_kwargs(
     alert_id: str,
     *,
     body: AddCommentRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -84,7 +83,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AddCommentRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     AddAlertCommentApiAlertsAlertIdCommentsPostResponseAddAlertCommentApiAlertsAlertIdCommentsPost
     | HTTPValidationError
@@ -99,7 +98,7 @@ def sync_detailed(
 
     Args:
         alert_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AddCommentRequest):
 
     Raises:
@@ -128,7 +127,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: AddCommentRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     AddAlertCommentApiAlertsAlertIdCommentsPostResponseAddAlertCommentApiAlertsAlertIdCommentsPost
     | HTTPValidationError
@@ -144,7 +143,7 @@ def sync(
 
     Args:
         alert_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AddCommentRequest):
 
     Raises:
@@ -168,7 +167,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AddCommentRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     AddAlertCommentApiAlertsAlertIdCommentsPostResponseAddAlertCommentApiAlertsAlertIdCommentsPost
     | HTTPValidationError
@@ -183,7 +182,7 @@ async def asyncio_detailed(
 
     Args:
         alert_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AddCommentRequest):
 
     Raises:
@@ -210,7 +209,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: AddCommentRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     AddAlertCommentApiAlertsAlertIdCommentsPostResponseAddAlertCommentApiAlertsAlertIdCommentsPost
     | HTTPValidationError
@@ -226,7 +225,7 @@ async def asyncio(
 
     Args:
         alert_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AddCommentRequest):
 
     Raises:

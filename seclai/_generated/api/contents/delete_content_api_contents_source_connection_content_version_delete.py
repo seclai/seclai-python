@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any, cast
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -14,7 +13,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     source_connection_content_version: str,
     *,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -66,7 +65,7 @@ def sync_detailed(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Delete content
 
@@ -81,7 +80,7 @@ def sync_detailed(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -107,7 +106,7 @@ def sync(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Delete content
 
@@ -122,7 +121,7 @@ def sync(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -143,7 +142,7 @@ async def asyncio_detailed(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Delete content
 
@@ -158,7 +157,7 @@ async def asyncio_detailed(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -182,7 +181,7 @@ async def asyncio(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Delete content
 
@@ -197,7 +196,7 @@ async def asyncio(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

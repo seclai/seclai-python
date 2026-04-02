@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -16,7 +15,7 @@ def _get_kwargs(
     agent_id: str,
     *,
     download: bool | Unset = True,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -75,7 +74,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     download: bool | Unset = True,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentExportResponse | HTTPValidationError]:
     r"""Export agent definition
 
@@ -108,7 +107,7 @@ def sync_detailed(
     Args:
         agent_id (str):
         download (bool | Unset): Return as file download Default: True.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -136,7 +135,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     download: bool | Unset = True,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentExportResponse | HTTPValidationError | None:
     r"""Export agent definition
 
@@ -169,7 +168,7 @@ def sync(
     Args:
         agent_id (str):
         download (bool | Unset): Return as file download Default: True.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -192,7 +191,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     download: bool | Unset = True,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentExportResponse | HTTPValidationError]:
     r"""Export agent definition
 
@@ -225,7 +224,7 @@ async def asyncio_detailed(
     Args:
         agent_id (str):
         download (bool | Unset): Return as file download Default: True.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -251,7 +250,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     download: bool | Unset = True,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentExportResponse | HTTPValidationError | None:
     r"""Export agent definition
 
@@ -284,7 +283,7 @@ async def asyncio(
     Args:
         agent_id (str):
         download (bool | Unset): Return as file download Default: True.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

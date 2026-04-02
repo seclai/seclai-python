@@ -14,7 +14,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     conversation_id: UUID,
     *,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -72,7 +72,7 @@ def sync_detailed(
     conversation_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Decline a governance plan
 
@@ -83,7 +83,7 @@ def sync_detailed(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -109,7 +109,7 @@ def sync(
     conversation_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Decline a governance plan
 
@@ -120,7 +120,7 @@ def sync(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -141,7 +141,7 @@ async def asyncio_detailed(
     conversation_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Decline a governance plan
 
@@ -152,7 +152,7 @@ async def asyncio_detailed(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -176,7 +176,7 @@ async def asyncio(
     conversation_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Decline a governance plan
 
@@ -187,7 +187,7 @@ async def asyncio(
 
     Args:
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

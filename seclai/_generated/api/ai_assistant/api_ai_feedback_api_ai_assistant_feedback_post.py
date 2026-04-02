@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from typing import Any
-from uuid import UUID
 
 import httpx
 
@@ -15,7 +14,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: AiAssistantFeedbackRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -68,7 +67,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantFeedbackRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AiAssistantFeedbackResponse | HTTPValidationError]:
     """Submit AI assistant feedback
 
@@ -78,7 +77,7 @@ def sync_detailed(
     Auth: requires ``X-API-Key`` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantFeedbackRequest): Request body for submitting AI assistant feedback.
 
     Raises:
@@ -105,7 +104,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantFeedbackRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AiAssistantFeedbackResponse | HTTPValidationError | None:
     """Submit AI assistant feedback
 
@@ -115,7 +114,7 @@ def sync(
     Auth: requires ``X-API-Key`` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantFeedbackRequest): Request body for submitting AI assistant feedback.
 
     Raises:
@@ -137,7 +136,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantFeedbackRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AiAssistantFeedbackResponse | HTTPValidationError]:
     """Submit AI assistant feedback
 
@@ -147,7 +146,7 @@ async def asyncio_detailed(
     Auth: requires ``X-API-Key`` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantFeedbackRequest): Request body for submitting AI assistant feedback.
 
     Raises:
@@ -172,7 +171,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: AiAssistantFeedbackRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AiAssistantFeedbackResponse | HTTPValidationError | None:
     """Submit AI assistant feedback
 
@@ -182,7 +181,7 @@ async def asyncio(
     Auth: requires ``X-API-Key`` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (AiAssistantFeedbackRequest): Request body for submitting AI assistant feedback.
 
     Raises:

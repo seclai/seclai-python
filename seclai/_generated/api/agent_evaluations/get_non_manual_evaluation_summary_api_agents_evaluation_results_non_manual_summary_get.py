@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from typing import Any
-from uuid import UUID
 
 import httpx
 
@@ -18,7 +17,7 @@ def _get_kwargs(
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -90,7 +89,7 @@ def sync_detailed(
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | NonManualEvaluationSummaryResponse]:
     """Get Non Manual Evaluation Summary
 
@@ -103,7 +102,7 @@ def sync_detailed(
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -133,7 +132,7 @@ def sync(
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | NonManualEvaluationSummaryResponse | None:
     """Get Non Manual Evaluation Summary
 
@@ -146,7 +145,7 @@ def sync(
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -171,7 +170,7 @@ async def asyncio_detailed(
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | NonManualEvaluationSummaryResponse]:
     """Get Non Manual Evaluation Summary
 
@@ -184,7 +183,7 @@ async def asyncio_detailed(
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -212,7 +211,7 @@ async def asyncio(
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | NonManualEvaluationSummaryResponse | None:
     """Get Non Manual Evaluation Summary
 
@@ -225,7 +224,7 @@ async def asyncio(
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -16,7 +15,7 @@ def _get_kwargs(
     run_id: str,
     *,
     include_step_outputs: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -75,7 +74,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Get an agent run
 
@@ -93,7 +92,7 @@ def sync_detailed(
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -121,7 +120,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Get an agent run
 
@@ -139,7 +138,7 @@ def sync(
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -162,7 +161,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Get an agent run
 
@@ -180,7 +179,7 @@ async def asyncio_detailed(
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -206,7 +205,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Get an agent run
 
@@ -224,7 +223,7 @@ async def asyncio(
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

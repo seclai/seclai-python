@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -17,7 +16,7 @@ def _get_kwargs(
     agent_id: str,
     *,
     body: TestDraftEvaluationRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -73,7 +72,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: TestDraftEvaluationRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | TestDraftEvaluationResponse]:
     """Test Draft Evaluation
 
@@ -85,7 +84,7 @@ def sync_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (TestDraftEvaluationRequest): Request body for ephemeral (non-persisted) evaluation
             testing.
 
@@ -118,7 +117,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: TestDraftEvaluationRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | TestDraftEvaluationResponse | None:
     """Test Draft Evaluation
 
@@ -130,7 +129,7 @@ def sync(
 
     Args:
         agent_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (TestDraftEvaluationRequest): Request body for ephemeral (non-persisted) evaluation
             testing.
 
@@ -158,7 +157,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: TestDraftEvaluationRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | TestDraftEvaluationResponse]:
     """Test Draft Evaluation
 
@@ -170,7 +169,7 @@ async def asyncio_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (TestDraftEvaluationRequest): Request body for ephemeral (non-persisted) evaluation
             testing.
 
@@ -201,7 +200,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: TestDraftEvaluationRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | TestDraftEvaluationResponse | None:
     """Test Draft Evaluation
 
@@ -213,7 +212,7 @@ async def asyncio(
 
     Args:
         agent_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (TestDraftEvaluationRequest): Request body for ephemeral (non-persisted) evaluation
             testing.
 

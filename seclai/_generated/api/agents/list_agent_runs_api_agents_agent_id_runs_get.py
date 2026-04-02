@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -21,7 +20,7 @@ def _get_kwargs(
     page: int | Unset = 1,
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -93,7 +92,7 @@ def sync_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
     """List agent runs
 
@@ -115,7 +114,7 @@ def sync_detailed(
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -147,7 +146,7 @@ def sync(
     page: int | Unset = 1,
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunListResponse | HTTPValidationError | None:
     """List agent runs
 
@@ -169,7 +168,7 @@ def sync(
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -196,7 +195,7 @@ async def asyncio_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
     """List agent runs
 
@@ -218,7 +217,7 @@ async def asyncio_detailed(
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -248,7 +247,7 @@ async def asyncio(
     page: int | Unset = 1,
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunListResponse | HTTPValidationError | None:
     """List agent runs
 
@@ -270,7 +269,7 @@ async def asyncio(
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

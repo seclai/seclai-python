@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from typing import Any
-from uuid import UUID
 
 import httpx
 
@@ -14,7 +13,7 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -64,7 +63,7 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
 ]:
@@ -78,7 +77,7 @@ def sync_detailed(
     - Requires `X-API-Key` header or OAuth Bearer token. Count is scoped to the caller's account.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -102,7 +101,7 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
     | None
@@ -117,7 +116,7 @@ def sync(
     - Requires `X-API-Key` header or OAuth Bearer token. Count is scoped to the caller's account.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -136,7 +135,7 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
 ]:
@@ -150,7 +149,7 @@ async def asyncio_detailed(
     - Requires `X-API-Key` header or OAuth Bearer token. Count is scoped to the caller's account.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -172,7 +171,7 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
     | None
@@ -187,7 +186,7 @@ async def asyncio(
     - Requires `X-API-Key` header or OAuth Bearer token. Count is scoped to the caller's account.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

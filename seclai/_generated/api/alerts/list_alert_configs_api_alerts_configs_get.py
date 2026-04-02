@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from typing import Any
-from uuid import UUID
 
 import httpx
 
@@ -18,7 +17,7 @@ def _get_kwargs(
     agent_id: None | str | Unset = UNSET,
     source_connection_id: None | str | Unset = UNSET,
     scope: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -104,7 +103,7 @@ def sync_detailed(
     agent_id: None | str | Unset = UNSET,
     source_connection_id: None | str | Unset = UNSET,
     scope: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | ListAlertConfigsApiAlertsConfigsGetResponseListAlertConfigsApiAlertsConfigsGet
@@ -130,7 +129,7 @@ def sync_detailed(
         agent_id (None | str | Unset): Filter by agent ID
         source_connection_id (None | str | Unset): Filter by source connection ID
         scope (None | str | Unset): Set to 'source' to list account-level source alert configs
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -160,7 +159,7 @@ def sync(
     agent_id: None | str | Unset = UNSET,
     source_connection_id: None | str | Unset = UNSET,
     scope: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | ListAlertConfigsApiAlertsConfigsGetResponseListAlertConfigsApiAlertsConfigsGet
@@ -187,7 +186,7 @@ def sync(
         agent_id (None | str | Unset): Filter by agent ID
         source_connection_id (None | str | Unset): Filter by source connection ID
         scope (None | str | Unset): Set to 'source' to list account-level source alert configs
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -212,7 +211,7 @@ async def asyncio_detailed(
     agent_id: None | str | Unset = UNSET,
     source_connection_id: None | str | Unset = UNSET,
     scope: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | ListAlertConfigsApiAlertsConfigsGetResponseListAlertConfigsApiAlertsConfigsGet
@@ -238,7 +237,7 @@ async def asyncio_detailed(
         agent_id (None | str | Unset): Filter by agent ID
         source_connection_id (None | str | Unset): Filter by source connection ID
         scope (None | str | Unset): Set to 'source' to list account-level source alert configs
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -266,7 +265,7 @@ async def asyncio(
     agent_id: None | str | Unset = UNSET,
     source_connection_id: None | str | Unset = UNSET,
     scope: None | str | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | ListAlertConfigsApiAlertsConfigsGetResponseListAlertConfigsApiAlertsConfigsGet
@@ -293,7 +292,7 @@ async def asyncio(
         agent_id (None | str | Unset): Filter by agent ID
         source_connection_id (None | str | Unset): Filter by source connection ID
         scope (None | str | Unset): Set to 'source' to list account-level source alert configs
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

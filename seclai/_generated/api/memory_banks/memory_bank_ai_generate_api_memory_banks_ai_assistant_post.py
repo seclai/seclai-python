@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from typing import Any, cast
-from uuid import UUID
 
 import httpx
 
@@ -15,7 +14,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: MemoryBankAiAssistantRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -72,7 +71,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAiAssistantRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | MemoryBankAiAssistantResponse]:
     """Generate a memory bank configuration
 
@@ -82,7 +81,7 @@ def sync_detailed(
     Auth: requires `X-API-Key` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAiAssistantRequest): Request body for the memory bank AI assistant.
 
     Raises:
@@ -109,7 +108,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAiAssistantRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | MemoryBankAiAssistantResponse | None:
     """Generate a memory bank configuration
 
@@ -119,7 +118,7 @@ def sync(
     Auth: requires `X-API-Key` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAiAssistantRequest): Request body for the memory bank AI assistant.
 
     Raises:
@@ -141,7 +140,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAiAssistantRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | MemoryBankAiAssistantResponse]:
     """Generate a memory bank configuration
 
@@ -151,7 +150,7 @@ async def asyncio_detailed(
     Auth: requires `X-API-Key` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAiAssistantRequest): Request body for the memory bank AI assistant.
 
     Raises:
@@ -176,7 +175,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: MemoryBankAiAssistantRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | MemoryBankAiAssistantResponse | None:
     """Generate a memory bank configuration
 
@@ -186,7 +185,7 @@ async def asyncio(
     Auth: requires `X-API-Key` header or OAuth Bearer token.
 
     Args:
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MemoryBankAiAssistantRequest): Request body for the memory bank AI assistant.
 
     Raises:

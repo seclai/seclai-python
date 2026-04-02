@@ -2,7 +2,6 @@ import datetime
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -19,7 +18,7 @@ def _get_kwargs(
     page: int | Unset = 1,
     limit: int | Unset = 20,
     started_after: datetime.datetime | None | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -91,7 +90,7 @@ def sync_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 20,
     started_after: datetime.datetime | None | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[CompatibleRunListResponse | HTTPValidationError]:
     """List Compatible Runs
 
@@ -105,7 +104,7 @@ def sync_detailed(
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
         started_after (datetime.datetime | None | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -137,7 +136,7 @@ def sync(
     page: int | Unset = 1,
     limit: int | Unset = 20,
     started_after: datetime.datetime | None | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> CompatibleRunListResponse | HTTPValidationError | None:
     """List Compatible Runs
 
@@ -151,7 +150,7 @@ def sync(
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
         started_after (datetime.datetime | None | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -178,7 +177,7 @@ async def asyncio_detailed(
     page: int | Unset = 1,
     limit: int | Unset = 20,
     started_after: datetime.datetime | None | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[CompatibleRunListResponse | HTTPValidationError]:
     """List Compatible Runs
 
@@ -192,7 +191,7 @@ async def asyncio_detailed(
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
         started_after (datetime.datetime | None | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -222,7 +221,7 @@ async def asyncio(
     page: int | Unset = 1,
     limit: int | Unset = 20,
     started_after: datetime.datetime | None | Unset = UNSET,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> CompatibleRunListResponse | HTTPValidationError | None:
     """List Compatible Runs
 
@@ -236,7 +235,7 @@ async def asyncio(
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
         started_after (datetime.datetime | None | Unset):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

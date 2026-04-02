@@ -16,7 +16,7 @@ def _get_kwargs(
     source_connection_id: UUID,
     *,
     body: InlineTextUploadRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -67,7 +67,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextUploadRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError]:
     """Upload inline text to a content source
 
@@ -91,7 +91,7 @@ def sync_detailed(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (InlineTextUploadRequest): Request model for inline text uploads.
 
     Raises:
@@ -120,7 +120,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextUploadRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | None:
     """Upload inline text to a content source
 
@@ -144,7 +144,7 @@ def sync(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (InlineTextUploadRequest): Request model for inline text uploads.
 
     Raises:
@@ -168,7 +168,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextUploadRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError]:
     """Upload inline text to a content source
 
@@ -192,7 +192,7 @@ async def asyncio_detailed(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (InlineTextUploadRequest): Request model for inline text uploads.
 
     Raises:
@@ -219,7 +219,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextUploadRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | None:
     """Upload inline text to a content source
 
@@ -243,7 +243,7 @@ async def asyncio(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (InlineTextUploadRequest): Request model for inline text uploads.
 
     Raises:

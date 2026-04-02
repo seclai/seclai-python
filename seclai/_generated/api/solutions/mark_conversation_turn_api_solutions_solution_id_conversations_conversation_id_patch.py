@@ -17,7 +17,7 @@ def _get_kwargs(
     conversation_id: UUID,
     *,
     body: MarkConversationTurnRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -74,7 +74,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MarkConversationTurnRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Mark conversation turn
 
@@ -86,7 +86,7 @@ def sync_detailed(
     Args:
         solution_id (UUID):
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MarkConversationTurnRequest):
 
     Raises:
@@ -117,7 +117,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: MarkConversationTurnRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Mark conversation turn
 
@@ -129,7 +129,7 @@ def sync(
     Args:
         solution_id (UUID):
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MarkConversationTurnRequest):
 
     Raises:
@@ -155,7 +155,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MarkConversationTurnRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Mark conversation turn
 
@@ -167,7 +167,7 @@ async def asyncio_detailed(
     Args:
         solution_id (UUID):
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MarkConversationTurnRequest):
 
     Raises:
@@ -196,7 +196,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: MarkConversationTurnRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Mark conversation turn
 
@@ -208,7 +208,7 @@ async def asyncio(
     Args:
         solution_id (UUID):
         conversation_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (MarkConversationTurnRequest):
 
     Raises:

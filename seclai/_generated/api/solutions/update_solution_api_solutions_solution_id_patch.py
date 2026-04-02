@@ -17,7 +17,7 @@ def _get_kwargs(
     solution_id: UUID,
     *,
     body: UpdateSolutionRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -73,7 +73,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSolutionRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SolutionResponse]:
     """Update a solution
 
@@ -83,7 +83,7 @@ def sync_detailed(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateSolutionRequest): Request model for updating a solution
 
     Raises:
@@ -112,7 +112,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSolutionRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | SolutionResponse | None:
     """Update a solution
 
@@ -122,7 +122,7 @@ def sync(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateSolutionRequest): Request model for updating a solution
 
     Raises:
@@ -146,7 +146,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSolutionRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SolutionResponse]:
     """Update a solution
 
@@ -156,7 +156,7 @@ async def asyncio_detailed(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateSolutionRequest): Request model for updating a solution
 
     Raises:
@@ -183,7 +183,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSolutionRequest,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | SolutionResponse | None:
     """Update a solution
 
@@ -193,7 +193,7 @@ async def asyncio(
 
     Args:
         solution_id (UUID):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
         body (UpdateSolutionRequest): Request model for updating a solution
 
     Raises:

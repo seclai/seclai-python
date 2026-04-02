@@ -7,7 +7,6 @@
         "name": "X-Account-Id",
         "required": false,
         "schema": {
-          "format": "uuid",
           "type": "string"
         }
       }

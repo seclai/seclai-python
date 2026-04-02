@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
-from uuid import UUID
 
 import httpx
 
@@ -17,7 +16,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     config_id: str,
     *,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -77,7 +76,7 @@ def sync_detailed(
     config_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     GetAlertConfigApiAlertsConfigsConfigIdGetResponseGetAlertConfigApiAlertsConfigsConfigIdGet
     | HTTPValidationError
@@ -94,7 +93,7 @@ def sync_detailed(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -120,7 +119,7 @@ def sync(
     config_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     GetAlertConfigApiAlertsConfigsConfigIdGetResponseGetAlertConfigApiAlertsConfigsConfigIdGet
     | HTTPValidationError
@@ -138,7 +137,7 @@ def sync(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -159,7 +158,7 @@ async def asyncio_detailed(
     config_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[
     GetAlertConfigApiAlertsConfigsConfigIdGetResponseGetAlertConfigApiAlertsConfigsConfigIdGet
     | HTTPValidationError
@@ -176,7 +175,7 @@ async def asyncio_detailed(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -200,7 +199,7 @@ async def asyncio(
     config_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: UUID | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> (
     GetAlertConfigApiAlertsConfigsConfigIdGetResponseGetAlertConfigApiAlertsConfigsConfigIdGet
     | HTTPValidationError
@@ -218,7 +217,7 @@ async def asyncio(
 
     Args:
         config_id (str):
-        x_account_id (UUID | Unset):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
