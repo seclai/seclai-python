@@ -1,18 +1,25 @@
 from http import HTTPStatus
 from typing import Any, cast
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     source_connection_content_version: str,
+    *,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
     _kwargs: dict[str, Any] = {
         "method": "delete",
         "url": "/contents/{source_connection_content_version}".format(
@@ -22,6 +29,7 @@ def _get_kwargs(
         ),
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -58,6 +66,7 @@ def sync_detailed(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Delete content
 
@@ -67,10 +76,12 @@ def sync_detailed(
     and knowledge base workflows that reference this item.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only delete content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -82,6 +93,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         source_connection_content_version=source_connection_content_version,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -95,6 +107,7 @@ def sync(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Delete content
 
@@ -104,10 +117,12 @@ def sync(
     and knowledge base workflows that reference this item.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only delete content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -120,6 +135,7 @@ def sync(
     return sync_detailed(
         source_connection_content_version=source_connection_content_version,
         client=client,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -127,6 +143,7 @@ async def asyncio_detailed(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Delete content
 
@@ -136,10 +153,12 @@ async def asyncio_detailed(
     and knowledge base workflows that reference this item.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only delete content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -151,6 +170,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         source_connection_content_version=source_connection_content_version,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -162,6 +182,7 @@ async def asyncio(
     source_connection_content_version: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Delete content
 
@@ -171,10 +192,12 @@ async def asyncio(
     and knowledge base workflows that reference this item.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only delete content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -188,5 +211,6 @@ async def asyncio(
         await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
             client=client,
+            x_account_id=x_account_id,
         )
     ).parsed

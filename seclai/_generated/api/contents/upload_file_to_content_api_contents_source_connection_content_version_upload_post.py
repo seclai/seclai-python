@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -11,15 +12,18 @@ from ...models.body_upload_file_to_content_api_contents_source_connection_conten
 )
 from ...models.file_upload_response import FileUploadResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     source_connection_content_version: str,
     *,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -71,6 +75,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
     r"""Replace a content version with a new upload
 
@@ -126,10 +131,12 @@ def sync_detailed(
     `metadata_author=...`). These override keys from `metadata`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only replace content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only replace content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
@@ -143,6 +150,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         source_connection_content_version=source_connection_content_version,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -157,6 +165,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+    x_account_id: UUID | Unset = UNSET,
 ) -> FileUploadResponse | HTTPValidationError | None:
     r"""Replace a content version with a new upload
 
@@ -212,10 +221,12 @@ def sync(
     `metadata_author=...`). These override keys from `metadata`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only replace content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only replace content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
@@ -230,6 +241,7 @@ def sync(
         source_connection_content_version=source_connection_content_version,
         client=client,
         body=body,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -238,6 +250,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
     r"""Replace a content version with a new upload
 
@@ -293,10 +306,12 @@ async def asyncio_detailed(
     `metadata_author=...`). These override keys from `metadata`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only replace content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only replace content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
@@ -310,6 +325,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         source_connection_content_version=source_connection_content_version,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -322,6 +338,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
+    x_account_id: UUID | Unset = UNSET,
 ) -> FileUploadResponse | HTTPValidationError | None:
     r"""Replace a content version with a new upload
 
@@ -377,10 +394,12 @@ async def asyncio(
     `metadata_author=...`). These override keys from `metadata`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only replace content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only replace content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
@@ -396,5 +415,6 @@ async def asyncio(
             source_connection_content_version=source_connection_content_version,
             client=client,
             body=body,
+            x_account_id=x_account_id,
         )
     ).parsed

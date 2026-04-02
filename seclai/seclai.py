@@ -1603,6 +1603,24 @@ class Seclai(_SeclaiBase):
         """
         self.request("DELETE", f"/agents/{agent_id}")
 
+    # ── Agent Export ────────────────────────────────────────────────────────────
+
+    def export_agent(self, agent_id: str, *, download: bool = True) -> dict[str, Any]:
+        """Export an agent definition as a portable JSON snapshot.
+
+        Args:
+            agent_id: Agent identifier.
+            download: When True (default), the server sets Content-Disposition: attachment.
+
+        Returns:
+            The exported agent snapshot.
+        """
+        params = _strip_none({"download": download})
+        return cast(
+            dict[str, Any],
+            self.request("GET", f"/agents/{agent_id}/export", params=params),
+        )
+
     # ── Agent Definitions ─────────────────────────────────────────────────────
 
     def get_agent_definition(self, agent_id: str) -> dict[str, Any]:
@@ -4773,6 +4791,26 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
         """
         await self.request("DELETE", f"/agents/{agent_id}")
+
+    # ── Agent Export ──────────────────────────────────────────────────────────
+
+    async def export_agent(
+        self, agent_id: str, *, download: bool = True
+    ) -> dict[str, Any]:
+        """Export an agent definition as a portable JSON snapshot.
+
+        Args:
+            agent_id: Agent identifier.
+            download: When True (default), the server sets Content-Disposition: attachment.
+
+        Returns:
+            The exported agent snapshot.
+        """
+        params = _strip_none({"download": download})
+        return cast(
+            dict[str, Any],
+            await self.request("GET", f"/agents/{agent_id}/export", params=params),
+        )
 
     # ── Agent Definitions ─────────────────────────────────────────────────────
 

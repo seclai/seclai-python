@@ -21,6 +21,7 @@ class AgentRunStepResponse:
         credits_used (float): Credits consumed by the step attempt, if applicable.
         duration_seconds (float | None): Duration of the step attempt in seconds.
         ended_at (None | str): Timestamp when the step attempt ended.
+        input_ (None | str): Input provided to the step, if any.
         output (None | str): Output produced by the step, if any.
         output_content_type (None | str): Content type of the step output, if any.
         started_at (None | str): Timestamp when the step attempt started.
@@ -32,6 +33,7 @@ class AgentRunStepResponse:
     credits_used: float
     duration_seconds: float | None
     ended_at: None | str
+    input_: None | str
     output: None | str
     output_content_type: None | str
     started_at: None | str
@@ -49,6 +51,9 @@ class AgentRunStepResponse:
 
         ended_at: None | str
         ended_at = self.ended_at
+
+        input_: None | str
+        input_ = self.input_
 
         output: None | str
         output = self.output
@@ -71,6 +76,7 @@ class AgentRunStepResponse:
                 "credits_used": credits_used,
                 "duration_seconds": duration_seconds,
                 "ended_at": ended_at,
+                "input": input_,
                 "output": output,
                 "output_content_type": output_content_type,
                 "started_at": started_at,
@@ -102,6 +108,13 @@ class AgentRunStepResponse:
 
         ended_at = _parse_ended_at(d.pop("ended_at"))
 
+        def _parse_input_(data: object) -> None | str:
+            if data is None:
+                return data
+            return cast(None | str, data)
+
+        input_ = _parse_input_(d.pop("input"))
+
         def _parse_output(data: object) -> None | str:
             if data is None:
                 return data
@@ -132,6 +145,7 @@ class AgentRunStepResponse:
             credits_used=credits_used,
             duration_seconds=duration_seconds,
             ended_at=ended_at,
+            input_=input_,
             output=output,
             output_content_type=output_content_type,
             started_at=started_at,

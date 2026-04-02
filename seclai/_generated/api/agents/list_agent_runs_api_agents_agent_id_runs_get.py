@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -8,6 +9,9 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_run_list_response import AgentRunListResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.pending_processing_completed_failed_status import (
+    PendingProcessingCompletedFailedStatus,
+)
 from ...types import UNSET, Response, Unset
 
 
@@ -16,12 +20,27 @@ def _get_kwargs(
     *,
     page: int | Unset = 1,
     limit: int | Unset = 50,
+    status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
     params: dict[str, Any] = {}
 
     params["page"] = page
 
     params["limit"] = limit
+
+    json_status: None | str | Unset
+    if isinstance(status, Unset):
+        json_status = UNSET
+    elif isinstance(status, PendingProcessingCompletedFailedStatus):
+        json_status = status.value
+    else:
+        json_status = status
+    params["status"] = json_status
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -33,6 +52,7 @@ def _get_kwargs(
         "params": params,
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -72,25 +92,30 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 50,
+    status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
 
     Typical use cases:
-    - Build a run history UI for an agent.
+    - Build a traces UI for an agent.
     - Debug recent executions and inspect terminal statuses.
 
     Notes:
     - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only list runs for agents in your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only list runs for agents in your
+    account.
 
     Args:
         agent_id (str):
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
+        status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -104,6 +129,8 @@ def sync_detailed(
         agent_id=agent_id,
         page=page,
         limit=limit,
+        status=status,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -119,25 +146,30 @@ def sync(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 50,
+    status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AgentRunListResponse | HTTPValidationError | None:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
 
     Typical use cases:
-    - Build a run history UI for an agent.
+    - Build a traces UI for an agent.
     - Debug recent executions and inspect terminal statuses.
 
     Notes:
     - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only list runs for agents in your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only list runs for agents in your
+    account.
 
     Args:
         agent_id (str):
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
+        status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -152,6 +184,8 @@ def sync(
         client=client,
         page=page,
         limit=limit,
+        status=status,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -161,25 +195,30 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 50,
+    status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
 
     Typical use cases:
-    - Build a run history UI for an agent.
+    - Build a traces UI for an agent.
     - Debug recent executions and inspect terminal statuses.
 
     Notes:
     - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only list runs for agents in your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only list runs for agents in your
+    account.
 
     Args:
         agent_id (str):
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
+        status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -193,6 +232,8 @@ async def asyncio_detailed(
         agent_id=agent_id,
         page=page,
         limit=limit,
+        status=status,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -206,25 +247,30 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 50,
+    status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AgentRunListResponse | HTTPValidationError | None:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
 
     Typical use cases:
-    - Build a run history UI for an agent.
+    - Build a traces UI for an agent.
     - Debug recent executions and inspect terminal statuses.
 
     Notes:
     - This endpoint returns a summary list. Fetch full details with `GET /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only list runs for agents in your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only list runs for agents in your
+    account.
 
     Args:
         agent_id (str):
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 50.
+        status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -240,5 +286,7 @@ async def asyncio(
             client=client,
             page=page,
             limit=limit,
+            status=status,
+            x_account_id=x_account_id,
         )
     ).parsed
