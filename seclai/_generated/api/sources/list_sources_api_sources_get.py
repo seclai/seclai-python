@@ -17,7 +17,12 @@ def _get_kwargs(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
     params: dict[str, Any] = {}
 
     params["page"] = page
@@ -43,6 +48,7 @@ def _get_kwargs(
         "params": params,
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -84,6 +90,7 @@ def sync_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
     """List sources
 
@@ -98,16 +105,17 @@ def sync_detailed(
     - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
 
     Auth & scoping:
-    - Requires `X-API-Key`. Results are scoped to the API key's account.
-    - The optional `account_id` query param is only allowed when it matches the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. Results are scoped to the caller's account.
+    - The optional `account_id` query param is only allowed when it matches the caller's account.
 
     Args:
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
-        account_id (None | str | Unset): List sources for the given account. Defaults to the api
-            key's account.
+        account_id (None | str | Unset): List sources for the given account. Defaults to the
+            caller's account.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -123,6 +131,7 @@ def sync_detailed(
         sort=sort,
         order=order,
         account_id=account_id,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -140,6 +149,7 @@ def sync(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
     """List sources
 
@@ -154,16 +164,17 @@ def sync(
     - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
 
     Auth & scoping:
-    - Requires `X-API-Key`. Results are scoped to the API key's account.
-    - The optional `account_id` query param is only allowed when it matches the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. Results are scoped to the caller's account.
+    - The optional `account_id` query param is only allowed when it matches the caller's account.
 
     Args:
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
-        account_id (None | str | Unset): List sources for the given account. Defaults to the api
-            key's account.
+        account_id (None | str | Unset): List sources for the given account. Defaults to the
+            caller's account.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -180,6 +191,7 @@ def sync(
         sort=sort,
         order=order,
         account_id=account_id,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -191,6 +203,7 @@ async def asyncio_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
     """List sources
 
@@ -205,16 +218,17 @@ async def asyncio_detailed(
     - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
 
     Auth & scoping:
-    - Requires `X-API-Key`. Results are scoped to the API key's account.
-    - The optional `account_id` query param is only allowed when it matches the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. Results are scoped to the caller's account.
+    - The optional `account_id` query param is only allowed when it matches the caller's account.
 
     Args:
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
-        account_id (None | str | Unset): List sources for the given account. Defaults to the api
-            key's account.
+        account_id (None | str | Unset): List sources for the given account. Defaults to the
+            caller's account.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -230,6 +244,7 @@ async def asyncio_detailed(
         sort=sort,
         order=order,
         account_id=account_id,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -245,6 +260,7 @@ async def asyncio(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
     """List sources
 
@@ -259,16 +275,17 @@ async def asyncio(
     - Sorting: `sort` (created_at/updated_at/name) and `order` (asc/desc).
 
     Auth & scoping:
-    - Requires `X-API-Key`. Results are scoped to the API key's account.
-    - The optional `account_id` query param is only allowed when it matches the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. Results are scoped to the caller's account.
+    - The optional `account_id` query param is only allowed when it matches the caller's account.
 
     Args:
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
-        account_id (None | str | Unset): List sources for the given account. Defaults to the api
-            key's account.
+        account_id (None | str | Unset): List sources for the given account. Defaults to the
+            caller's account.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -286,5 +303,6 @@ async def asyncio(
             sort=sort,
             order=order,
             account_id=account_id,
+            x_account_id=x_account_id,
         )
     ).parsed

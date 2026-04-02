@@ -9,15 +9,18 @@ from ...client import AuthenticatedClient, Client
 from ...models.agent_run_request import AgentRunRequest
 from ...models.agent_run_response import AgentRunResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     agent_id: str,
     *,
     body: AgentRunRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -69,6 +72,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Run an agent
 
@@ -83,6 +87,9 @@ def sync_detailed(
     - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
 
     Key fields:
+    - `input`: text input for agents with a `dynamic_input` trigger.
+    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
+    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
     - `priority`: set true for latency-sensitive, user-facing work.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
@@ -91,10 +98,12 @@ def sync_detailed(
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -108,6 +117,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -122,6 +132,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Run an agent
 
@@ -136,6 +147,9 @@ def sync(
     - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
 
     Key fields:
+    - `input`: text input for agents with a `dynamic_input` trigger.
+    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
+    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
     - `priority`: set true for latency-sensitive, user-facing work.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
@@ -144,10 +158,12 @@ def sync(
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -162,6 +178,7 @@ def sync(
         agent_id=agent_id,
         client=client,
         body=body,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -170,6 +187,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Run an agent
 
@@ -184,6 +202,9 @@ async def asyncio_detailed(
     - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
 
     Key fields:
+    - `input`: text input for agents with a `dynamic_input` trigger.
+    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
+    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
     - `priority`: set true for latency-sensitive, user-facing work.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
@@ -192,10 +213,12 @@ async def asyncio_detailed(
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -209,6 +232,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -221,6 +245,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Run an agent
 
@@ -235,6 +260,9 @@ async def asyncio(
     - Use `POST /agents/{agent_id}/runs/stream` if you need real-time progress via SSE.
 
     Key fields:
+    - `input`: text input for agents with a `dynamic_input` trigger.
+    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
+    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
     - `priority`: set true for latency-sensitive, user-facing work.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
@@ -243,10 +271,12 @@ async def asyncio(
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -262,5 +292,6 @@ async def asyncio(
             agent_id=agent_id,
             client=client,
             body=body,
+            x_account_id=x_account_id,
         )
     ).parsed

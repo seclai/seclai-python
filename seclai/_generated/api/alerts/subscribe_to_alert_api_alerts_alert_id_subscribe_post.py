@@ -1,0 +1,228 @@
+from http import HTTPStatus
+from typing import Any
+from urllib.parse import quote
+
+import httpx
+
+from ... import errors
+from ...client import AuthenticatedClient, Client
+from ...models.http_validation_error import HTTPValidationError
+from ...models.subscribe_to_alert_api_alerts_alert_id_subscribe_post_response_subscribe_to_alert_api_alerts_alert_id_subscribe_post import (
+    SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost,
+)
+from ...types import UNSET, Response, Unset
+
+
+def _get_kwargs(
+    alert_id: str,
+    *,
+    x_account_id: str | Unset = UNSET,
+) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
+    _kwargs: dict[str, Any] = {
+        "method": "post",
+        "url": "/alerts/{alert_id}/subscribe".format(
+            alert_id=quote(str(alert_id), safe=""),
+        ),
+    }
+
+    _kwargs["headers"] = headers
+    return _kwargs
+
+
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> (
+    HTTPValidationError
+    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+    | None
+):
+    if response.status_code == 200:
+        response_200 = SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost.from_dict(
+            response.json()
+        )
+
+        return response_200
+
+    if response.status_code == 422:
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
+
+    if client.raise_on_unexpected_status:
+        raise errors.UnexpectedStatus(response.status_code, response.content)
+    else:
+        return None
+
+
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[
+    HTTPValidationError
+    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+]:
+    return Response(
+        status_code=HTTPStatus(response.status_code),
+        content=response.content,
+        headers=response.headers,
+        parsed=_parse_response(client=client, response=response),
+    )
+
+
+def sync_detailed(
+    alert_id: str,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
+) -> Response[
+    HTTPValidationError
+    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+]:
+    """Subscribe to alert
+
+     Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
+    status changes or new comments are added.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token.
+
+    Args:
+        alert_id (str):
+        x_account_id (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost]
+    """
+
+    kwargs = _get_kwargs(
+        alert_id=alert_id,
+        x_account_id=x_account_id,
+    )
+
+    response = client.get_httpx_client().request(
+        **kwargs,
+    )
+
+    return _build_response(client=client, response=response)
+
+
+def sync(
+    alert_id: str,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
+) -> (
+    HTTPValidationError
+    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+    | None
+):
+    """Subscribe to alert
+
+     Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
+    status changes or new comments are added.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token.
+
+    Args:
+        alert_id (str):
+        x_account_id (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+    """
+
+    return sync_detailed(
+        alert_id=alert_id,
+        client=client,
+        x_account_id=x_account_id,
+    ).parsed
+
+
+async def asyncio_detailed(
+    alert_id: str,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
+) -> Response[
+    HTTPValidationError
+    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+]:
+    """Subscribe to alert
+
+     Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
+    status changes or new comments are added.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token.
+
+    Args:
+        alert_id (str):
+        x_account_id (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost]
+    """
+
+    kwargs = _get_kwargs(
+        alert_id=alert_id,
+        x_account_id=x_account_id,
+    )
+
+    response = await client.get_async_httpx_client().request(**kwargs)
+
+    return _build_response(client=client, response=response)
+
+
+async def asyncio(
+    alert_id: str,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
+) -> (
+    HTTPValidationError
+    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+    | None
+):
+    """Subscribe to alert
+
+     Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
+    status changes or new comments are added.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token.
+
+    Args:
+        alert_id (str):
+        x_account_id (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+    """
+
+    return (
+        await asyncio_detailed(
+            alert_id=alert_id,
+            client=client,
+            x_account_id=x_account_id,
+        )
+    ).parsed

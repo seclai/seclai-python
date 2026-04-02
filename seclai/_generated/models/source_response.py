@@ -42,8 +42,11 @@ class SourceResponse:
         dimensions (int | None | Unset): Dimensions of the embedding model.
         embedding_model (None | str | Unset): Embedding model used for the source connection.
         embedding_model_type (None | str | Unset): Type of the embedding model.
+        free_retention_days (int | None | Unset): Number of days content is stored for free before billing applies.
         has_historical_data (bool | Unset): Indicates if the source connection has historical data. Default: False.
         readonly (bool | Unset): Indicates if the source connection is read-only. Default: False.
+        system_managed (bool | Unset): Indicates if this source is automatically managed by the system (e.g., agent
+            traces). Default: False.
     """
 
     account_id: UUID
@@ -71,8 +74,10 @@ class SourceResponse:
     dimensions: int | None | Unset = UNSET
     embedding_model: None | str | Unset = UNSET
     embedding_model_type: None | str | Unset = UNSET
+    free_retention_days: int | None | Unset = UNSET
     has_historical_data: bool | Unset = False
     readonly: bool | Unset = False
+    system_managed: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -173,9 +178,17 @@ class SourceResponse:
         else:
             embedding_model_type = self.embedding_model_type
 
+        free_retention_days: int | None | Unset
+        if isinstance(self.free_retention_days, Unset):
+            free_retention_days = UNSET
+        else:
+            free_retention_days = self.free_retention_days
+
         has_historical_data = self.has_historical_data
 
         readonly = self.readonly
+
+        system_managed = self.system_managed
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -219,10 +232,14 @@ class SourceResponse:
             field_dict["embedding_model"] = embedding_model
         if embedding_model_type is not UNSET:
             field_dict["embedding_model_type"] = embedding_model_type
+        if free_retention_days is not UNSET:
+            field_dict["free_retention_days"] = free_retention_days
         if has_historical_data is not UNSET:
             field_dict["has_historical_data"] = has_historical_data
         if readonly is not UNSET:
             field_dict["readonly"] = readonly
+        if system_managed is not UNSET:
+            field_dict["system_managed"] = system_managed
 
         return field_dict
 
@@ -392,9 +409,22 @@ class SourceResponse:
             d.pop("embedding_model_type", UNSET)
         )
 
+        def _parse_free_retention_days(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        free_retention_days = _parse_free_retention_days(
+            d.pop("free_retention_days", UNSET)
+        )
+
         has_historical_data = d.pop("has_historical_data", UNSET)
 
         readonly = d.pop("readonly", UNSET)
+
+        system_managed = d.pop("system_managed", UNSET)
 
         source_response = cls(
             account_id=account_id,
@@ -422,8 +452,10 @@ class SourceResponse:
             dimensions=dimensions,
             embedding_model=embedding_model,
             embedding_model_type=embedding_model_type,
+            free_retention_days=free_retention_days,
             has_historical_data=has_historical_data,
             readonly=readonly,
+            system_managed=system_managed,
         )
 
         source_response.additional_properties = d

@@ -8,12 +8,18 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_run_response import AgentRunResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     run_id: str,
+    *,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
     _kwargs: dict[str, Any] = {
         "method": "delete",
         "url": "/agents/runs/{run_id}".format(
@@ -21,6 +27,7 @@ def _get_kwargs(
         ),
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -58,6 +65,7 @@ def sync_detailed(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Cancel an agent run
 
@@ -66,10 +74,12 @@ def sync_detailed(
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your
+    account.
 
     Args:
         run_id (str):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -81,6 +91,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         run_id=run_id,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -94,6 +105,7 @@ def sync(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Cancel an agent run
 
@@ -102,10 +114,12 @@ def sync(
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your
+    account.
 
     Args:
         run_id (str):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -118,6 +132,7 @@ def sync(
     return sync_detailed(
         run_id=run_id,
         client=client,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -125,6 +140,7 @@ async def asyncio_detailed(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Cancel an agent run
 
@@ -133,10 +149,12 @@ async def asyncio_detailed(
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your
+    account.
 
     Args:
         run_id (str):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -148,6 +166,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         run_id=run_id,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -159,6 +178,7 @@ async def asyncio(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Cancel an agent run
 
@@ -167,10 +187,12 @@ async def asyncio(
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only cancel runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your
+    account.
 
     Args:
         run_id (str):
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -184,5 +206,6 @@ async def asyncio(
         await asyncio_detailed(
             run_id=run_id,
             client=client,
+            x_account_id=x_account_id,
         )
     ).parsed

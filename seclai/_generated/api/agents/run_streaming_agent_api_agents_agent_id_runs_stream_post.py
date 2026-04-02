@@ -8,15 +8,18 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_run_stream_request import AgentRunStreamRequest
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     agent_id: str,
     *,
     body: AgentRunStreamRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -67,6 +70,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Run an agent (stream events)
 
@@ -80,16 +84,23 @@ def sync_detailed(
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
+    Input options (for `dynamic_input` triggers):
+    - `input`: text input passed directly.
+    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
+    exclusive with `input`).
+
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -103,6 +114,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -117,6 +129,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Run an agent (stream events)
 
@@ -130,16 +143,23 @@ def sync(
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
+    Input options (for `dynamic_input` triggers):
+    - `input`: text input passed directly.
+    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
+    exclusive with `input`).
+
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -154,6 +174,7 @@ def sync(
         agent_id=agent_id,
         client=client,
         body=body,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -162,6 +183,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Run an agent (stream events)
 
@@ -175,16 +197,23 @@ async def asyncio_detailed(
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
+    Input options (for `dynamic_input` triggers):
+    - `input`: text input passed directly.
+    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
+    exclusive with `input`).
+
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -198,6 +227,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -210,6 +240,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
+    x_account_id: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Run an agent (stream events)
 
@@ -223,16 +254,23 @@ async def asyncio(
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
+    Input options (for `dynamic_input` triggers):
+    - `input`: text input passed directly.
+    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
+    exclusive with `input`).
+
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
 
     Auth & scoping:
-    - Requires `X-API-Key`. All resources are scoped to the API key's account.
+    - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
+    account.
 
     Args:
         agent_id (str):
+        x_account_id (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -248,5 +286,6 @@ async def asyncio(
             agent_id=agent_id,
             client=client,
             body=body,
+            x_account_id=x_account_id,
         )
     ).parsed

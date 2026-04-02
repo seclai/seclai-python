@@ -16,7 +16,12 @@ def _get_kwargs(
     *,
     start: int | Unset = 0,
     end: int | Unset = 5000,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
     params: dict[str, Any] = {}
 
     params["start"] = start
@@ -35,6 +40,7 @@ def _get_kwargs(
         "params": params,
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -74,6 +80,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     start: int | Unset = 0,
     end: int | Unset = 5000,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[ContentDetailResponse | HTTPValidationError]:
     """Get content details
 
@@ -88,12 +95,14 @@ def sync_detailed(
     through large documents.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -107,6 +116,7 @@ def sync_detailed(
         source_connection_content_version=source_connection_content_version,
         start=start,
         end=end,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -122,6 +132,7 @@ def sync(
     client: AuthenticatedClient | Client,
     start: int | Unset = 0,
     end: int | Unset = 5000,
+    x_account_id: str | Unset = UNSET,
 ) -> ContentDetailResponse | HTTPValidationError | None:
     """Get content details
 
@@ -136,12 +147,14 @@ def sync(
     through large documents.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -156,6 +169,7 @@ def sync(
         client=client,
         start=start,
         end=end,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -165,6 +179,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     start: int | Unset = 0,
     end: int | Unset = 5000,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[ContentDetailResponse | HTTPValidationError]:
     """Get content details
 
@@ -179,12 +194,14 @@ async def asyncio_detailed(
     through large documents.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -198,6 +215,7 @@ async def asyncio_detailed(
         source_connection_content_version=source_connection_content_version,
         start=start,
         end=end,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -211,6 +229,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     start: int | Unset = 0,
     end: int | Unset = 5000,
+    x_account_id: str | Unset = UNSET,
 ) -> ContentDetailResponse | HTTPValidationError | None:
     """Get content details
 
@@ -225,12 +244,14 @@ async def asyncio(
     through large documents.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access content belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
 
     Args:
         source_connection_content_version (str):
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -246,5 +267,6 @@ async def asyncio(
             client=client,
             start=start,
             end=end,
+            x_account_id=x_account_id,
         )
     ).parsed

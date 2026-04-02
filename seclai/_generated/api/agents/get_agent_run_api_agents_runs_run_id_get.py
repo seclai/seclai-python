@@ -15,7 +15,12 @@ def _get_kwargs(
     run_id: str,
     *,
     include_step_outputs: bool | Unset = False,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
     params: dict[str, Any] = {}
 
     params["include_step_outputs"] = include_step_outputs
@@ -30,6 +35,7 @@ def _get_kwargs(
         "params": params,
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -68,6 +74,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Get an agent run
 
@@ -78,12 +85,14 @@ def sync_detailed(
     `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access runs belonging to your
+    account.
 
     Args:
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -96,6 +105,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         run_id=run_id,
         include_step_outputs=include_step_outputs,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -110,6 +120,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Get an agent run
 
@@ -120,12 +131,14 @@ def sync(
     `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access runs belonging to your
+    account.
 
     Args:
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -139,6 +152,7 @@ def sync(
         run_id=run_id,
         client=client,
         include_step_outputs=include_step_outputs,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -147,6 +161,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[AgentRunResponse | HTTPValidationError]:
     """Get an agent run
 
@@ -157,12 +172,14 @@ async def asyncio_detailed(
     `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access runs belonging to your
+    account.
 
     Args:
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -175,6 +192,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         run_id=run_id,
         include_step_outputs=include_step_outputs,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -187,6 +205,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     include_step_outputs: bool | Unset = False,
+    x_account_id: str | Unset = UNSET,
 ) -> AgentRunResponse | HTTPValidationError | None:
     """Get an agent run
 
@@ -197,12 +216,14 @@ async def asyncio(
     `include_step_outputs=true` to include per-step outputs, timing, durations, and credits.
 
     Auth & scoping:
-    - Requires `X-API-Key`. You can only access runs belonging to your account.
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access runs belonging to your
+    account.
 
     Args:
         run_id (str):
         include_step_outputs (bool | Unset): If true, include per-step outputs with timing,
             durations, and credits. Default: False.
+        x_account_id (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -217,5 +238,6 @@ async def asyncio(
             run_id=run_id,
             client=client,
             include_step_outputs=include_step_outputs,
+            x_account_id=x_account_id,
         )
     ).parsed

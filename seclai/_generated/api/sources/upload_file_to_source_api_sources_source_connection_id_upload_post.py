@@ -10,15 +10,18 @@ from ...models.body_upload_file_to_source_api_sources_source_connection_id_uploa
     BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
 )
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     source_connection_id: str,
     *,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
+    x_account_id: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -63,6 +66,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError]:
     r"""Upload a file to a content source
 
@@ -120,6 +124,7 @@ def sync_detailed(
 
     Args:
         source_connection_id (str):
+        x_account_id (str | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:
@@ -133,6 +138,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         source_connection_id=source_connection_id,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = client.get_httpx_client().request(
@@ -147,6 +153,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | None:
     r"""Upload a file to a content source
 
@@ -204,6 +211,7 @@ def sync(
 
     Args:
         source_connection_id (str):
+        x_account_id (str | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:
@@ -218,6 +226,7 @@ def sync(
         source_connection_id=source_connection_id,
         client=client,
         body=body,
+        x_account_id=x_account_id,
     ).parsed
 
 
@@ -226,6 +235,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
+    x_account_id: str | Unset = UNSET,
 ) -> Response[HTTPValidationError]:
     r"""Upload a file to a content source
 
@@ -283,6 +293,7 @@ async def asyncio_detailed(
 
     Args:
         source_connection_id (str):
+        x_account_id (str | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:
@@ -296,6 +307,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         source_connection_id=source_connection_id,
         body=body,
+        x_account_id=x_account_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -308,6 +320,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
+    x_account_id: str | Unset = UNSET,
 ) -> HTTPValidationError | None:
     r"""Upload a file to a content source
 
@@ -365,6 +378,7 @@ async def asyncio(
 
     Args:
         source_connection_id (str):
+        x_account_id (str | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:
@@ -380,5 +394,6 @@ async def asyncio(
             source_connection_id=source_connection_id,
             client=client,
             body=body,
+            x_account_id=x_account_id,
         )
     ).parsed
