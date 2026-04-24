@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -19,7 +20,7 @@ def _get_kwargs(
     conversation_id: str,
     *,
     body: MarkAiSuggestionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -86,7 +87,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
@@ -105,7 +106,7 @@ def sync_detailed(
     Args:
         agent_id (str):
         conversation_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:
@@ -136,7 +137,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
@@ -156,7 +157,7 @@ def sync(
     Args:
         agent_id (str):
         conversation_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:
@@ -182,7 +183,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
@@ -201,7 +202,7 @@ async def asyncio_detailed(
     Args:
         agent_id (str):
         conversation_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:
@@ -230,7 +231,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
@@ -250,7 +251,7 @@ async def asyncio(
     Args:
         agent_id (str):
         conversation_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:

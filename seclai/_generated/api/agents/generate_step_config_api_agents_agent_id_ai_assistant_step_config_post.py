@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ def _get_kwargs(
     agent_id: str,
     *,
     body: GenerateStepConfigRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -72,7 +73,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: GenerateStepConfigRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[GenerateStepConfigResponse | HTTPValidationError]:
     """Generate step configuration
 
@@ -88,7 +89,7 @@ def sync_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GenerateStepConfigRequest):
 
     Raises:
@@ -117,7 +118,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: GenerateStepConfigRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> GenerateStepConfigResponse | HTTPValidationError | None:
     """Generate step configuration
 
@@ -133,7 +134,7 @@ def sync(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GenerateStepConfigRequest):
 
     Raises:
@@ -157,7 +158,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: GenerateStepConfigRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[GenerateStepConfigResponse | HTTPValidationError]:
     """Generate step configuration
 
@@ -173,7 +174,7 @@ async def asyncio_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GenerateStepConfigRequest):
 
     Raises:
@@ -200,7 +201,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: GenerateStepConfigRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> GenerateStepConfigResponse | HTTPValidationError | None:
     """Generate step configuration
 
@@ -216,7 +217,7 @@ async def asyncio(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GenerateStepConfigRequest):
 
     Raises:

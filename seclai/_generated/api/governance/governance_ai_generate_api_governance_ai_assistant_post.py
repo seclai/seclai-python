@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any, cast
+from uuid import UUID
 
 import httpx
 
@@ -14,7 +15,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: GovernanceAiAssistantRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -75,7 +76,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]:
     """Generate a governance plan
 
@@ -85,7 +86,7 @@ def sync_detailed(
     Auth: requires `X-API-Key` header or OAuth Bearer token with governance access.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:
@@ -112,7 +113,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | GovernanceAiAssistantResponse | HTTPValidationError | None:
     """Generate a governance plan
 
@@ -122,7 +123,7 @@ def sync(
     Auth: requires `X-API-Key` header or OAuth Bearer token with governance access.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:
@@ -144,7 +145,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]:
     """Generate a governance plan
 
@@ -154,7 +155,7 @@ async def asyncio_detailed(
     Auth: requires `X-API-Key` header or OAuth Bearer token with governance access.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:
@@ -179,7 +180,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | GovernanceAiAssistantResponse | HTTPValidationError | None:
     """Generate a governance plan
 
@@ -189,7 +190,7 @@ async def asyncio(
     Auth: requires `X-API-Key` header or OAuth Bearer token with governance access.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:

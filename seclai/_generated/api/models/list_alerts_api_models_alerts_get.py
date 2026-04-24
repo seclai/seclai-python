@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -18,7 +19,7 @@ def _get_kwargs(
     unread_only: bool | Unset = False,
     limit: int | Unset = 50,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -99,7 +100,7 @@ def sync_detailed(
     unread_only: bool | Unset = False,
     limit: int | Unset = 50,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
@@ -119,7 +120,7 @@ def sync_detailed(
         unread_only (bool | Unset): When true, only return unread alerts. Default: False.
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -151,7 +152,7 @@ def sync(
     unread_only: bool | Unset = False,
     limit: int | Unset = 50,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
@@ -172,7 +173,7 @@ def sync(
         unread_only (bool | Unset): When true, only return unread alerts. Default: False.
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -199,7 +200,7 @@ async def asyncio_detailed(
     unread_only: bool | Unset = False,
     limit: int | Unset = 50,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     HTTPValidationError
     | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
@@ -219,7 +220,7 @@ async def asyncio_detailed(
         unread_only (bool | Unset): When true, only return unread alerts. Default: False.
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -249,7 +250,7 @@ async def asyncio(
     unread_only: bool | Unset = False,
     limit: int | Unset = 50,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     HTTPValidationError
     | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
@@ -270,7 +271,7 @@ async def asyncio(
         unread_only (bool | Unset): When true, only return unread alerts. Default: False.
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

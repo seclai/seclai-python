@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -17,7 +18,7 @@ def _get_kwargs(
     source_connection_id: str,
     *,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -66,7 +67,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError]:
     r"""Upload a file to a content source
 
@@ -77,7 +78,6 @@ def sync_detailed(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -124,7 +124,7 @@ def sync_detailed(
 
     Args:
         source_connection_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:
@@ -153,7 +153,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | None:
     r"""Upload a file to a content source
 
@@ -164,7 +164,6 @@ def sync(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -211,7 +210,7 @@ def sync(
 
     Args:
         source_connection_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:
@@ -235,7 +234,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError]:
     r"""Upload a file to a content source
 
@@ -246,7 +245,6 @@ async def asyncio_detailed(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -293,7 +291,7 @@ async def asyncio_detailed(
 
     Args:
         source_connection_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:
@@ -320,7 +318,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | None:
     r"""Upload a file to a content source
 
@@ -331,7 +329,6 @@ async def asyncio(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -378,7 +375,7 @@ async def asyncio(
 
     Args:
         source_connection_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost):
 
     Raises:

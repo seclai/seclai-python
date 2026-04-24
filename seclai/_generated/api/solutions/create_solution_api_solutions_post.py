@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -14,7 +15,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: CreateSolutionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -67,7 +68,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSolutionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SolutionResponse]:
     """Create a solution
 
@@ -77,7 +78,7 @@ def sync_detailed(
     `name` and optional `description` in the request body.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSolutionRequest): Request model for creating a new solution
 
     Raises:
@@ -104,7 +105,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSolutionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SolutionResponse | None:
     """Create a solution
 
@@ -114,7 +115,7 @@ def sync(
     `name` and optional `description` in the request body.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSolutionRequest): Request model for creating a new solution
 
     Raises:
@@ -136,7 +137,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSolutionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SolutionResponse]:
     """Create a solution
 
@@ -146,7 +147,7 @@ async def asyncio_detailed(
     `name` and optional `description` in the request body.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSolutionRequest): Request model for creating a new solution
 
     Raises:
@@ -171,7 +172,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSolutionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SolutionResponse | None:
     """Create a solution
 
@@ -181,7 +182,7 @@ async def asyncio(
     `name` and optional `description` in the request body.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSolutionRequest): Request model for creating a new solution
 
     Raises:

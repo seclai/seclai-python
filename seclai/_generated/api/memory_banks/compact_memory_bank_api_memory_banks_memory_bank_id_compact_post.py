@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     memory_bank_id: str,
     *,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -76,7 +77,7 @@ def sync_detailed(
     memory_bank_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
     | HTTPValidationError
@@ -90,7 +91,7 @@ def sync_detailed(
 
     Args:
         memory_bank_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -116,7 +117,7 @@ def sync(
     memory_bank_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
     | HTTPValidationError
@@ -131,7 +132,7 @@ def sync(
 
     Args:
         memory_bank_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -152,7 +153,7 @@ async def asyncio_detailed(
     memory_bank_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
     | HTTPValidationError
@@ -166,7 +167,7 @@ async def asyncio_detailed(
 
     Args:
         memory_bank_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -190,7 +191,7 @@ async def asyncio(
     memory_bank_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
     | HTTPValidationError
@@ -205,7 +206,7 @@ async def asyncio(
 
     Args:
         memory_bank_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

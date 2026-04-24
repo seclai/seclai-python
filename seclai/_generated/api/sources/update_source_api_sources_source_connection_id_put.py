@@ -17,7 +17,7 @@ def _get_kwargs(
     source_connection_id: UUID,
     *,
     body: UpdateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -73,7 +73,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceResponse]:
     """Update Source
 
@@ -84,7 +84,7 @@ def sync_detailed(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateSourceBody): Request body for updating a content source.
 
     Raises:
@@ -113,7 +113,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SourceResponse | None:
     """Update Source
 
@@ -124,7 +124,7 @@ def sync(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateSourceBody): Request body for updating a content source.
 
     Raises:
@@ -148,7 +148,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceResponse]:
     """Update Source
 
@@ -159,7 +159,7 @@ async def asyncio_detailed(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateSourceBody): Request body for updating a content source.
 
     Raises:
@@ -186,7 +186,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SourceResponse | None:
     """Update Source
 
@@ -197,7 +197,7 @@ async def asyncio(
 
     Args:
         source_connection_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateSourceBody): Request body for updating a content source.
 
     Raises:

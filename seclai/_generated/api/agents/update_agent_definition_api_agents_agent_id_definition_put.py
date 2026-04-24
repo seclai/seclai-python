@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ def _get_kwargs(
     agent_id: str,
     *,
     body: UpdateAgentDefinitionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -72,7 +73,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAgentDefinitionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AgentDefinitionResponse | HTTPValidationError]:
     """Update agent definition
 
@@ -83,11 +84,11 @@ def sync_detailed(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_json`, `extract_html`,
-    `extract_xml`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
+    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
+    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
     `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
     `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`) cannot contain child steps.
+    `evaluate_step`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
@@ -99,7 +100,7 @@ def sync_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateAgentDefinitionRequest):
 
     Raises:
@@ -128,7 +129,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAgentDefinitionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AgentDefinitionResponse | HTTPValidationError | None:
     """Update agent definition
 
@@ -139,11 +140,11 @@ def sync(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_json`, `extract_html`,
-    `extract_xml`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
+    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
+    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
     `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
     `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`) cannot contain child steps.
+    `evaluate_step`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
@@ -155,7 +156,7 @@ def sync(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateAgentDefinitionRequest):
 
     Raises:
@@ -179,7 +180,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAgentDefinitionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AgentDefinitionResponse | HTTPValidationError]:
     """Update agent definition
 
@@ -190,11 +191,11 @@ async def asyncio_detailed(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_json`, `extract_html`,
-    `extract_xml`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
+    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
+    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
     `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
     `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`) cannot contain child steps.
+    `evaluate_step`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
@@ -206,7 +207,7 @@ async def asyncio_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateAgentDefinitionRequest):
 
     Raises:
@@ -233,7 +234,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateAgentDefinitionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AgentDefinitionResponse | HTTPValidationError | None:
     """Update agent definition
 
@@ -244,11 +245,11 @@ async def asyncio(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_json`, `extract_html`,
-    `extract_xml`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
+    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
+    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
     `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
     `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`) cannot contain child steps.
+    `evaluate_step`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
@@ -260,7 +261,7 @@ async def asyncio(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateAgentDefinitionRequest):
 
     Raises:

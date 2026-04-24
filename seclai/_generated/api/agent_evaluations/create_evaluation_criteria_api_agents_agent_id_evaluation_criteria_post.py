@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ def _get_kwargs(
     agent_id: str,
     *,
     body: CreateEvaluationCriteriaRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -72,7 +73,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateEvaluationCriteriaRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[EvaluationCriteriaResponse | HTTPValidationError]:
     """Create Evaluation Criteria
 
@@ -83,7 +84,7 @@ def sync_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
             The evaluation mode, retry settings, and sample frequency are set at the
@@ -115,7 +116,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: CreateEvaluationCriteriaRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> EvaluationCriteriaResponse | HTTPValidationError | None:
     """Create Evaluation Criteria
 
@@ -126,7 +127,7 @@ def sync(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
             The evaluation mode, retry settings, and sample frequency are set at the
@@ -153,7 +154,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateEvaluationCriteriaRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[EvaluationCriteriaResponse | HTTPValidationError]:
     """Create Evaluation Criteria
 
@@ -164,7 +165,7 @@ async def asyncio_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
             The evaluation mode, retry settings, and sample frequency are set at the
@@ -194,7 +195,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: CreateEvaluationCriteriaRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> EvaluationCriteriaResponse | HTTPValidationError | None:
     """Create Evaluation Criteria
 
@@ -205,7 +206,7 @@ async def asyncio(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
             The evaluation mode, retry settings, and sample frequency are set at the

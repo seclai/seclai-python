@@ -1,6 +1,7 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ def _get_kwargs(
     agent_id: str,
     *,
     body: AgentRunRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -39,11 +40,15 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentRunResponse | HTTPValidationError | None:
+) -> AgentRunResponse | Any | HTTPValidationError | None:
     if response.status_code == 200:
         response_200 = AgentRunResponse.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 402:
+        response_402 = cast(Any, None)
+        return response_402
 
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
@@ -58,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentRunResponse | HTTPValidationError]:
+) -> Response[AgentRunResponse | Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,8 +77,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
-    x_account_id: str | Unset = UNSET,
-) -> Response[AgentRunResponse | HTTPValidationError]:
+    x_account_id: UUID | Unset = UNSET,
+) -> Response[AgentRunResponse | Any | HTTPValidationError]:
     """Run an agent
 
      Start an agent run.
@@ -90,7 +95,9 @@ def sync_detailed(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
     /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
-    - `priority`: set true for latency-sensitive, user-facing work.
+    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
+    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
+    without live token streaming.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
     After starting:
@@ -103,7 +110,7 @@ def sync_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -111,7 +118,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | HTTPValidationError]
+        Response[AgentRunResponse | Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -132,8 +139,8 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
-    x_account_id: str | Unset = UNSET,
-) -> AgentRunResponse | HTTPValidationError | None:
+    x_account_id: UUID | Unset = UNSET,
+) -> AgentRunResponse | Any | HTTPValidationError | None:
     """Run an agent
 
      Start an agent run.
@@ -150,7 +157,9 @@ def sync(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
     /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
-    - `priority`: set true for latency-sensitive, user-facing work.
+    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
+    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
+    without live token streaming.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
     After starting:
@@ -163,7 +172,7 @@ def sync(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -171,7 +180,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | HTTPValidationError
+        AgentRunResponse | Any | HTTPValidationError
     """
 
     return sync_detailed(
@@ -187,8 +196,8 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
-    x_account_id: str | Unset = UNSET,
-) -> Response[AgentRunResponse | HTTPValidationError]:
+    x_account_id: UUID | Unset = UNSET,
+) -> Response[AgentRunResponse | Any | HTTPValidationError]:
     """Run an agent
 
      Start an agent run.
@@ -205,7 +214,9 @@ async def asyncio_detailed(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
     /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
-    - `priority`: set true for latency-sensitive, user-facing work.
+    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
+    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
+    without live token streaming.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
     After starting:
@@ -218,7 +229,7 @@ async def asyncio_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -226,7 +237,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | HTTPValidationError]
+        Response[AgentRunResponse | Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -245,8 +256,8 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
-    x_account_id: str | Unset = UNSET,
-) -> AgentRunResponse | HTTPValidationError | None:
+    x_account_id: UUID | Unset = UNSET,
+) -> AgentRunResponse | Any | HTTPValidationError | None:
     """Run an agent
 
      Start an agent run.
@@ -263,7 +274,9 @@ async def asyncio(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
     /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
-    - `priority`: set true for latency-sensitive, user-facing work.
+    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
+    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
+    without live token streaming.
     - `metadata`: a JSON object that becomes available to agent steps for string substitution.
 
     After starting:
@@ -276,7 +289,7 @@ async def asyncio(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunRequest):
 
     Raises:
@@ -284,7 +297,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | HTTPValidationError
+        AgentRunResponse | Any | HTTPValidationError
     """
 
     return (

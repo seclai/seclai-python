@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any, cast
+from uuid import UUID
 
 import httpx
 
@@ -14,7 +15,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: CreateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -71,19 +72,23 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | SourceResponse]:
     """Create Source
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `file_uploads`, `custom_index`.
+    Source types: `rss`, `website`, `custom_index`.
 
-    For RSS and website sources, provide the URL. For file upload and custom index sources, the URL is
-    created automatically.
+    For RSS and website sources, provide the URL. For custom index sources, the URL is created
+    automatically.
+
+    For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
+    `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as
+    an alias for `custom_index` with `index_mode=fast_and_cheap`.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSourceBody): Request body for creating a content source.
 
     Raises:
@@ -110,19 +115,23 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | SourceResponse | None:
     """Create Source
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `file_uploads`, `custom_index`.
+    Source types: `rss`, `website`, `custom_index`.
 
-    For RSS and website sources, provide the URL. For file upload and custom index sources, the URL is
-    created automatically.
+    For RSS and website sources, provide the URL. For custom index sources, the URL is created
+    automatically.
+
+    For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
+    `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as
+    an alias for `custom_index` with `index_mode=fast_and_cheap`.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSourceBody): Request body for creating a content source.
 
     Raises:
@@ -144,19 +153,23 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | SourceResponse]:
     """Create Source
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `file_uploads`, `custom_index`.
+    Source types: `rss`, `website`, `custom_index`.
 
-    For RSS and website sources, provide the URL. For file upload and custom index sources, the URL is
-    created automatically.
+    For RSS and website sources, provide the URL. For custom index sources, the URL is created
+    automatically.
+
+    For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
+    `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as
+    an alias for `custom_index` with `index_mode=fast_and_cheap`.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSourceBody): Request body for creating a content source.
 
     Raises:
@@ -181,19 +194,23 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: CreateSourceBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | SourceResponse | None:
     """Create Source
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `file_uploads`, `custom_index`.
+    Source types: `rss`, `website`, `custom_index`.
 
-    For RSS and website sources, provide the URL. For file upload and custom index sources, the URL is
-    created automatically.
+    For RSS and website sources, provide the URL. For custom index sources, the URL is created
+    automatically.
+
+    For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
+    `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as
+    an alias for `custom_index` with `index_mode=fast_and_cheap`.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateSourceBody): Request body for creating a content source.
 
     Raises:

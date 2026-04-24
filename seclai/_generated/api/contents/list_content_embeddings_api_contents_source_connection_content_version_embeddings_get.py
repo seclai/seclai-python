@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ def _get_kwargs(
     *,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -80,7 +81,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[ContentEmbeddingsListResponse | HTTPValidationError]:
     """List content embeddings
 
@@ -97,7 +98,7 @@ def sync_detailed(
         source_connection_content_version (str):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -127,7 +128,7 @@ def sync(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> ContentEmbeddingsListResponse | HTTPValidationError | None:
     """List content embeddings
 
@@ -144,7 +145,7 @@ def sync(
         source_connection_content_version (str):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -169,7 +170,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[ContentEmbeddingsListResponse | HTTPValidationError]:
     """List content embeddings
 
@@ -186,7 +187,7 @@ async def asyncio_detailed(
         source_connection_content_version (str):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -214,7 +215,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> ContentEmbeddingsListResponse | HTTPValidationError | None:
     """List content embeddings
 
@@ -231,7 +232,7 @@ async def asyncio(
         source_connection_content_version (str):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

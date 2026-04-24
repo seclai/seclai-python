@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any, cast
+from uuid import UUID
 
 import httpx
 
@@ -14,7 +15,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: CreateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -71,7 +72,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | KnowledgeBase]:
     """Create Knowledge Base
 
@@ -80,7 +81,7 @@ def sync_detailed(
     At least one `source_id` is required. The source connections must belong to the same account.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateKnowledgeBaseBody): Request body for creating a knowledge base.
 
     Raises:
@@ -107,7 +108,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: CreateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | KnowledgeBase | None:
     """Create Knowledge Base
 
@@ -116,7 +117,7 @@ def sync(
     At least one `source_id` is required. The source connections must belong to the same account.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateKnowledgeBaseBody): Request body for creating a knowledge base.
 
     Raises:
@@ -138,7 +139,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: CreateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | KnowledgeBase]:
     """Create Knowledge Base
 
@@ -147,7 +148,7 @@ async def asyncio_detailed(
     At least one `source_id` is required. The source connections must belong to the same account.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateKnowledgeBaseBody): Request body for creating a knowledge base.
 
     Raises:
@@ -172,7 +173,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: CreateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | KnowledgeBase | None:
     """Create Knowledge Base
 
@@ -181,7 +182,7 @@ async def asyncio(
     At least one `source_id` is required. The source connections must belong to the same account.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (CreateKnowledgeBaseBody): Request body for creating a knowledge base.
 
     Raises:

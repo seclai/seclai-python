@@ -27,8 +27,8 @@ class AgentDefinitionResponse:
         change_id (str): Current change ID (use as expected_change_id when updating).
         definition (AgentDefinitionResponseDefinition): The agent definition containing name, description, tags, and
             step workflow tree. Step types include prompt_call, retrieval, transform, gate, retry, evaluate_step, insight,
-            extract_json, send_email, webhook_call, call_agent, write_metadata, write_content_attachment,
-            load_content_attachment, load_content, display_result, and others.
+            extract_content, streaming_result, send_email, webhook_call, call_agent, write_metadata,
+            write_content_attachment, load_content_attachment, load_content, display_result, and others.
         schema_version (str): Agent schema version.
         warnings (list[AgentDefinitionResponseWarningsType0Item] | None | Unset): Validation warnings, if any.
     """

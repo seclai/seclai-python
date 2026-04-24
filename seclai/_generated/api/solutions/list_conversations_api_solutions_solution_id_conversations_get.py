@@ -15,7 +15,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     solution_id: UUID,
     *,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -73,7 +73,7 @@ def sync_detailed(
     solution_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[SolutionConversationResponse]]:
     """List conversations
 
@@ -84,7 +84,7 @@ def sync_detailed(
 
     Args:
         solution_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,7 +110,7 @@ def sync(
     solution_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | list[SolutionConversationResponse] | None:
     """List conversations
 
@@ -121,7 +121,7 @@ def sync(
 
     Args:
         solution_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -142,7 +142,7 @@ async def asyncio_detailed(
     solution_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[SolutionConversationResponse]]:
     """List conversations
 
@@ -153,7 +153,7 @@ async def asyncio_detailed(
 
     Args:
         solution_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -177,7 +177,7 @@ async def asyncio(
     solution_id: UUID,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | list[SolutionConversationResponse] | None:
     """List conversations
 
@@ -188,7 +188,7 @@ async def asyncio(
 
     Args:
         solution_id (UUID):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
