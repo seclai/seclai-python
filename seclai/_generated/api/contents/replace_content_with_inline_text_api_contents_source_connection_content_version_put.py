@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ def _get_kwargs(
     source_connection_content_version: str,
     *,
     body: InlineTextReplaceRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -74,7 +75,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextReplaceRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
     """Replace a content version with inline text
 
@@ -98,7 +99,7 @@ def sync_detailed(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (InlineTextReplaceRequest): Request model for inline text content replacement.
 
     Raises:
@@ -127,7 +128,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextReplaceRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> FileUploadResponse | HTTPValidationError | None:
     """Replace a content version with inline text
 
@@ -151,7 +152,7 @@ def sync(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (InlineTextReplaceRequest): Request model for inline text content replacement.
 
     Raises:
@@ -175,7 +176,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextReplaceRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
     """Replace a content version with inline text
 
@@ -199,7 +200,7 @@ async def asyncio_detailed(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (InlineTextReplaceRequest): Request model for inline text content replacement.
 
     Raises:
@@ -226,7 +227,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: InlineTextReplaceRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> FileUploadResponse | HTTPValidationError | None:
     """Replace a content version with inline text
 
@@ -250,7 +251,7 @@ async def asyncio(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (InlineTextReplaceRequest): Request model for inline text content replacement.
 
     Raises:

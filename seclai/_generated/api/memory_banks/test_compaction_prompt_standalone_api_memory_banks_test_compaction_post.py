@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -14,7 +15,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     body: StandaloneTestCompactionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -67,7 +68,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: StandaloneTestCompactionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[CompactionTestResponseModel | HTTPValidationError]:
     """Test Compaction Prompt Standalone
 
@@ -76,7 +77,7 @@ def sync_detailed(
     with verdict, score, and reasoning.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (StandaloneTestCompactionRequest): Request body for testing a compaction prompt
             *without* an existing bank.
 
@@ -109,7 +110,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: StandaloneTestCompactionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> CompactionTestResponseModel | HTTPValidationError | None:
     """Test Compaction Prompt Standalone
 
@@ -118,7 +119,7 @@ def sync(
     with verdict, score, and reasoning.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (StandaloneTestCompactionRequest): Request body for testing a compaction prompt
             *without* an existing bank.
 
@@ -146,7 +147,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: StandaloneTestCompactionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[CompactionTestResponseModel | HTTPValidationError]:
     """Test Compaction Prompt Standalone
 
@@ -155,7 +156,7 @@ async def asyncio_detailed(
     with verdict, score, and reasoning.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (StandaloneTestCompactionRequest): Request body for testing a compaction prompt
             *without* an existing bank.
 
@@ -186,7 +187,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: StandaloneTestCompactionRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> CompactionTestResponseModel | HTTPValidationError | None:
     """Test Compaction Prompt Standalone
 
@@ -195,7 +196,7 @@ async def asyncio(
     with verdict, score, and reasoning.
 
     Args:
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (StandaloneTestCompactionRequest): Request body for testing a compaction prompt
             *without* an existing bank.
 

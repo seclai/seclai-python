@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -21,7 +22,7 @@ def _get_kwargs(
     require_thinking: bool | None | Unset = UNSET,
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -126,7 +127,7 @@ def sync_detailed(
     require_thinking: bool | None | Unset = UNSET,
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
     | HTTPValidationError
@@ -150,7 +151,7 @@ def sync_detailed(
             thinking/reasoning.
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -186,7 +187,7 @@ def sync(
     require_thinking: bool | None | Unset = UNSET,
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
     | HTTPValidationError
@@ -211,7 +212,7 @@ def sync(
             thinking/reasoning.
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -242,7 +243,7 @@ async def asyncio_detailed(
     require_thinking: bool | None | Unset = UNSET,
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[
     GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
     | HTTPValidationError
@@ -266,7 +267,7 @@ async def asyncio_detailed(
             thinking/reasoning.
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -300,7 +301,7 @@ async def asyncio(
     require_thinking: bool | None | Unset = UNSET,
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> (
     GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
     | HTTPValidationError
@@ -325,7 +326,7 @@ async def asyncio(
             thinking/reasoning.
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

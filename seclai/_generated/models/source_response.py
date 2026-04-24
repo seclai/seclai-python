@@ -7,6 +7,7 @@ from uuid import UUID
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.source_index_mode import SourceIndexMode
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="SourceResponse")
@@ -44,6 +45,8 @@ class SourceResponse:
         embedding_model_type (None | str | Unset): Type of the embedding model.
         free_retention_days (int | None | Unset): Number of days content is stored for free before billing applies.
         has_historical_data (bool | Unset): Indicates if the source connection has historical data. Default: False.
+        index_mode (None | SourceIndexMode | Unset): Index mode for custom_index sources: fast_and_cheap, balanced,
+            slow_and_thorough, or custom.
         readonly (bool | Unset): Indicates if the source connection is read-only. Default: False.
         system_managed (bool | Unset): Indicates if this source is automatically managed by the system (e.g., agent
             traces). Default: False.
@@ -76,6 +79,7 @@ class SourceResponse:
     embedding_model_type: None | str | Unset = UNSET
     free_retention_days: int | None | Unset = UNSET
     has_historical_data: bool | Unset = False
+    index_mode: None | SourceIndexMode | Unset = UNSET
     readonly: bool | Unset = False
     system_managed: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -186,6 +190,14 @@ class SourceResponse:
 
         has_historical_data = self.has_historical_data
 
+        index_mode: None | str | Unset
+        if isinstance(self.index_mode, Unset):
+            index_mode = UNSET
+        elif isinstance(self.index_mode, SourceIndexMode):
+            index_mode = self.index_mode.value
+        else:
+            index_mode = self.index_mode
+
         readonly = self.readonly
 
         system_managed = self.system_managed
@@ -236,6 +248,8 @@ class SourceResponse:
             field_dict["free_retention_days"] = free_retention_days
         if has_historical_data is not UNSET:
             field_dict["has_historical_data"] = has_historical_data
+        if index_mode is not UNSET:
+            field_dict["index_mode"] = index_mode
         if readonly is not UNSET:
             field_dict["readonly"] = readonly
         if system_managed is not UNSET:
@@ -422,6 +436,23 @@ class SourceResponse:
 
         has_historical_data = d.pop("has_historical_data", UNSET)
 
+        def _parse_index_mode(data: object) -> None | SourceIndexMode | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                index_mode_type_0 = SourceIndexMode(data)
+
+                return index_mode_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | SourceIndexMode | Unset, data)
+
+        index_mode = _parse_index_mode(d.pop("index_mode", UNSET))
+
         readonly = d.pop("readonly", UNSET)
 
         system_managed = d.pop("system_managed", UNSET)
@@ -454,6 +485,7 @@ class SourceResponse:
             embedding_model_type=embedding_model_type,
             free_retention_days=free_retention_days,
             has_historical_data=has_historical_data,
+            index_mode=index_mode,
             readonly=readonly,
             system_managed=system_managed,
         )

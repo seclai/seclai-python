@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -18,7 +19,7 @@ def _get_kwargs(
     source_connection_content_version: str,
     *,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -74,7 +75,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
     r"""Replace a content version with a new upload
 
@@ -88,7 +89,6 @@ def sync_detailed(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -135,7 +135,7 @@ def sync_detailed(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
@@ -164,7 +164,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> FileUploadResponse | HTTPValidationError | None:
     r"""Replace a content version with a new upload
 
@@ -178,7 +178,6 @@ def sync(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -225,7 +224,7 @@ def sync(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
@@ -249,7 +248,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[FileUploadResponse | HTTPValidationError]:
     r"""Replace a content version with a new upload
 
@@ -263,7 +262,6 @@ async def asyncio_detailed(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -310,7 +308,7 @@ async def asyncio_detailed(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:
@@ -337,7 +335,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> FileUploadResponse | HTTPValidationError | None:
     r"""Replace a content version with a new upload
 
@@ -351,7 +349,6 @@ async def asyncio(
     **Supported MIME types:**
     - `application/epub+zip`
     - `application/json`
-    - `application/msword`
     - `application/pdf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
@@ -398,7 +395,7 @@ async def asyncio(
 
     Args:
         source_connection_content_version (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost):
 
     Raises:

@@ -1,6 +1,7 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -15,7 +16,7 @@ def _get_kwargs(
     agent_id: str,
     *,
     body: AgentRunStreamRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -42,6 +43,10 @@ def _parse_response(
     if response.status_code == 200:
         response_200 = response.json()
         return response_200
+
+    if response.status_code == 402:
+        response_402 = cast(Any, None)
+        return response_402
 
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
@@ -70,7 +75,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Run an agent (stream events)
 
@@ -81,6 +86,8 @@ def sync_detailed(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
+    tokens (with a `token` field) and a `stream_end` event signals completion.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -100,7 +107,7 @@ def sync_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -129,7 +136,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Run an agent (stream events)
 
@@ -140,6 +147,8 @@ def sync(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
+    tokens (with a `token` field) and a `stream_end` event signals completion.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -159,7 +168,7 @@ def sync(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -183,7 +192,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError]:
     """Run an agent (stream events)
 
@@ -194,6 +203,8 @@ async def asyncio_detailed(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
+    tokens (with a `token` field) and a `stream_end` event signals completion.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -213,7 +224,7 @@ async def asyncio_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -240,7 +251,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Any | HTTPValidationError | None:
     """Run an agent (stream events)
 
@@ -251,6 +262,8 @@ async def asyncio(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
+    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
+    tokens (with a `token` field) and a `stream_end` event signals completion.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -270,7 +283,7 @@ async def asyncio(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (AgentRunStreamRequest):
 
     Raises:

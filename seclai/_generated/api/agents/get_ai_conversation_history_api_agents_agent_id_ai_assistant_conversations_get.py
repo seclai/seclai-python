@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -18,7 +19,7 @@ def _get_kwargs(
     step_id: None | str | Unset = UNSET,
     limit: int | Unset = 10,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -91,7 +92,7 @@ def sync_detailed(
     step_id: None | str | Unset = UNSET,
     limit: int | Unset = 10,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AiConversationHistoryResponse | HTTPValidationError]:
     """Get AI conversation history
 
@@ -111,7 +112,7 @@ def sync_detailed(
         step_id (None | str | Unset): Step ID to filter by.
         limit (int | Unset): Max turns to return. Default: 10.
         offset (int | Unset): Number of recent turns to skip. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -145,7 +146,7 @@ def sync(
     step_id: None | str | Unset = UNSET,
     limit: int | Unset = 10,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AiConversationHistoryResponse | HTTPValidationError | None:
     """Get AI conversation history
 
@@ -165,7 +166,7 @@ def sync(
         step_id (None | str | Unset): Step ID to filter by.
         limit (int | Unset): Max turns to return. Default: 10.
         offset (int | Unset): Number of recent turns to skip. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -194,7 +195,7 @@ async def asyncio_detailed(
     step_id: None | str | Unset = UNSET,
     limit: int | Unset = 10,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AiConversationHistoryResponse | HTTPValidationError]:
     """Get AI conversation history
 
@@ -214,7 +215,7 @@ async def asyncio_detailed(
         step_id (None | str | Unset): Step ID to filter by.
         limit (int | Unset): Max turns to return. Default: 10.
         offset (int | Unset): Number of recent turns to skip. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -246,7 +247,7 @@ async def asyncio(
     step_id: None | str | Unset = UNSET,
     limit: int | Unset = 10,
     offset: int | Unset = 0,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AiConversationHistoryResponse | HTTPValidationError | None:
     """Get AI conversation history
 
@@ -266,7 +267,7 @@ async def asyncio(
         step_id (None | str | Unset): Step ID to filter by.
         limit (int | Unset): Max turns to return. Default: 10.
         offset (int | Unset): Number of recent turns to skip. Default: 0.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

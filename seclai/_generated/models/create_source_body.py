@@ -6,6 +6,7 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.source_index_mode import SourceIndexMode
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="CreateSourceBody")
@@ -17,12 +18,15 @@ class CreateSourceBody:
 
     Attributes:
         name (str): Source name.
-        source_type (str): Source type: rss, website, file_uploads, or custom_index.
+        source_type (str): Source type: rss, website, or custom_index. The legacy value 'file_uploads' is accepted as an
+            alias for custom_index.
         chunk_overlap (int | None | Unset): Chunk overlap for content processing.
         chunk_size (int | None | Unset): Chunk size for content processing.
         content_filter (None | str | Unset): Content filter type.
         dimensions (int | None | Unset): Embedding dimensions override.
         embedding_model (None | str | Unset): Embedding model override.
+        index_mode (None | SourceIndexMode | Unset): Index mode for custom_index sources: fast_and_cheap (default),
+            balanced, slow_and_thorough, or custom.
         polling (None | str | Unset): Polling interval (e.g. hourly, daily).
         polling_action (None | str | Unset): Polling action.
         polling_max_items (int | None | Unset): Max items per poll.
@@ -37,6 +41,7 @@ class CreateSourceBody:
     content_filter: None | str | Unset = UNSET
     dimensions: int | None | Unset = UNSET
     embedding_model: None | str | Unset = UNSET
+    index_mode: None | SourceIndexMode | Unset = UNSET
     polling: None | str | Unset = UNSET
     polling_action: None | str | Unset = UNSET
     polling_max_items: int | None | Unset = UNSET
@@ -78,6 +83,14 @@ class CreateSourceBody:
             embedding_model = UNSET
         else:
             embedding_model = self.embedding_model
+
+        index_mode: None | str | Unset
+        if isinstance(self.index_mode, Unset):
+            index_mode = UNSET
+        elif isinstance(self.index_mode, SourceIndexMode):
+            index_mode = self.index_mode.value
+        else:
+            index_mode = self.index_mode
 
         polling: None | str | Unset
         if isinstance(self.polling, Unset):
@@ -127,6 +140,8 @@ class CreateSourceBody:
             field_dict["dimensions"] = dimensions
         if embedding_model is not UNSET:
             field_dict["embedding_model"] = embedding_model
+        if index_mode is not UNSET:
+            field_dict["index_mode"] = index_mode
         if polling is not UNSET:
             field_dict["polling"] = polling
         if polling_action is not UNSET:
@@ -192,6 +207,23 @@ class CreateSourceBody:
 
         embedding_model = _parse_embedding_model(d.pop("embedding_model", UNSET))
 
+        def _parse_index_mode(data: object) -> None | SourceIndexMode | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                index_mode_type_0 = SourceIndexMode(data)
+
+                return index_mode_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | SourceIndexMode | Unset, data)
+
+        index_mode = _parse_index_mode(d.pop("index_mode", UNSET))
+
         def _parse_polling(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -245,6 +277,7 @@ class CreateSourceBody:
             content_filter=content_filter,
             dimensions=dimensions,
             embedding_model=embedding_model,
+            index_mode=index_mode,
             polling=polling,
             polling_action=polling_action,
             polling_max_items=polling_max_items,

@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -17,7 +18,7 @@ def _get_kwargs(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -90,15 +91,15 @@ def sync_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
     """List sources
 
      List content sources for your account.
 
-    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
-    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
-    workflows.
+    A *source* is where Seclai pulls or receives content from — RSS feeds, websites, or content stores
+    (``custom_index``). Content stores support file uploads and API-driven content ingestion with
+    configurable index modes (``fast_and_cheap``, ``balanced``, ``slow_and_thorough``, or ``custom``).
 
     Parameters:
     - Pagination: `page` and `limit`.
@@ -115,7 +116,7 @@ def sync_detailed(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -149,15 +150,15 @@ def sync(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
     """List sources
 
      List content sources for your account.
 
-    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
-    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
-    workflows.
+    A *source* is where Seclai pulls or receives content from — RSS feeds, websites, or content stores
+    (``custom_index``). Content stores support file uploads and API-driven content ingestion with
+    configurable index modes (``fast_and_cheap``, ``balanced``, ``slow_and_thorough``, or ``custom``).
 
     Parameters:
     - Pagination: `page` and `limit`.
@@ -174,7 +175,7 @@ def sync(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -203,15 +204,15 @@ async def asyncio_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SourceListResponse]:
     """List sources
 
      List content sources for your account.
 
-    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
-    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
-    workflows.
+    A *source* is where Seclai pulls or receives content from — RSS feeds, websites, or content stores
+    (``custom_index``). Content stores support file uploads and API-driven content ingestion with
+    configurable index modes (``fast_and_cheap``, ``balanced``, ``slow_and_thorough``, or ``custom``).
 
     Parameters:
     - Pagination: `page` and `limit`.
@@ -228,7 +229,7 @@ async def asyncio_detailed(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -260,15 +261,15 @@ async def asyncio(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     account_id: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SourceListResponse | None:
     """List sources
 
      List content sources for your account.
 
-    A *source* is where Seclai pulls or receives content from (for example RSS feeds, websites, file
-    uploads, or custom indexes). Sources are the inputs that power your agents and knowledge base
-    workflows.
+    A *source* is where Seclai pulls or receives content from — RSS feeds, websites, or content stores
+    (``custom_index``). Content stores support file uploads and API-driven content ingestion with
+    configurable index modes (``fast_and_cheap``, ``balanced``, ``slow_and_thorough``, or ``custom``).
 
     Parameters:
     - Pagination: `page` and `limit`.
@@ -285,7 +286,7 @@ async def asyncio(
         order (str | Unset): Sort order Default: 'desc'.
         account_id (None | str | Unset): List sources for the given account. Defaults to the
             caller's account.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

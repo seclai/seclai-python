@@ -3352,6 +3352,118 @@ class Seclai(_SeclaiBase):
         """
         return self.request("GET", f"/models/{model_id}/recommendations")
 
+    def list_models(
+        self,
+        *,
+        provider: str | None = None,
+        supports_tool_use: bool | None = None,
+        supports_thinking: bool | None = None,
+    ) -> JSONValue:
+        """List all enabled LLM models grouped by provider.
+
+        Args:
+            provider: Filter by provider name.
+            supports_tool_use: Filter to models that support tool use.
+            supports_thinking: Filter to models that support extended thinking.
+
+        Returns:
+            List of provider groups with their models.
+        """
+        return self.request(
+            "GET",
+            "/models",
+            params=_strip_none(
+                {
+                    "provider": provider,
+                    "supports_tool_use": supports_tool_use,
+                    "supports_thinking": supports_thinking,
+                }
+            ),
+        )
+
+    def get_model(self, model_id: str) -> JSONValue:
+        """Get full details for a specific model.
+
+        Args:
+            model_id: Model identifier.
+
+        Returns:
+            Model details including capabilities, pricing, and lifecycle status.
+        """
+        return self.request("GET", f"/models/{model_id}/details")
+
+    # ── Model Playground Experiments ──────────────────────────────────────────
+
+    def list_experiments(
+        self,
+        *,
+        days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> JSONValue:
+        """List model playground experiments.
+
+        Args:
+            days: Look-back window in days (1-730, default 30).
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            limit: Maximum number of results.
+            offset: Pagination offset.
+
+        Returns:
+            Paginated list of experiments.
+        """
+        return self.request(
+            "GET",
+            "/models/playground/experiments",
+            params=_strip_none(
+                {
+                    "days": days,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "limit": limit,
+                    "offset": offset,
+                }
+            ),
+        )
+
+    def create_experiment(self, body: dict[str, Any]) -> JSONValue:
+        """Create a model playground experiment.
+
+        Args:
+            body: Experiment configuration including prompt, model_ids, etc.
+
+        Returns:
+            Created experiment details.
+        """
+        return self.request("POST", "/models/playground/experiments", json=body)
+
+    def get_experiment(self, experiment_id: str) -> JSONValue:
+        """Get a model playground experiment by ID.
+
+        Args:
+            experiment_id: Experiment identifier.
+
+        Returns:
+            Experiment details.
+        """
+        return self.request("GET", f"/models/playground/experiments/{experiment_id}")
+
+    def cancel_experiment(self, experiment_id: str) -> JSONValue:
+        """Cancel a running model playground experiment.
+
+        Args:
+            experiment_id: Experiment identifier.
+
+        Returns:
+            Cancellation confirmation.
+        """
+        return self.request(
+            "POST", f"/models/playground/experiments/{experiment_id}/cancel"
+        )
+
     # ── Search ────────────────────────────────────────────────────────────────
 
     def search(
@@ -6574,6 +6686,120 @@ class AsyncSeclai(_SeclaiBase):
             Model recommendations.
         """
         return await self.request("GET", f"/models/{model_id}/recommendations")
+
+    async def list_models(
+        self,
+        *,
+        provider: str | None = None,
+        supports_tool_use: bool | None = None,
+        supports_thinking: bool | None = None,
+    ) -> JSONValue:
+        """List all enabled LLM models grouped by provider.
+
+        Args:
+            provider: Filter by provider name.
+            supports_tool_use: Filter to models that support tool use.
+            supports_thinking: Filter to models that support extended thinking.
+
+        Returns:
+            List of provider groups with their models.
+        """
+        return await self.request(
+            "GET",
+            "/models",
+            params=_strip_none(
+                {
+                    "provider": provider,
+                    "supports_tool_use": supports_tool_use,
+                    "supports_thinking": supports_thinking,
+                }
+            ),
+        )
+
+    async def get_model(self, model_id: str) -> JSONValue:
+        """Get full details for a specific model.
+
+        Args:
+            model_id: Model identifier.
+
+        Returns:
+            Model details including capabilities, pricing, and lifecycle status.
+        """
+        return await self.request("GET", f"/models/{model_id}/details")
+
+    # ── Model Playground Experiments ──────────────────────────────────────────
+
+    async def list_experiments(
+        self,
+        *,
+        days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> JSONValue:
+        """List model playground experiments.
+
+        Args:
+            days: Look-back window in days (1-730, default 30).
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            limit: Maximum number of results.
+            offset: Pagination offset.
+
+        Returns:
+            Paginated list of experiments.
+        """
+        return await self.request(
+            "GET",
+            "/models/playground/experiments",
+            params=_strip_none(
+                {
+                    "days": days,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "limit": limit,
+                    "offset": offset,
+                }
+            ),
+        )
+
+    async def create_experiment(self, body: dict[str, Any]) -> JSONValue:
+        """Create a model playground experiment.
+
+        Args:
+            body: Experiment configuration including prompt, model_ids, etc.
+
+        Returns:
+            Created experiment details.
+        """
+        return await self.request("POST", "/models/playground/experiments", json=body)
+
+    async def get_experiment(self, experiment_id: str) -> JSONValue:
+        """Get a model playground experiment by ID.
+
+        Args:
+            experiment_id: Experiment identifier.
+
+        Returns:
+            Experiment details.
+        """
+        return await self.request(
+            "GET", f"/models/playground/experiments/{experiment_id}"
+        )
+
+    async def cancel_experiment(self, experiment_id: str) -> JSONValue:
+        """Cancel a running model playground experiment.
+
+        Args:
+            experiment_id: Experiment identifier.
+
+        Returns:
+            Cancellation confirmation.
+        """
+        return await self.request(
+            "POST", f"/models/playground/experiments/{experiment_id}/cancel"
+        )
 
     # ── Search ────────────────────────────────────────────────────────────────
 

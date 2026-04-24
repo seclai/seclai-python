@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -16,7 +17,7 @@ def _get_kwargs(
     knowledge_base_id: str,
     *,
     body: UpdateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -72,7 +73,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | KnowledgeBase]:
     """Update Knowledge Base
 
@@ -85,7 +86,7 @@ def sync_detailed(
 
     Args:
         knowledge_base_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateKnowledgeBaseBody): Request body for updating a knowledge base.
 
     Raises:
@@ -114,7 +115,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | KnowledgeBase | None:
     """Update Knowledge Base
 
@@ -127,7 +128,7 @@ def sync(
 
     Args:
         knowledge_base_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateKnowledgeBaseBody): Request body for updating a knowledge base.
 
     Raises:
@@ -151,7 +152,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | KnowledgeBase]:
     """Update Knowledge Base
 
@@ -164,7 +165,7 @@ async def asyncio_detailed(
 
     Args:
         knowledge_base_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateKnowledgeBaseBody): Request body for updating a knowledge base.
 
     Raises:
@@ -191,7 +192,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: UpdateKnowledgeBaseBody,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | KnowledgeBase | None:
     """Update Knowledge Base
 
@@ -204,7 +205,7 @@ async def asyncio(
 
     Args:
         knowledge_base_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
         body (UpdateKnowledgeBaseBody): Request body for updating a knowledge base.
 
     Raises:

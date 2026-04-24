@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -20,7 +21,7 @@ def _get_kwargs(
     time_to: None | str | Unset = UNSET,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -109,7 +110,7 @@ def sync_detailed(
     time_to: None | str | Unset = UNSET,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[EvaluationResultListResponse | HTTPValidationError]:
     """List Evaluation Results
 
@@ -127,7 +128,7 @@ def sync_detailed(
         time_to (None | str | Unset):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -165,7 +166,7 @@ def sync(
     time_to: None | str | Unset = UNSET,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> EvaluationResultListResponse | HTTPValidationError | None:
     """List Evaluation Results
 
@@ -183,7 +184,7 @@ def sync(
         time_to (None | str | Unset):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -216,7 +217,7 @@ async def asyncio_detailed(
     time_to: None | str | Unset = UNSET,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[EvaluationResultListResponse | HTTPValidationError]:
     """List Evaluation Results
 
@@ -234,7 +235,7 @@ async def asyncio_detailed(
         time_to (None | str | Unset):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -270,7 +271,7 @@ async def asyncio(
     time_to: None | str | Unset = UNSET,
     page: int | Unset = 1,
     limit: int | Unset = 20,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> EvaluationResultListResponse | HTTPValidationError | None:
     """List Evaluation Results
 
@@ -288,7 +289,7 @@ async def asyncio(
         time_to (None | str | Unset):
         page (int | Unset):  Default: 1.
         limit (int | Unset):  Default: 20.
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

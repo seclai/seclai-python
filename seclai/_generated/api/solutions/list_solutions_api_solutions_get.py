@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -17,7 +18,7 @@ def _get_kwargs(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     search: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -90,7 +91,7 @@ def sync_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     search: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SolutionListResponse]:
     """List solutions
 
@@ -113,7 +114,7 @@ def sync_detailed(
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
         search (None | str | Unset): Filter by solution name (case-insensitive partial match)
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -147,7 +148,7 @@ def sync(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     search: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SolutionListResponse | None:
     """List solutions
 
@@ -170,7 +171,7 @@ def sync(
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
         search (None | str | Unset): Filter by solution name (case-insensitive partial match)
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -199,7 +200,7 @@ async def asyncio_detailed(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     search: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SolutionListResponse]:
     """List solutions
 
@@ -222,7 +223,7 @@ async def asyncio_detailed(
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
         search (None | str | Unset): Filter by solution name (case-insensitive partial match)
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -254,7 +255,7 @@ async def asyncio(
     sort: str | Unset = "created_at",
     order: str | Unset = "desc",
     search: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SolutionListResponse | None:
     """List solutions
 
@@ -277,7 +278,7 @@ async def asyncio(
         sort (str | Unset): Sort field Default: 'created_at'.
         order (str | Unset): Sort order Default: 'desc'.
         search (None | str | Unset): Filter by solution name (case-insensitive partial match)
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

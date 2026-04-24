@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -17,7 +18,7 @@ def _get_kwargs(
     q: str,
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -86,7 +87,7 @@ def sync_detailed(
     q: str,
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet]:
     """Search resources
 
@@ -101,7 +102,7 @@ def sync_detailed(
         limit (int | Unset): Maximum results Default: 10.
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -131,7 +132,7 @@ def sync(
     q: str,
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet | None:
     """Search resources
 
@@ -146,7 +147,7 @@ def sync(
         limit (int | Unset): Maximum results Default: 10.
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -171,7 +172,7 @@ async def asyncio_detailed(
     q: str,
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet]:
     """Search resources
 
@@ -186,7 +187,7 @@ async def asyncio_detailed(
         limit (int | Unset): Maximum results Default: 10.
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -214,7 +215,7 @@ async def asyncio(
     q: str,
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet | None:
     """Search resources
 
@@ -229,7 +230,7 @@ async def asyncio(
         limit (int | Unset): Maximum results Default: 10.
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

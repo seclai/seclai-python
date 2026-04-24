@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx
 
@@ -14,7 +15,7 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     agent_id: str,
     *,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
@@ -65,7 +66,7 @@ def sync_detailed(
     agent_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AgentDefinitionResponse | HTTPValidationError]:
     """Get agent definition
 
@@ -85,7 +86,7 @@ def sync_detailed(
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
     - `insight`: Progressively read and analyze large input
-    - `extract_json` / `extract_html` / `extract_xml`: Extract structured data
+    - `extract_content`: Extract structured data (JSON, HTML, XML)
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -100,6 +101,8 @@ def sync_detailed(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
+    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
+    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `combinator`: Combine multiple inputs
@@ -111,7 +114,7 @@ def sync_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -137,7 +140,7 @@ def sync(
     agent_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AgentDefinitionResponse | HTTPValidationError | None:
     """Get agent definition
 
@@ -157,7 +160,7 @@ def sync(
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
     - `insight`: Progressively read and analyze large input
-    - `extract_json` / `extract_html` / `extract_xml`: Extract structured data
+    - `extract_content`: Extract structured data (JSON, HTML, XML)
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -172,6 +175,8 @@ def sync(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
+    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
+    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `combinator`: Combine multiple inputs
@@ -183,7 +188,7 @@ def sync(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -204,7 +209,7 @@ async def asyncio_detailed(
     agent_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> Response[AgentDefinitionResponse | HTTPValidationError]:
     """Get agent definition
 
@@ -224,7 +229,7 @@ async def asyncio_detailed(
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
     - `insight`: Progressively read and analyze large input
-    - `extract_json` / `extract_html` / `extract_xml`: Extract structured data
+    - `extract_content`: Extract structured data (JSON, HTML, XML)
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -239,6 +244,8 @@ async def asyncio_detailed(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
+    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
+    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `combinator`: Combine multiple inputs
@@ -250,7 +257,7 @@ async def asyncio_detailed(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -274,7 +281,7 @@ async def asyncio(
     agent_id: str,
     *,
     client: AuthenticatedClient | Client,
-    x_account_id: str | Unset = UNSET,
+    x_account_id: UUID | Unset = UNSET,
 ) -> AgentDefinitionResponse | HTTPValidationError | None:
     """Get agent definition
 
@@ -294,7 +301,7 @@ async def asyncio(
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
     - `insight`: Progressively read and analyze large input
-    - `extract_json` / `extract_html` / `extract_xml`: Extract structured data
+    - `extract_content`: Extract structured data (JSON, HTML, XML)
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -309,6 +316,8 @@ async def asyncio(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
+    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
+    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `combinator`: Combine multiple inputs
@@ -320,7 +329,7 @@ async def asyncio(
 
     Args:
         agent_id (str):
-        x_account_id (str | Unset):
+        x_account_id (UUID | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
