@@ -167,6 +167,24 @@ client.update_agent_definition("agent_id", {
     "change_id": definition["change_id"],
     "steps": [{"type": "llm", "config": {}}],
 })
+
+# Export / import an agent
+exported = client.export_agent("agent_id")
+
+# Validate the payload first to surface unresolved entity refs in this account
+preview = client.preview_import_agent({"agent_definition": exported})
+entity_remap = {
+    ref["ref_id"]: ""  # pick a target uuid from ref["alternatives"]
+    for ref in preview.get("unresolved_refs", [])
+}
+
+# Commit — `entity_remap` substitutes workflow refs before save
+imported = client.create_agent({
+    "name": "Imported",
+    "agent_definition": exported,
+    "entity_remap": entity_remap,
+})
+# `imported["import_warnings"]` lists any items that couldn't be applied.
 ```
 
 ### Agent runs

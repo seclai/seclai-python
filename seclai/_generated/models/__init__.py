@@ -8,6 +8,7 @@ from .add_conversation_turn_request import AddConversationTurnRequest
 from .add_conversation_turn_request_actions_taken_type_0 import (
     AddConversationTurnRequestActionsTakenType0,
 )
+from .agent_definition_import_error_response import AgentDefinitionImportErrorResponse
 from .agent_definition_response import AgentDefinitionResponse
 from .agent_definition_response_definition import AgentDefinitionResponseDefinition
 from .agent_definition_response_warnings_type_0_item import (
@@ -29,6 +30,14 @@ from .agent_export_response_governance_policies_type_0_item import (
     AgentExportResponseGovernancePoliciesType0Item,
 )
 from .agent_export_response_trigger_type_0 import AgentExportResponseTriggerType0
+from .agent_import_preview_request import AgentImportPreviewRequest
+from .agent_import_preview_request_agent_definition import (
+    AgentImportPreviewRequestAgentDefinition,
+)
+from .agent_import_preview_response import AgentImportPreviewResponse
+from .agent_import_preview_response_unresolved_refs_item import (
+    AgentImportPreviewResponseUnresolvedRefsItem,
+)
 from .agent_list_response import AgentListResponse
 from .agent_run_attempt_response import AgentRunAttemptResponse
 from .agent_run_list_response import AgentRunListResponse
@@ -90,6 +99,10 @@ from .content_detail_response_metadata_type_0_item import (
 from .content_embedding_response import ContentEmbeddingResponse
 from .content_embeddings_list_response import ContentEmbeddingsListResponse
 from .create_agent_request import CreateAgentRequest
+from .create_agent_request_agent_definition_type_0 import (
+    CreateAgentRequestAgentDefinitionType0,
+)
+from .create_agent_request_entity_remap_type_0 import CreateAgentRequestEntityRemapType0
 from .create_alert_config_api_alerts_configs_post_response_create_alert_config_api_alerts_configs_post import (
     CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost,
 )
@@ -203,7 +216,11 @@ from .governance_conversation_response import GovernanceConversationResponse
 from .governance_conversation_response_proposed_actions_type_0 import (
     GovernanceConversationResponseProposedActionsType0,
 )
+from .governance_policy_ref_response import GovernancePolicyRefResponse
 from .http_validation_error import HTTPValidationError
+from .import_field_error_model import ImportFieldErrorModel
+from .import_skip_response import ImportSkipResponse
+from .import_skip_response_details import ImportSkipResponseDetails
 from .inline_text_replace_request import InlineTextReplaceRequest
 from .inline_text_replace_request_metadata_type_0 import (
     InlineTextReplaceRequestMetadataType0,
@@ -282,6 +299,7 @@ from .prompt_tool_response import PromptToolResponse
 from .prompt_tool_response_headers_type_0 import PromptToolResponseHeadersType0
 from .proposed_action_response import ProposedActionResponse
 from .proposed_action_response_params import ProposedActionResponseParams
+from .proposed_action_response_preview_type_0 import ProposedActionResponsePreviewType0
 from .proposed_policy_action_response import ProposedPolicyActionResponse
 from .proposed_policy_action_response_params import ProposedPolicyActionResponseParams
 from .provider_group_response import ProviderGroupResponse
@@ -325,6 +343,10 @@ from .update_agent_definition_request_definition import (
     UpdateAgentDefinitionRequestDefinition,
 )
 from .update_agent_request import UpdateAgentRequest
+from .update_agent_request_agent_definition_type_0 import (
+    UpdateAgentRequestAgentDefinitionType0,
+)
+from .update_agent_request_entity_remap_type_0 import UpdateAgentRequestEntityRemapType0
 from .update_agent_request_sampling_config_type_0 import (
     UpdateAgentRequestSamplingConfigType0,
 )
@@ -356,6 +378,7 @@ __all__ = (
     "AddCommentRequest",
     "AddConversationTurnRequest",
     "AddConversationTurnRequestActionsTakenType0",
+    "AgentDefinitionImportErrorResponse",
     "AgentDefinitionResponse",
     "AgentDefinitionResponseDefinition",
     "AgentDefinitionResponseWarningsType0Item",
@@ -367,6 +390,10 @@ __all__ = (
     "AgentExportResponseEvaluationCriteriaType0Item",
     "AgentExportResponseGovernancePoliciesType0Item",
     "AgentExportResponseTriggerType0",
+    "AgentImportPreviewRequest",
+    "AgentImportPreviewRequestAgentDefinition",
+    "AgentImportPreviewResponse",
+    "AgentImportPreviewResponseUnresolvedRefsItem",
     "AgentListResponse",
     "AgentRunAttemptResponse",
     "AgentRunListResponse",
@@ -408,6 +435,8 @@ __all__ = (
     "ContentEmbeddingResponse",
     "ContentEmbeddingsListResponse",
     "CreateAgentRequest",
+    "CreateAgentRequestAgentDefinitionType0",
+    "CreateAgentRequestEntityRemapType0",
     "CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost",
     "CreateAlertConfigRequest",
     "CreateAlertConfigRequestThresholdType0",
@@ -467,7 +496,11 @@ __all__ = (
     "GovernanceAiAssistantResponse",
     "GovernanceConversationResponse",
     "GovernanceConversationResponseProposedActionsType0",
+    "GovernancePolicyRefResponse",
     "HTTPValidationError",
+    "ImportFieldErrorModel",
+    "ImportSkipResponse",
+    "ImportSkipResponseDetails",
     "InlineTextReplaceRequest",
     "InlineTextReplaceRequestMetadataType0",
     "InlineTextUploadRequest",
@@ -512,6 +545,7 @@ __all__ = (
     "PromptToolResponseHeadersType0",
     "ProposedActionResponse",
     "ProposedActionResponseParams",
+    "ProposedActionResponsePreviewType0",
     "ProposedPolicyActionResponse",
     "ProposedPolicyActionResponseParams",
     "ProviderGroupResponse",
@@ -541,6 +575,8 @@ __all__ = (
     "UpdateAgentDefinitionRequest",
     "UpdateAgentDefinitionRequestDefinition",
     "UpdateAgentRequest",
+    "UpdateAgentRequestAgentDefinitionType0",
+    "UpdateAgentRequestEntityRemapType0",
     "UpdateAgentRequestSamplingConfigType0",
     "UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch",
     "UpdateAlertConfigRequest",

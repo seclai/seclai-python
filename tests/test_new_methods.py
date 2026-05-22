@@ -120,6 +120,35 @@ class TestAgents:
         client.delete_agent("a1")
         assert seen == {"method": "DELETE", "path": "/agents/a1"}
 
+    def test_preview_import_agent(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {
+                    "ok": True,
+                    "agent_name": "n",
+                    "description": None,
+                    "step_count": 0,
+                    "schedules": 0,
+                    "alert_configs": 0,
+                    "evaluation_criteria": 0,
+                    "governance_policies": 0,
+                }
+            )
+
+        client = _sync_client(handler)
+        result = client.preview_import_agent(
+            {"agent_definition": {"agent": {"name": "n"}}}
+        )
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/preview-import"
+        assert seen["body"] == {"agent_definition": {"agent": {"name": "n"}}}
+        assert result["ok"] is True
+
 
 # ---------------------------------------------------------------------------
 # Agent Definitions
@@ -1467,6 +1496,24 @@ class TestAsyncMethods:
         result = await client.create_agent({"name": "Test"})
         assert seen == {"method": "POST", "path": "/agents"}
         assert result["id"] == "a1"
+
+    @pytest.mark.asyncio
+    async def test_async_preview_import_agent(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response({"ok": True})
+
+        client = _async_client(handler)
+        await client.preview_import_agent(
+            {"agent_definition": {"agent": {"name": "n"}}}
+        )
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/preview-import"
+        assert seen["body"] == {"agent_definition": {"agent": {"name": "n"}}}
 
     @pytest.mark.asyncio
     async def test_async_delete_agent(self) -> None:

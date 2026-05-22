@@ -1621,6 +1621,33 @@ class Seclai(_SeclaiBase):
             self.request("GET", f"/agents/{agent_id}/export", params=params),
         )
 
+    def preview_import_agent(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Validate an ``agent_definition`` payload without creating an agent.
+
+        Use before :meth:`create_agent` or :meth:`update_agent` with an
+        ``agent_definition`` to surface ``unresolved_refs`` — workflow
+        references to knowledge bases, memory banks, source connections, or
+        sub-agents that don't exist in the target account. Pass the returned
+        ids back in ``entity_remap`` on the commit call to substitute them.
+
+        Args:
+            body: ``{"agent_definition": ...}`` — same shape produced by
+                :meth:`export_agent`.
+
+        Returns:
+            Summary with step/schedule/alert/criteria/policy counts and any
+            ``unresolved_refs``.
+
+        Raises:
+            SeclaiAPIValidationError: HTTP 422 — body lists each field error
+                with a 1-indexed line/column anchored to the canonical
+                ``source`` echo.
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", "/agents/preview-import", json=body),
+        )
+
     # ── Agent Definitions ─────────────────────────────────────────────────────
 
     def get_agent_definition(self, agent_id: str) -> dict[str, Any]:
@@ -4922,6 +4949,33 @@ class AsyncSeclai(_SeclaiBase):
         return cast(
             dict[str, Any],
             await self.request("GET", f"/agents/{agent_id}/export", params=params),
+        )
+
+    async def preview_import_agent(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Validate an ``agent_definition`` payload without creating an agent.
+
+        Use before :meth:`create_agent` or :meth:`update_agent` with an
+        ``agent_definition`` to surface ``unresolved_refs`` — workflow
+        references to knowledge bases, memory banks, source connections, or
+        sub-agents that don't exist in the target account. Pass the returned
+        ids back in ``entity_remap`` on the commit call to substitute them.
+
+        Args:
+            body: ``{"agent_definition": ...}`` — same shape produced by
+                :meth:`export_agent`.
+
+        Returns:
+            Summary with step/schedule/alert/criteria/policy counts and any
+            ``unresolved_refs``.
+
+        Raises:
+            SeclaiAPIValidationError: HTTP 422 — body lists each field error
+                with a 1-indexed line/column anchored to the canonical
+                ``source`` echo.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", "/agents/preview-import", json=body),
         )
 
     # ── Agent Definitions ─────────────────────────────────────────────────────

@@ -24,7 +24,7 @@ T = TypeVar("T", bound="GenerateStepConfigRequest")
 class GenerateStepConfigRequest:
     """
     Attributes:
-        step_type (str): The step type to generate config for (e.g. 'transform', 'gate', 'text', 'prompt_call',
+        step_type (str): The step type to generate config for (e.g. 'regex_replace', 'gate', 'text', 'prompt_call',
             'retrieval').
         user_input (str): Natural language description of what the step should do.
         agent_steps (list[GenerateStepConfigRequestAgentStepsType0Item] | None | Unset): Current agent step hierarchy

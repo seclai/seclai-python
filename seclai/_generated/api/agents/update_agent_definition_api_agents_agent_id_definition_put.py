@@ -84,11 +84,12 @@ def sync_detailed(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
-    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
-    `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
-    `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`, `streaming_result`) cannot contain child steps.
+    `regex_replace`, `gate`, `retry`, `evaluate_step`, `extract_data`, `extract_content`,
+    `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
+    `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
+    `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
+    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
+    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
@@ -140,11 +141,12 @@ def sync(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
-    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
-    `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
-    `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`, `streaming_result`) cannot contain child steps.
+    `regex_replace`, `gate`, `retry`, `evaluate_step`, `extract_data`, `extract_content`,
+    `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
+    `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
+    `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
+    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
+    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
@@ -191,11 +193,12 @@ async def asyncio_detailed(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
-    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
-    `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
-    `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`, `streaming_result`) cannot contain child steps.
+    `regex_replace`, `gate`, `retry`, `evaluate_step`, `extract_data`, `extract_content`,
+    `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
+    `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
+    `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
+    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
+    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
@@ -245,11 +248,12 @@ async def asyncio(
     last read.
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
-    `transform`, `gate`, `retry`, `evaluate_step`, `insight`, `extract_content`, `streaming_result`,
-    `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`,
-    `write_content_attachment`, `load_content_attachment`, `load_content`, `display_result`, `join`,
-    `combinator`, and `text`. Non-composite step types (`display_result`, `join`, `retry`,
-    `evaluate_step`, `streaming_result`) cannot contain child steps.
+    `regex_replace`, `gate`, `retry`, `evaluate_step`, `extract_data`, `extract_content`,
+    `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
+    `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
+    `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
+    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
+    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
