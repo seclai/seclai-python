@@ -1639,8 +1639,12 @@ class Seclai(_SeclaiBase):
             ``unresolved_refs``.
 
         Raises:
-            SeclaiAPIValidationError: HTTP 422 — body lists each field error
-                with a 1-indexed line/column anchored to the canonical
+            SeclaiAPIStatusError: For any non-success response, including
+                HTTP 422 when the ``agent_definition`` fails validation.
+                On 422 the response body (available as
+                ``SeclaiAPIStatusError.response_text``) is an
+                ``AgentDefinitionImportErrorResponse`` listing each field
+                error with a 1-indexed line/column anchored to the canonical
                 ``source`` echo.
         """
         return cast(
@@ -4969,8 +4973,12 @@ class AsyncSeclai(_SeclaiBase):
             ``unresolved_refs``.
 
         Raises:
-            SeclaiAPIValidationError: HTTP 422 — body lists each field error
-                with a 1-indexed line/column anchored to the canonical
+            SeclaiAPIStatusError: For any non-success response, including
+                HTTP 422 when the ``agent_definition`` fails validation.
+                On 422 the response body (available as
+                ``SeclaiAPIStatusError.response_text``) is an
+                ``AgentDefinitionImportErrorResponse`` listing each field
+                error with a 1-indexed line/column anchored to the canonical
                 ``source`` echo.
         """
         return cast(
