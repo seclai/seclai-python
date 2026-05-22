@@ -6,9 +6,11 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.agent_definition_import_error_response import (
+    AgentDefinitionImportErrorResponse,
+)
 from ...models.agent_summary_response import AgentSummaryResponse
 from ...models.create_agent_request import CreateAgentRequest
-from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
 
@@ -36,7 +38,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentSummaryResponse | Any | HTTPValidationError | None:
+) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
     if response.status_code == 201:
         response_201 = AgentSummaryResponse.from_dict(response.json())
 
@@ -47,7 +49,7 @@ def _parse_response(
         return response_402
 
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = AgentDefinitionImportErrorResponse.from_dict(response.json())
 
         return response_422
 
@@ -59,7 +61,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentSummaryResponse | Any | HTTPValidationError]:
+) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,7 +75,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[AgentSummaryResponse | Any | HTTPValidationError]:
+) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
     """Create an agent
 
      Create a new agent.
@@ -87,6 +89,14 @@ def sync_detailed(
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
 
+    Importing an existing agent:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
+    suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
+    items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
+    banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
+    target_uuid}` on this call to substitute them before save.
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. Agent is created in the caller's account.
 
@@ -99,7 +109,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentSummaryResponse | Any | HTTPValidationError]
+        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]
     """
 
     kwargs = _get_kwargs(
@@ -119,7 +129,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> AgentSummaryResponse | Any | HTTPValidationError | None:
+) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
     """Create an agent
 
      Create a new agent.
@@ -133,6 +143,14 @@ def sync(
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
 
+    Importing an existing agent:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
+    suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
+    items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
+    banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
+    target_uuid}` on this call to substitute them before save.
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. Agent is created in the caller's account.
 
@@ -145,7 +163,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentSummaryResponse | Any | HTTPValidationError
+        AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any
     """
 
     return sync_detailed(
@@ -160,7 +178,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[AgentSummaryResponse | Any | HTTPValidationError]:
+) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
     """Create an agent
 
      Create a new agent.
@@ -174,6 +192,14 @@ async def asyncio_detailed(
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
 
+    Importing an existing agent:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
+    suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
+    items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
+    banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
+    target_uuid}` on this call to substitute them before save.
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. Agent is created in the caller's account.
 
@@ -186,7 +212,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentSummaryResponse | Any | HTTPValidationError]
+        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]
     """
 
     kwargs = _get_kwargs(
@@ -204,7 +230,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> AgentSummaryResponse | Any | HTTPValidationError | None:
+) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
     """Create an agent
 
      Create a new agent.
@@ -218,6 +244,14 @@ async def asyncio(
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
 
+    Importing an existing agent:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
+    suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
+    items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
+    banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
+    target_uuid}` on this call to substitute them before save.
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. Agent is created in the caller's account.
 
@@ -230,7 +264,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentSummaryResponse | Any | HTTPValidationError
+        AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any
     """
 
     return (

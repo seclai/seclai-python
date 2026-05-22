@@ -10,6 +10,12 @@ from ..models.prompt_model_auto_upgrade_strategy import PromptModelAutoUpgradeSt
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.update_agent_request_agent_definition_type_0 import (
+        UpdateAgentRequestAgentDefinitionType0,
+    )
+    from ..models.update_agent_request_entity_remap_type_0 import (
+        UpdateAgentRequestEntityRemapType0,
+    )
     from ..models.update_agent_request_sampling_config_type_0 import (
         UpdateAgentRequestSamplingConfigType0,
     )
@@ -22,8 +28,15 @@ T = TypeVar("T", bound="UpdateAgentRequest")
 class UpdateAgentRequest:
     """
     Attributes:
+        agent_definition (None | Unset | UpdateAgentRequestAgentDefinitionType0): Optional payload in the same format
+            produced by GET /agents/{id}/export. When provided, agent metadata fields the request does not set explicitly
+            are taken from the payload, and the agent's workflow is replaced from `agent.definition`. The previous version
+            is preserved in history. Validation errors include line/column references against a canonical pretty-printed
+            echo of the supplied payload.
         default_evaluation_tier (None | str | Unset): Default evaluation tier: 'fast', 'balanced', or 'thorough'.
         description (None | str | Unset): New description for the agent.
+        entity_remap (None | Unset | UpdateAgentRequestEntityRemapType0): Optional UUID-substitution map applied to the
+            imported workflow before save (same shape as on POST /agents).
         evaluation_mode (None | str | Unset): Evaluation mode: 'output_expectation', 'eval_and_retry', or
             'sample_and_flag'.
         max_retries (int | None | Unset): Max retries for eval_and_retry mode (1-10).
@@ -45,8 +58,10 @@ class UpdateAgentRequest:
             Default: False.
     """
 
+    agent_definition: None | Unset | UpdateAgentRequestAgentDefinitionType0 = UNSET
     default_evaluation_tier: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
+    entity_remap: None | Unset | UpdateAgentRequestEntityRemapType0 = UNSET
     evaluation_mode: None | str | Unset = UNSET
     max_retries: int | None | Unset = UNSET
     name: None | str | Unset = UNSET
@@ -63,9 +78,23 @@ class UpdateAgentRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.update_agent_request_agent_definition_type_0 import (
+            UpdateAgentRequestAgentDefinitionType0,
+        )
+        from ..models.update_agent_request_entity_remap_type_0 import (
+            UpdateAgentRequestEntityRemapType0,
+        )
         from ..models.update_agent_request_sampling_config_type_0 import (
             UpdateAgentRequestSamplingConfigType0,
         )
+
+        agent_definition: dict[str, Any] | None | Unset
+        if isinstance(self.agent_definition, Unset):
+            agent_definition = UNSET
+        elif isinstance(self.agent_definition, UpdateAgentRequestAgentDefinitionType0):
+            agent_definition = self.agent_definition.to_dict()
+        else:
+            agent_definition = self.agent_definition
 
         default_evaluation_tier: None | str | Unset
         if isinstance(self.default_evaluation_tier, Unset):
@@ -78,6 +107,14 @@ class UpdateAgentRequest:
             description = UNSET
         else:
             description = self.description
+
+        entity_remap: dict[str, Any] | None | Unset
+        if isinstance(self.entity_remap, Unset):
+            entity_remap = UNSET
+        elif isinstance(self.entity_remap, UpdateAgentRequestEntityRemapType0):
+            entity_remap = self.entity_remap.to_dict()
+        else:
+            entity_remap = self.entity_remap
 
         evaluation_mode: None | str | Unset
         if isinstance(self.evaluation_mode, Unset):
@@ -153,10 +190,14 @@ class UpdateAgentRequest:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
+        if agent_definition is not UNSET:
+            field_dict["agent_definition"] = agent_definition
         if default_evaluation_tier is not UNSET:
             field_dict["default_evaluation_tier"] = default_evaluation_tier
         if description is not UNSET:
             field_dict["description"] = description
+        if entity_remap is not UNSET:
+            field_dict["entity_remap"] = entity_remap
         if evaluation_mode is not UNSET:
             field_dict["evaluation_mode"] = evaluation_mode
         if max_retries is not UNSET:
@@ -192,11 +233,38 @@ class UpdateAgentRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.update_agent_request_agent_definition_type_0 import (
+            UpdateAgentRequestAgentDefinitionType0,
+        )
+        from ..models.update_agent_request_entity_remap_type_0 import (
+            UpdateAgentRequestEntityRemapType0,
+        )
         from ..models.update_agent_request_sampling_config_type_0 import (
             UpdateAgentRequestSamplingConfigType0,
         )
 
         d = dict(src_dict)
+
+        def _parse_agent_definition(
+            data: object,
+        ) -> None | Unset | UpdateAgentRequestAgentDefinitionType0:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                agent_definition_type_0 = (
+                    UpdateAgentRequestAgentDefinitionType0.from_dict(data)
+                )
+
+                return agent_definition_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | Unset | UpdateAgentRequestAgentDefinitionType0, data)
+
+        agent_definition = _parse_agent_definition(d.pop("agent_definition", UNSET))
 
         def _parse_default_evaluation_tier(data: object) -> None | str | Unset:
             if data is None:
@@ -217,6 +285,25 @@ class UpdateAgentRequest:
             return cast(None | str | Unset, data)
 
         description = _parse_description(d.pop("description", UNSET))
+
+        def _parse_entity_remap(
+            data: object,
+        ) -> None | Unset | UpdateAgentRequestEntityRemapType0:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                entity_remap_type_0 = UpdateAgentRequestEntityRemapType0.from_dict(data)
+
+                return entity_remap_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | Unset | UpdateAgentRequestEntityRemapType0, data)
+
+        entity_remap = _parse_entity_remap(d.pop("entity_remap", UNSET))
 
         def _parse_evaluation_mode(data: object) -> None | str | Unset:
             if data is None:
@@ -343,8 +430,10 @@ class UpdateAgentRequest:
         set_sampling_config = d.pop("set_sampling_config", UNSET)
 
         update_agent_request = cls(
+            agent_definition=agent_definition,
             default_evaluation_tier=default_evaluation_tier,
             description=description,
+            entity_remap=entity_remap,
             evaluation_mode=evaluation_mode,
             max_retries=max_retries,
             name=name,

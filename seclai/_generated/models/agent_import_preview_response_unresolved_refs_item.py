@@ -6,18 +6,12 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="AgentDefinitionResponseDefinition")
+T = TypeVar("T", bound="AgentImportPreviewResponseUnresolvedRefsItem")
 
 
 @_attrs_define
-class AgentDefinitionResponseDefinition:
-    """The agent definition containing name, description, tags, and step workflow tree. Step types include prompt_call,
-    retrieval, regex_replace, gate, retry, evaluate_step, extract_data, extract_content, add_chat_turn,
-    load_chat_history, add_memory, search_memory, load_memory, streaming_result, send_email, webhook_call, call_agent,
-    write_metadata, write_content_attachment, load_content_attachment, load_content, display_result, merge, for_each,
-    and others.
-
-    """
+class AgentImportPreviewResponseUnresolvedRefsItem:
+    """ """
 
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -30,10 +24,10 @@ class AgentDefinitionResponseDefinition:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        agent_definition_response_definition = cls()
+        agent_import_preview_response_unresolved_refs_item = cls()
 
-        agent_definition_response_definition.additional_properties = d
-        return agent_definition_response_definition
+        agent_import_preview_response_unresolved_refs_item.additional_properties = d
+        return agent_import_preview_response_unresolved_refs_item
 
     @property
     def additional_keys(self) -> list[str]:

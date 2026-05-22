@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ..models.agent_summary_response_sampling_config_type_0 import (
         AgentSummaryResponseSamplingConfigType0,
     )
+    from ..models.import_skip_response import ImportSkipResponse
 
 
 T = TypeVar("T", bound="AgentSummaryResponse")
@@ -30,6 +31,9 @@ class AgentSummaryResponse:
         default_evaluation_tier (None | str | Unset): Default evaluation tier: fast, balanced, or thorough.
         evaluation_mode (str | Unset): Evaluation mode: output_expectation, eval_and_retry, or sample_and_flag. Default:
             'eval_and_retry'.
+        import_warnings (list[ImportSkipResponse] | None | Unset): One entry per item dropped or substituted during
+            import. Present only on endpoints that accept agent_definition; null on non-import calls; [] when the import had
+            no skips.
         max_retries (int | Unset): Max retries for eval_and_retry mode. Default: 3.
         prompt_model_auto_rollback_enabled (bool | Unset): Whether automatic rollback is enabled for upgraded models.
             Default: False.
@@ -50,6 +54,7 @@ class AgentSummaryResponse:
     updated_at: str
     default_evaluation_tier: None | str | Unset = UNSET
     evaluation_mode: str | Unset = "eval_and_retry"
+    import_warnings: list[ImportSkipResponse] | None | Unset = UNSET
     max_retries: int | Unset = 3
     prompt_model_auto_rollback_enabled: bool | Unset = False
     prompt_model_auto_rollback_triggers: list[str] | None | Unset = UNSET
@@ -84,6 +89,18 @@ class AgentSummaryResponse:
             default_evaluation_tier = self.default_evaluation_tier
 
         evaluation_mode = self.evaluation_mode
+
+        import_warnings: list[dict[str, Any]] | None | Unset
+        if isinstance(self.import_warnings, Unset):
+            import_warnings = UNSET
+        elif isinstance(self.import_warnings, list):
+            import_warnings = []
+            for import_warnings_type_0_item_data in self.import_warnings:
+                import_warnings_type_0_item = import_warnings_type_0_item_data.to_dict()
+                import_warnings.append(import_warnings_type_0_item)
+
+        else:
+            import_warnings = self.import_warnings
 
         max_retries = self.max_retries
 
@@ -130,6 +147,8 @@ class AgentSummaryResponse:
             field_dict["default_evaluation_tier"] = default_evaluation_tier
         if evaluation_mode is not UNSET:
             field_dict["evaluation_mode"] = evaluation_mode
+        if import_warnings is not UNSET:
+            field_dict["import_warnings"] = import_warnings
         if max_retries is not UNSET:
             field_dict["max_retries"] = max_retries
         if prompt_model_auto_rollback_enabled is not UNSET:
@@ -156,6 +175,7 @@ class AgentSummaryResponse:
         from ..models.agent_summary_response_sampling_config_type_0 import (
             AgentSummaryResponseSamplingConfigType0,
         )
+        from ..models.import_skip_response import ImportSkipResponse
 
         d = dict(src_dict)
         created_at = d.pop("created_at")
@@ -192,6 +212,32 @@ class AgentSummaryResponse:
         )
 
         evaluation_mode = d.pop("evaluation_mode", UNSET)
+
+        def _parse_import_warnings(
+            data: object,
+        ) -> list[ImportSkipResponse] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                import_warnings_type_0 = []
+                _import_warnings_type_0 = data
+                for import_warnings_type_0_item_data in _import_warnings_type_0:
+                    import_warnings_type_0_item = ImportSkipResponse.from_dict(
+                        import_warnings_type_0_item_data
+                    )
+
+                    import_warnings_type_0.append(import_warnings_type_0_item)
+
+                return import_warnings_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[ImportSkipResponse] | None | Unset, data)
+
+        import_warnings = _parse_import_warnings(d.pop("import_warnings", UNSET))
 
         max_retries = d.pop("max_retries", UNSET)
 
@@ -258,6 +304,7 @@ class AgentSummaryResponse:
             updated_at=updated_at,
             default_evaluation_tier=default_evaluation_tier,
             evaluation_mode=evaluation_mode,
+            import_warnings=import_warnings,
             max_retries=max_retries,
             prompt_model_auto_rollback_enabled=prompt_model_auto_rollback_enabled,
             prompt_model_auto_rollback_triggers=prompt_model_auto_rollback_triggers,

@@ -7,8 +7,10 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.agent_definition_import_error_response import (
+    AgentDefinitionImportErrorResponse,
+)
 from ...models.agent_summary_response import AgentSummaryResponse
-from ...models.http_validation_error import HTTPValidationError
 from ...models.update_agent_request import UpdateAgentRequest
 from ...types import UNSET, Response, Unset
 
@@ -40,14 +42,14 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentSummaryResponse | HTTPValidationError | None:
+) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | None:
     if response.status_code == 200:
         response_200 = AgentSummaryResponse.from_dict(response.json())
 
         return response_200
 
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = AgentDefinitionImportErrorResponse.from_dict(response.json())
 
         return response_422
 
@@ -59,7 +61,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentSummaryResponse | HTTPValidationError]:
+) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -74,7 +76,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: UpdateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[AgentSummaryResponse | HTTPValidationError]:
+) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse]:
     """Update agent metadata
 
      Update an agent's name, description, evaluation settings, and model lifecycle settings.
@@ -87,6 +89,14 @@ def sync_detailed(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Replacing the workflow from an export:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only
+    touches the workflow + agent metadata — alert_configs, evaluation_criteria, governance_policies,
+    schedules, and solution links from the imported file are NOT applied (use the dedicated endpoints
+    for those, or `POST /agents` to import as a new agent).
+    - `entity_remap: {source_uuid: target_uuid}` substitutes workflow entity refs before save (same
+    shape as `POST /agents`).
 
     At least one field must be provided.
 
@@ -104,7 +114,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentSummaryResponse | HTTPValidationError]
+        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse]
     """
 
     kwargs = _get_kwargs(
@@ -126,7 +136,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: UpdateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> AgentSummaryResponse | HTTPValidationError | None:
+) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | None:
     """Update agent metadata
 
      Update an agent's name, description, evaluation settings, and model lifecycle settings.
@@ -139,6 +149,14 @@ def sync(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Replacing the workflow from an export:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only
+    touches the workflow + agent metadata — alert_configs, evaluation_criteria, governance_policies,
+    schedules, and solution links from the imported file are NOT applied (use the dedicated endpoints
+    for those, or `POST /agents` to import as a new agent).
+    - `entity_remap: {source_uuid: target_uuid}` substitutes workflow entity refs before save (same
+    shape as `POST /agents`).
 
     At least one field must be provided.
 
@@ -156,7 +174,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentSummaryResponse | HTTPValidationError
+        AgentDefinitionImportErrorResponse | AgentSummaryResponse
     """
 
     return sync_detailed(
@@ -173,7 +191,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: UpdateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[AgentSummaryResponse | HTTPValidationError]:
+) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse]:
     """Update agent metadata
 
      Update an agent's name, description, evaluation settings, and model lifecycle settings.
@@ -186,6 +204,14 @@ async def asyncio_detailed(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Replacing the workflow from an export:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only
+    touches the workflow + agent metadata — alert_configs, evaluation_criteria, governance_policies,
+    schedules, and solution links from the imported file are NOT applied (use the dedicated endpoints
+    for those, or `POST /agents` to import as a new agent).
+    - `entity_remap: {source_uuid: target_uuid}` substitutes workflow entity refs before save (same
+    shape as `POST /agents`).
 
     At least one field must be provided.
 
@@ -203,7 +229,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentSummaryResponse | HTTPValidationError]
+        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse]
     """
 
     kwargs = _get_kwargs(
@@ -223,7 +249,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: UpdateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> AgentSummaryResponse | HTTPValidationError | None:
+) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | None:
     """Update agent metadata
 
      Update an agent's name, description, evaluation settings, and model lifecycle settings.
@@ -236,6 +262,14 @@ async def asyncio(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Replacing the workflow from an export:
+    - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only
+    touches the workflow + agent metadata — alert_configs, evaluation_criteria, governance_policies,
+    schedules, and solution links from the imported file are NOT applied (use the dedicated endpoints
+    for those, or `POST /agents` to import as a new agent).
+    - `entity_remap: {source_uuid: target_uuid}` substitutes workflow entity refs before save (same
+    shape as `POST /agents`).
 
     At least one field must be provided.
 
@@ -253,7 +287,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentSummaryResponse | HTTPValidationError
+        AgentDefinitionImportErrorResponse | AgentSummaryResponse
     """
 
     return (

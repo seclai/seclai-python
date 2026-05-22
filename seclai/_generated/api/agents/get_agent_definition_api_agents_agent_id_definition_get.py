@@ -78,15 +78,19 @@ def sync_detailed(
     The definition contains the agent's step workflow. Available step types:
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
-    - `transform`: Reshape data with a Liquid template
+    - `regex_replace`: Reshape text via ordered regex find/replace rules
     - `gate`: Evaluate conditions, stop or continue child execution
     - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
     step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
-    - `insight`: Progressively read and analyze large input
+    - `extract_data`: Progressively read and analyze large input
     - `extract_content`: Extract structured data (JSON, HTML, XML)
+    - `add_chat_turn` / `load_chat_history`: Record a turn or load running history from a conversation
+    memory bank
+    - `add_memory` / `search_memory` / `load_memory`: Write, semantic-search, or load entries on a
+    general memory bank
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -102,11 +106,13 @@ def sync_detailed(
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
+    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
+    time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
-    - `combinator`: Combine multiple inputs
+    - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
+    - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -152,15 +158,19 @@ def sync(
     The definition contains the agent's step workflow. Available step types:
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
-    - `transform`: Reshape data with a Liquid template
+    - `regex_replace`: Reshape text via ordered regex find/replace rules
     - `gate`: Evaluate conditions, stop or continue child execution
     - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
     step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
-    - `insight`: Progressively read and analyze large input
+    - `extract_data`: Progressively read and analyze large input
     - `extract_content`: Extract structured data (JSON, HTML, XML)
+    - `add_chat_turn` / `load_chat_history`: Record a turn or load running history from a conversation
+    memory bank
+    - `add_memory` / `search_memory` / `load_memory`: Write, semantic-search, or load entries on a
+    general memory bank
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -176,11 +186,13 @@ def sync(
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
+    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
+    time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
-    - `combinator`: Combine multiple inputs
+    - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
+    - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -221,15 +233,19 @@ async def asyncio_detailed(
     The definition contains the agent's step workflow. Available step types:
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
-    - `transform`: Reshape data with a Liquid template
+    - `regex_replace`: Reshape text via ordered regex find/replace rules
     - `gate`: Evaluate conditions, stop or continue child execution
     - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
     step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
-    - `insight`: Progressively read and analyze large input
+    - `extract_data`: Progressively read and analyze large input
     - `extract_content`: Extract structured data (JSON, HTML, XML)
+    - `add_chat_turn` / `load_chat_history`: Record a turn or load running history from a conversation
+    memory bank
+    - `add_memory` / `search_memory` / `load_memory`: Write, semantic-search, or load entries on a
+    general memory bank
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -245,11 +261,13 @@ async def asyncio_detailed(
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
+    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
+    time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
-    - `combinator`: Combine multiple inputs
+    - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
+    - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -293,15 +311,19 @@ async def asyncio(
     The definition contains the agent's step workflow. Available step types:
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
-    - `transform`: Reshape data with a Liquid template
+    - `regex_replace`: Reshape text via ordered regex find/replace rules
     - `gate`: Evaluate conditions, stop or continue child execution
     - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
     step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
-    - `insight`: Progressively read and analyze large input
+    - `extract_data`: Progressively read and analyze large input
     - `extract_content`: Extract structured data (JSON, HTML, XML)
+    - `add_chat_turn` / `load_chat_history`: Record a turn or load running history from a conversation
+    memory bank
+    - `add_memory` / `search_memory` / `load_memory`: Write, semantic-search, or load entries on a
+    general memory bank
     - `send_email`: Send email with step output
     - `webhook_call`: POST data to an external URL
     - `write_aws_s3_object`: Write output to S3
@@ -317,11 +339,13 @@ async def asyncio(
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` trigger; `priority: true` enables real-time streaming)
+    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
+    time streaming)
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
-    - `combinator`: Combine multiple inputs
+    - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
+    - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
