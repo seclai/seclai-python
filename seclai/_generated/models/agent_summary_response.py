@@ -26,7 +26,6 @@ class AgentSummaryResponse:
         description (None | str): Agent description.
         id (str): Unique agent identifier.
         name (str): Agent name.
-        trigger_type (None | str): Trigger type for the agent.
         updated_at (str): ISO 8601 last-updated timestamp.
         default_evaluation_tier (None | str | Unset): Default evaluation tier: fast, balanced, or thorough.
         evaluation_mode (str | Unset): Evaluation mode: output_expectation, eval_and_retry, or sample_and_flag. Default:
@@ -44,13 +43,13 @@ class AgentSummaryResponse:
         retry_on_failure (bool | Unset): Whether to retry on evaluation failure. Default: True.
         sampling_config (AgentSummaryResponseSamplingConfigType0 | None | Unset): Sampling configuration for
             sample_and_flag mode.
+        trigger_type (None | str | Unset): Trigger type for the agent.
     """
 
     created_at: str
     description: None | str
     id: str
     name: str
-    trigger_type: None | str
     updated_at: str
     default_evaluation_tier: None | str | Unset = UNSET
     evaluation_mode: str | Unset = "eval_and_retry"
@@ -61,6 +60,7 @@ class AgentSummaryResponse:
     prompt_model_auto_upgrade_strategy: str | Unset = "none"
     retry_on_failure: bool | Unset = True
     sampling_config: AgentSummaryResponseSamplingConfigType0 | None | Unset = UNSET
+    trigger_type: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -76,9 +76,6 @@ class AgentSummaryResponse:
         id = self.id
 
         name = self.name
-
-        trigger_type: None | str
-        trigger_type = self.trigger_type
 
         updated_at = self.updated_at
 
@@ -131,6 +128,12 @@ class AgentSummaryResponse:
         else:
             sampling_config = self.sampling_config
 
+        trigger_type: None | str | Unset
+        if isinstance(self.trigger_type, Unset):
+            trigger_type = UNSET
+        else:
+            trigger_type = self.trigger_type
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -139,7 +142,6 @@ class AgentSummaryResponse:
                 "description": description,
                 "id": id,
                 "name": name,
-                "trigger_type": trigger_type,
                 "updated_at": updated_at,
             }
         )
@@ -167,6 +169,8 @@ class AgentSummaryResponse:
             field_dict["retry_on_failure"] = retry_on_failure
         if sampling_config is not UNSET:
             field_dict["sampling_config"] = sampling_config
+        if trigger_type is not UNSET:
+            field_dict["trigger_type"] = trigger_type
 
         return field_dict
 
@@ -190,13 +194,6 @@ class AgentSummaryResponse:
         id = d.pop("id")
 
         name = d.pop("name")
-
-        def _parse_trigger_type(data: object) -> None | str:
-            if data is None:
-                return data
-            return cast(None | str, data)
-
-        trigger_type = _parse_trigger_type(d.pop("trigger_type"))
 
         updated_at = d.pop("updated_at")
 
@@ -295,12 +292,20 @@ class AgentSummaryResponse:
 
         sampling_config = _parse_sampling_config(d.pop("sampling_config", UNSET))
 
+        def _parse_trigger_type(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        trigger_type = _parse_trigger_type(d.pop("trigger_type", UNSET))
+
         agent_summary_response = cls(
             created_at=created_at,
             description=description,
             id=id,
             name=name,
-            trigger_type=trigger_type,
             updated_at=updated_at,
             default_evaluation_tier=default_evaluation_tier,
             evaluation_mode=evaluation_mode,
@@ -311,6 +316,7 @@ class AgentSummaryResponse:
             prompt_model_auto_upgrade_strategy=prompt_model_auto_upgrade_strategy,
             retry_on_failure=retry_on_failure,
             sampling_config=sampling_config,
+            trigger_type=trigger_type,
         )
 
         agent_summary_response.additional_properties = d

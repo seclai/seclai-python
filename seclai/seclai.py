@@ -716,7 +716,10 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        # ``parsed`` can only be the success model here: _raise_for_openapi_response
+        # already raised for any non-200 status, including the 402
+        # InsufficientCreditsResponse envelope.
+        return cast(AgentRunResponse, parsed)
 
     def run_streaming_agent_and_wait(
         self,
@@ -1772,6 +1775,72 @@ class Seclai(_SeclaiBase):
             ),
         )
 
+    def get_agent_attachment_references(self, agent_id: str) -> dict[str, Any]:
+        """Get the static attachment-reference contract for an agent.
+
+        Call this before staging uploads to learn whether the agent accepts
+        files at all (``requires_uploads``) and which specific filenames,
+        indexes, or glob patterns its templates reference. A run-time upload
+        batch that does not satisfy every declared selector is rejected with
+        HTTP 400.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The agent's attachment-reference contract.
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/agents/{agent_id}/attachment-references",
+            ),
+        )
+
+    def download_agent_run_attachment(
+        self,
+        run_id: str,
+        attachment_id: str,
+        *,
+        download_name: str | None = None,
+    ) -> httpx.Response:
+        """Download an attachment emitted by a step in an agent run.
+
+        Returns a **streaming** response. The caller is responsible for
+        consuming and closing the response::
+
+            response = client.download_agent_run_attachment("run", "att")
+            with response:
+                for chunk in response.iter_bytes():
+                    f.write(chunk)
+
+        Args:
+            run_id: Run identifier.
+            attachment_id: URL-safe-base64-encoded ``storage_key`` of the
+                attachment (as surfaced in webhook/email payloads and run
+                output manifests).
+            download_name: Optional filename hint for the download disposition.
+
+        Returns:
+            A streaming ``httpx.Response``. Must be closed by the caller.
+        """
+        request = self._client.build_request(
+            "GET",
+            f"/v2/agent-runs/{run_id}/attachments/{attachment_id}",
+            params=_strip_none({"download_name": download_name}),
+            headers=_merge_request_headers(options=self._options, request_headers=None),
+        )
+        response = self._client.send(request, stream=True)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            response.read()
+            response.close()
+            _raise_for_status(response)
+        return response
+
     # ── Agent AI Assistant ────────────────────────────────────────────────────
 
     def generate_agent_steps(
@@ -2627,7 +2696,13 @@ class Seclai(_SeclaiBase):
             headers=_merge_request_headers(options=self._options, request_headers=None),
         )
         response = self._client.send(request, stream=True)
-        _raise_for_status(response)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            response.read()
+            response.close()
+            _raise_for_status(response)
         return response
 
     def estimate_source_export(
@@ -3495,6 +3570,17 @@ class Seclai(_SeclaiBase):
             "POST", f"/models/playground/experiments/{experiment_id}/cancel"
         )
 
+    def delete_experiment(self, experiment_id: str) -> None:
+        """Soft-delete a model playground experiment.
+
+        Removes the experiment from list/detail views while preserving audit
+        history.
+
+        Args:
+            experiment_id: Experiment identifier.
+        """
+        self.request("DELETE", f"/models/playground/experiments/{experiment_id}")
+
     # ── Search ────────────────────────────────────────────────────────────────
 
     def search(
@@ -4061,7 +4147,10 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        # ``parsed`` can only be the success model here: _raise_for_openapi_response
+        # already raised for any non-200 status, including the 402
+        # InsufficientCreditsResponse envelope.
+        return cast(AgentRunResponse, parsed)
 
     async def run_streaming_agent_and_wait(
         self,
@@ -5111,6 +5200,75 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
+    async def get_agent_attachment_references(self, agent_id: str) -> dict[str, Any]:
+        """Get the static attachment-reference contract for an agent.
+
+        Call this before staging uploads to learn whether the agent accepts
+        files at all (``requires_uploads``) and which specific filenames,
+        indexes, or glob patterns its templates reference. A run-time upload
+        batch that does not satisfy every declared selector is rejected with
+        HTTP 400.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The agent's attachment-reference contract.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/agents/{agent_id}/attachment-references",
+            ),
+        )
+
+    async def download_agent_run_attachment(
+        self,
+        run_id: str,
+        attachment_id: str,
+        *,
+        download_name: str | None = None,
+    ) -> httpx.Response:
+        """Download an attachment emitted by a step in an agent run.
+
+        Returns a **streaming** response. The caller is responsible for
+        consuming and closing the response::
+
+            response = await client.download_agent_run_attachment("run", "att")
+            async with response:
+                async for chunk in response.aiter_bytes():
+                    f.write(chunk)
+
+        Args:
+            run_id: Run identifier.
+            attachment_id: URL-safe-base64-encoded ``storage_key`` of the
+                attachment (as surfaced in webhook/email payloads and run
+                output manifests).
+            download_name: Optional filename hint for the download disposition.
+
+        Returns:
+            A streaming ``httpx.Response``. Must be closed by the caller.
+        """
+        headers = await _merge_request_headers_async(
+            options=self._options, request_headers=None
+        )
+        request = self._client.build_request(
+            "GET",
+            f"/v2/agent-runs/{run_id}/attachments/{attachment_id}",
+            params=_strip_none({"download_name": download_name}),
+            headers=headers,
+        )
+        response = await self._client.send(request, stream=True)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            await response.aread()
+            await response.aclose()
+            _raise_for_status(response)
+        return response
+
     # ── Agent AI Assistant ────────────────────────────────────────────────────
 
     async def generate_agent_steps(
@@ -5981,7 +6139,13 @@ class AsyncSeclai(_SeclaiBase):
             headers=headers,
         )
         response = await self._client.send(request, stream=True)
-        _raise_for_status(response)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            await response.aread()
+            await response.aclose()
+            _raise_for_status(response)
         return response
 
     async def estimate_source_export(
@@ -6862,6 +7026,17 @@ class AsyncSeclai(_SeclaiBase):
         return await self.request(
             "POST", f"/models/playground/experiments/{experiment_id}/cancel"
         )
+
+    async def delete_experiment(self, experiment_id: str) -> None:
+        """Soft-delete a model playground experiment.
+
+        Removes the experiment from list/detail views while preserving audit
+        history.
+
+        Args:
+            experiment_id: Experiment identifier.
+        """
+        await self.request("DELETE", f"/models/playground/experiments/{experiment_id}")
 
     # ── Search ────────────────────────────────────────────────────────────────
 

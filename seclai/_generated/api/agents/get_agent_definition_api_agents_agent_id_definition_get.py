@@ -113,6 +113,18 @@ def sync_detailed(
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
+    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
+    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
+    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
+    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
+    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
+    `child_steps`.
+    - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
+    to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
+    semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
+    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
+    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
+    `display_result` in `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -193,6 +205,18 @@ def sync(
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
+    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
+    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
+    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
+    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
+    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
+    `child_steps`.
+    - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
+    to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
+    semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
+    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
+    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
+    `display_result` in `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -268,6 +292,18 @@ async def asyncio_detailed(
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
+    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
+    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
+    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
+    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
+    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
+    `child_steps`.
+    - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
+    to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
+    semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
+    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
+    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
+    `display_result` in `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -346,6 +382,18 @@ async def asyncio(
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
+    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
+    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
+    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
+    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
+    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
+    `child_steps`.
+    - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
+    to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
+    semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
+    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
+    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
+    `display_result` in `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your

@@ -107,6 +107,7 @@ def sync_detailed(
     - `image/gif`
     - `image/jpeg`
     - `image/png`
+    - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
     - `text/csv`
@@ -196,6 +197,7 @@ def sync(
     - `image/gif`
     - `image/jpeg`
     - `image/png`
+    - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
     - `text/csv`
@@ -280,6 +282,7 @@ async def asyncio_detailed(
     - `image/gif`
     - `image/jpeg`
     - `image/png`
+    - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
     - `text/csv`
@@ -367,6 +370,7 @@ async def asyncio(
     - `image/gif`
     - `image/jpeg`
     - `image/png`
+    - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
     - `text/csv`

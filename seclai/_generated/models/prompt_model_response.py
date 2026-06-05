@@ -11,6 +11,7 @@ from dateutil.parser import isoparse
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.modality_rate_response import ModalityRateResponse
     from ..models.prompt_model_response_payload_schema_type_0 import (
         PromptModelResponsePayloadSchemaType0,
     )
@@ -50,6 +51,7 @@ class PromptModelResponse:
             prompt_call json_template payloads.
         payload_schema_source_url (None | str | Unset): Source URL used to derive payload_schema guidance for this
             model.
+        per_modality_rates (list[ModalityRateResponse] | Unset):
         released_at (datetime.datetime | None | Unset):
         schema_documentation_url (None | str | Unset): Model documentation URL with request/response payload details.
         schema_notes (None | str | Unset): Human-readable notes about request payload compatibility.
@@ -57,6 +59,7 @@ class PromptModelResponse:
         sunset_at (datetime.datetime | None | Unset):
         supported_input_media (list[str] | None | Unset):
         supported_languages (list[str] | None | Unset):
+        supported_output_media (list[str] | None | Unset):
         supports_openai_arguments (bool | Unset):  Default: False.
         supports_streaming (bool | Unset):  Default: False.
         supports_structured_output (bool | Unset):  Default: True.
@@ -91,6 +94,7 @@ class PromptModelResponse:
     output_credits_per_1000_tokens: float | None | Unset = UNSET
     payload_schema: None | PromptModelResponsePayloadSchemaType0 | Unset = UNSET
     payload_schema_source_url: None | str | Unset = UNSET
+    per_modality_rates: list[ModalityRateResponse] | Unset = UNSET
     released_at: datetime.datetime | None | Unset = UNSET
     schema_documentation_url: None | str | Unset = UNSET
     schema_notes: None | str | Unset = UNSET
@@ -98,6 +102,7 @@ class PromptModelResponse:
     sunset_at: datetime.datetime | None | Unset = UNSET
     supported_input_media: list[str] | None | Unset = UNSET
     supported_languages: list[str] | None | Unset = UNSET
+    supported_output_media: list[str] | None | Unset = UNSET
     supports_openai_arguments: bool | Unset = False
     supports_streaming: bool | Unset = False
     supports_structured_output: bool | Unset = True
@@ -209,6 +214,13 @@ class PromptModelResponse:
         else:
             payload_schema_source_url = self.payload_schema_source_url
 
+        per_modality_rates: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.per_modality_rates, Unset):
+            per_modality_rates = []
+            for per_modality_rates_item_data in self.per_modality_rates:
+                per_modality_rates_item = per_modality_rates_item_data.to_dict()
+                per_modality_rates.append(per_modality_rates_item)
+
         released_at: None | str | Unset
         if isinstance(self.released_at, Unset):
             released_at = UNSET
@@ -260,6 +272,15 @@ class PromptModelResponse:
 
         else:
             supported_languages = self.supported_languages
+
+        supported_output_media: list[str] | None | Unset
+        if isinstance(self.supported_output_media, Unset):
+            supported_output_media = UNSET
+        elif isinstance(self.supported_output_media, list):
+            supported_output_media = self.supported_output_media
+
+        else:
+            supported_output_media = self.supported_output_media
 
         supports_openai_arguments = self.supports_openai_arguments
 
@@ -359,6 +380,8 @@ class PromptModelResponse:
             field_dict["payload_schema"] = payload_schema
         if payload_schema_source_url is not UNSET:
             field_dict["payload_schema_source_url"] = payload_schema_source_url
+        if per_modality_rates is not UNSET:
+            field_dict["per_modality_rates"] = per_modality_rates
         if released_at is not UNSET:
             field_dict["released_at"] = released_at
         if schema_documentation_url is not UNSET:
@@ -373,6 +396,8 @@ class PromptModelResponse:
             field_dict["supported_input_media"] = supported_input_media
         if supported_languages is not UNSET:
             field_dict["supported_languages"] = supported_languages
+        if supported_output_media is not UNSET:
+            field_dict["supported_output_media"] = supported_output_media
         if supports_openai_arguments is not UNSET:
             field_dict["supports_openai_arguments"] = supports_openai_arguments
         if supports_streaming is not UNSET:
@@ -398,6 +423,7 @@ class PromptModelResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.modality_rate_response import ModalityRateResponse
         from ..models.prompt_model_response_payload_schema_type_0 import (
             PromptModelResponsePayloadSchemaType0,
         )
@@ -563,6 +589,17 @@ class PromptModelResponse:
             d.pop("payload_schema_source_url", UNSET)
         )
 
+        _per_modality_rates = d.pop("per_modality_rates", UNSET)
+        per_modality_rates: list[ModalityRateResponse] | Unset = UNSET
+        if _per_modality_rates is not UNSET:
+            per_modality_rates = []
+            for per_modality_rates_item_data in _per_modality_rates:
+                per_modality_rates_item = ModalityRateResponse.from_dict(
+                    per_modality_rates_item_data
+                )
+
+                per_modality_rates.append(per_modality_rates_item)
+
         def _parse_released_at(data: object) -> datetime.datetime | None | Unset:
             if data is None:
                 return data
@@ -664,6 +701,25 @@ class PromptModelResponse:
 
         supported_languages = _parse_supported_languages(
             d.pop("supported_languages", UNSET)
+        )
+
+        def _parse_supported_output_media(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                supported_output_media_type_0 = cast(list[str], data)
+
+                return supported_output_media_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        supported_output_media = _parse_supported_output_media(
+            d.pop("supported_output_media", UNSET)
         )
 
         supports_openai_arguments = d.pop("supports_openai_arguments", UNSET)
@@ -775,6 +831,7 @@ class PromptModelResponse:
             output_credits_per_1000_tokens=output_credits_per_1000_tokens,
             payload_schema=payload_schema,
             payload_schema_source_url=payload_schema_source_url,
+            per_modality_rates=per_modality_rates,
             released_at=released_at,
             schema_documentation_url=schema_documentation_url,
             schema_notes=schema_notes,
@@ -782,6 +839,7 @@ class PromptModelResponse:
             sunset_at=sunset_at,
             supported_input_media=supported_input_media,
             supported_languages=supported_languages,
+            supported_output_media=supported_output_media,
             supports_openai_arguments=supports_openai_arguments,
             supports_streaming=supports_streaming,
             supports_structured_output=supports_structured_output,

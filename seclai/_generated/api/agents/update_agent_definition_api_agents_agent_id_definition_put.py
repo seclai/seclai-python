@@ -88,12 +88,21 @@ def sync_detailed(
     `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
     `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
     `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
-    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
-    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
+    `display_result`, `join`, `merge`, `text`, `for_each`, `if_else`, and `switch`. Non-composite step
+    types (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
     before the retry to make retries conditional.
+
+    **if_else** runs `then_steps` when its `conditions` (same shape as `gate`) match, otherwise its
+    optional `else_steps`. Either branch's output flows to the if_else step's own `child_steps` (the
+    post-branch continuation chain).
+
+    **switch** dispatches on a `discriminator` template (default `{{input}}`) to the first matching case
+    (equality by default; pass a list in `match` for `$in` semantics) or to `else_steps` when no case
+    matches. Cases own their own `steps` subtrees; the chosen branch's output flows to the switch step's
+    own `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only update agents belonging to your
@@ -145,12 +154,21 @@ def sync(
     `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
     `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
     `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
-    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
-    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
+    `display_result`, `join`, `merge`, `text`, `for_each`, `if_else`, and `switch`. Non-composite step
+    types (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
     before the retry to make retries conditional.
+
+    **if_else** runs `then_steps` when its `conditions` (same shape as `gate`) match, otherwise its
+    optional `else_steps`. Either branch's output flows to the if_else step's own `child_steps` (the
+    post-branch continuation chain).
+
+    **switch** dispatches on a `discriminator` template (default `{{input}}`) to the first matching case
+    (equality by default; pass a list in `match` for `$in` semantics) or to `else_steps` when no case
+    matches. Cases own their own `steps` subtrees; the chosen branch's output flows to the switch step's
+    own `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only update agents belonging to your
@@ -197,12 +215,21 @@ async def asyncio_detailed(
     `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
     `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
     `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
-    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
-    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
+    `display_result`, `join`, `merge`, `text`, `for_each`, `if_else`, and `switch`. Non-composite step
+    types (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
     before the retry to make retries conditional.
+
+    **if_else** runs `then_steps` when its `conditions` (same shape as `gate`) match, otherwise its
+    optional `else_steps`. Either branch's output flows to the if_else step's own `child_steps` (the
+    post-branch continuation chain).
+
+    **switch** dispatches on a `discriminator` template (default `{{input}}`) to the first matching case
+    (equality by default; pass a list in `match` for `$in` semantics) or to `else_steps` when no case
+    matches. Cases own their own `steps` subtrees; the chosen branch's output flows to the switch step's
+    own `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only update agents belonging to your
@@ -252,12 +279,21 @@ async def asyncio(
     `add_chat_turn`, `load_chat_history`, `add_memory`, `search_memory`, `load_memory`,
     `streaming_result`, `send_email`, `webhook_call`, `write_aws_s3_object`, `call_agent`,
     `write_metadata`, `write_content_attachment`, `load_content_attachment`, `load_content`,
-    `display_result`, `join`, `merge`, `text`, and `for_each`. Non-composite step types
-    (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
+    `display_result`, `join`, `merge`, `text`, `for_each`, `if_else`, and `switch`. Non-composite step
+    types (`display_result`, `join`, `retry`, `streaming_result`) cannot contain child steps.
 
     **Retry steps** re-execute from a target ancestor step for quality-control loops. Configure with
     `target_step_id` (ancestor step ID) and `max_retries` (1–10). Best practice: place a `gate` step
     before the retry to make retries conditional.
+
+    **if_else** runs `then_steps` when its `conditions` (same shape as `gate`) match, otherwise its
+    optional `else_steps`. Either branch's output flows to the if_else step's own `child_steps` (the
+    post-branch continuation chain).
+
+    **switch** dispatches on a `discriminator` template (default `{{input}}`) to the first matching case
+    (equality by default; pass a list in `match` for `$in` semantics) or to `else_steps` when no case
+    matches. Cases own their own `steps` subtrees; the chosen branch's output flows to the switch step's
+    own `child_steps`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only update agents belonging to your

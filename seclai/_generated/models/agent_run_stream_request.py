@@ -24,14 +24,23 @@ class AgentRunStreamRequest:
     Attributes:
         input_ (None | str | Unset): Input to provide to the agent upon running for agents with dynamic triggers.
         input_upload_id (None | Unset | UUID): ID of a previously uploaded file (via POST /{agent_id}/upload-input) to
-            use as the run input for dynamic-input triggers. Mutually exclusive with the 'input' field.
+            use as the run input for dynamic-input triggers. Mutually exclusive with the 'input' field. Use
+            ``input_upload_ids`` to attach multiple files. Subject to the same per-batch attachment-selector validation as
+            the non-streaming endpoint.
+        input_upload_ids (list[UUID] | None | Unset): IDs of multiple previously uploaded files. See the non-streaming
+            endpoint for full semantics, including per-batch selector validation (exact names, indexed references, and glob
+            patterns must all be satisfied or the run is rejected with HTTP 400). Max 20.
         metadata (AgentRunStreamRequestMetadataType0 | None | Unset): Metadata to make available for string substitution
             expressions in agent tasks.
+        replay_of_run_id (None | Unset | UUID): Re-run reusing a prior run's uploaded input files (re-resolved server-
+            side from the source run, which must belong to this account and agent). A fresh upload batch takes precedence.
     """
 
     input_: None | str | Unset = UNSET
     input_upload_id: None | Unset | UUID = UNSET
+    input_upload_ids: list[UUID] | None | Unset = UNSET
     metadata: AgentRunStreamRequestMetadataType0 | None | Unset = UNSET
+    replay_of_run_id: None | Unset | UUID = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -53,6 +62,18 @@ class AgentRunStreamRequest:
         else:
             input_upload_id = self.input_upload_id
 
+        input_upload_ids: list[str] | None | Unset
+        if isinstance(self.input_upload_ids, Unset):
+            input_upload_ids = UNSET
+        elif isinstance(self.input_upload_ids, list):
+            input_upload_ids = []
+            for input_upload_ids_type_0_item_data in self.input_upload_ids:
+                input_upload_ids_type_0_item = str(input_upload_ids_type_0_item_data)
+                input_upload_ids.append(input_upload_ids_type_0_item)
+
+        else:
+            input_upload_ids = self.input_upload_ids
+
         metadata: dict[str, Any] | None | Unset
         if isinstance(self.metadata, Unset):
             metadata = UNSET
@@ -61,6 +82,14 @@ class AgentRunStreamRequest:
         else:
             metadata = self.metadata
 
+        replay_of_run_id: None | str | Unset
+        if isinstance(self.replay_of_run_id, Unset):
+            replay_of_run_id = UNSET
+        elif isinstance(self.replay_of_run_id, UUID):
+            replay_of_run_id = str(self.replay_of_run_id)
+        else:
+            replay_of_run_id = self.replay_of_run_id
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -68,8 +97,12 @@ class AgentRunStreamRequest:
             field_dict["input"] = input_
         if input_upload_id is not UNSET:
             field_dict["input_upload_id"] = input_upload_id
+        if input_upload_ids is not UNSET:
+            field_dict["input_upload_ids"] = input_upload_ids
         if metadata is not UNSET:
             field_dict["metadata"] = metadata
+        if replay_of_run_id is not UNSET:
+            field_dict["replay_of_run_id"] = replay_of_run_id
 
         return field_dict
 
@@ -107,6 +140,30 @@ class AgentRunStreamRequest:
 
         input_upload_id = _parse_input_upload_id(d.pop("input_upload_id", UNSET))
 
+        def _parse_input_upload_ids(data: object) -> list[UUID] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                input_upload_ids_type_0 = []
+                _input_upload_ids_type_0 = data
+                for input_upload_ids_type_0_item_data in _input_upload_ids_type_0:
+                    input_upload_ids_type_0_item = UUID(
+                        input_upload_ids_type_0_item_data
+                    )
+
+                    input_upload_ids_type_0.append(input_upload_ids_type_0_item)
+
+                return input_upload_ids_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[UUID] | None | Unset, data)
+
+        input_upload_ids = _parse_input_upload_ids(d.pop("input_upload_ids", UNSET))
+
         def _parse_metadata(
             data: object,
         ) -> AgentRunStreamRequestMetadataType0 | None | Unset:
@@ -126,10 +183,29 @@ class AgentRunStreamRequest:
 
         metadata = _parse_metadata(d.pop("metadata", UNSET))
 
+        def _parse_replay_of_run_id(data: object) -> None | Unset | UUID:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                replay_of_run_id_type_0 = UUID(data)
+
+                return replay_of_run_id_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | Unset | UUID, data)
+
+        replay_of_run_id = _parse_replay_of_run_id(d.pop("replay_of_run_id", UNSET))
+
         agent_run_stream_request = cls(
             input_=input_,
             input_upload_id=input_upload_id,
+            input_upload_ids=input_upload_ids,
             metadata=metadata,
+            replay_of_run_id=replay_of_run_id,
         )
 
         agent_run_stream_request.additional_properties = d
