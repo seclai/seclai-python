@@ -21,8 +21,8 @@ class ImportSkipResponse:
 
     Used as the element type for ``import_warnings`` on every
     response model that accepts an ``agent_definition`` payload.
-    See :py:class:`services.agent_definition_import.AgentImportSkip`
-    for the full category list.
+    See ``services.agent_definition_import.AgentImportSkip`` for the
+    full category list.
 
     Lives here (not on each router) so the authenticated and public
     API responses share one definition — keeping the shape that

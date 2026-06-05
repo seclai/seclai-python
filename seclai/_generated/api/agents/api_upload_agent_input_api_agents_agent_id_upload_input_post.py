@@ -84,6 +84,12 @@ def sync_detailed(
     After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
     then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
 
+    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
+    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
+    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
+    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
+    agent-trace retention (the agent-traces source's retention period; free default 7 days).
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
     account.
@@ -134,6 +140,12 @@ def sync(
     After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
     then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
 
+    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
+    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
+    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
+    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
+    agent-trace retention (the agent-traces source's retention period; free default 7 days).
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
     account.
@@ -178,6 +190,12 @@ async def asyncio_detailed(
 
     After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
     then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
+
+    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
+    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
+    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
+    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
+    agent-trace retention (the agent-traces source's retention period; free default 7 days).
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -226,6 +244,12 @@ async def asyncio(
 
     After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
     then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
+
+    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
+    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
+    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
+    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
+    agent-trace retention (the agent-traces source's retention period; free default 7 days).
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's

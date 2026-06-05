@@ -260,8 +260,24 @@ result = client.run_agent_and_poll(
 ### Agent input uploads
 
 ```python
+# Discover which files (if any) the agent expects before staging uploads
+refs = client.get_agent_attachment_references("agent_id")
+# refs["requires_uploads"] -> bool; refs["agent"] lists the exact_names /
+# indexes_max / patterns a run-time upload batch must satisfy.
+
 upload = client.upload_agent_input("agent_id", file=b"data", file_name="input.pdf")
 status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
+```
+
+### Agent run attachments
+
+```python
+# Download a file emitted by a step in an agent run. attachment_id is the
+# URL-safe-base64 storage_key surfaced in run output manifests / webhooks.
+response = client.download_agent_run_attachment("run_id", "attachment_id")  # raw httpx.Response
+with response:
+    for chunk in response.iter_bytes():
+        ...  # write to disk
 ```
 
 ### Agent AI assistant
@@ -491,6 +507,13 @@ client.mark_model_alert_read("alert_id")
 client.mark_all_model_alerts_read()
 unread = client.get_unread_model_alert_count()
 recs = client.get_model_recommendations("model_id")
+
+# Model playground experiments
+experiment = client.create_experiment({"model_ids": ["model_id"], "prompt": "..."})
+experiments = client.list_experiments()
+detail = client.get_experiment("experiment_id")
+client.cancel_experiment("experiment_id")
+client.delete_experiment("experiment_id")  # soft-delete, preserves audit history
 ```
 
 ### Search

@@ -8,6 +8,7 @@ from .add_conversation_turn_request import AddConversationTurnRequest
 from .add_conversation_turn_request_actions_taken_type_0 import (
     AddConversationTurnRequestActionsTakenType0,
 )
+from .agent_attachment_refs_api_response import AgentAttachmentRefsApiResponse
 from .agent_definition_import_error_response import AgentDefinitionImportErrorResponse
 from .agent_definition_response import AgentDefinitionResponse
 from .agent_definition_response_definition import AgentDefinitionResponseDefinition
@@ -47,6 +48,7 @@ from .agent_run_response import AgentRunResponse
 from .agent_run_step_response import AgentRunStepResponse
 from .agent_run_stream_request import AgentRunStreamRequest
 from .agent_run_stream_request_metadata_type_0 import AgentRunStreamRequestMetadataType0
+from .agent_run_tool_call_response import AgentRunToolCallResponse
 from .agent_summary_response import AgentSummaryResponse
 from .agent_summary_response_sampling_config_type_0 import (
     AgentSummaryResponseSamplingConfigType0,
@@ -72,6 +74,7 @@ from .api_ai_memory_bank_accept_api_ai_assistant_memory_bank_conversation_id_pat
     ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch,
 )
 from .applied_action_response import AppliedActionResponse
+from .attachment_refs_source_api_summary import AttachmentRefsSourceApiSummary
 from .body_upload_file_to_content_api_contents_source_connection_content_version_upload_post import (
     BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
 )
@@ -229,6 +232,8 @@ from .inline_text_upload_request import InlineTextUploadRequest
 from .inline_text_upload_request_metadata_type_0 import (
     InlineTextUploadRequestMetadataType0,
 )
+from .insufficient_credits_detail import InsufficientCreditsDetail
+from .insufficient_credits_response import InsufficientCreditsResponse
 from .knowledge_base import KnowledgeBase
 from .knowledge_base_list_response_model import KnowledgeBaseListResponseModel
 from .link_resources_request import LinkResourcesRequest
@@ -270,6 +275,7 @@ from .memory_bank_conversation_turn_response_resulting_config_type_0 import (
 )
 from .memory_bank_last_conversation_response import MemoryBankLastConversationResponse
 from .memory_bank_list_response_model import MemoryBankListResponseModel
+from .modality_rate_response import ModalityRateResponse
 from .non_manual_evaluation_mode_stat_response import (
     NonManualEvaluationModeStatResponse,
 )
@@ -378,6 +384,7 @@ __all__ = (
     "AddCommentRequest",
     "AddConversationTurnRequest",
     "AddConversationTurnRequestActionsTakenType0",
+    "AgentAttachmentRefsApiResponse",
     "AgentDefinitionImportErrorResponse",
     "AgentDefinitionResponse",
     "AgentDefinitionResponseDefinition",
@@ -403,6 +410,7 @@ __all__ = (
     "AgentRunStepResponse",
     "AgentRunStreamRequest",
     "AgentRunStreamRequestMetadataType0",
+    "AgentRunToolCallResponse",
     "AgentSummaryResponse",
     "AgentSummaryResponseSamplingConfigType0",
     "AgentTraceMatchResponse",
@@ -420,6 +428,7 @@ __all__ = (
     "AiConversationTurnResponseResultingConfigType0",
     "ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch",
     "AppliedActionResponse",
+    "AttachmentRefsSourceApiSummary",
     "BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost",
     "BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost",
     "CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost",
@@ -505,6 +514,8 @@ __all__ = (
     "InlineTextReplaceRequestMetadataType0",
     "InlineTextUploadRequest",
     "InlineTextUploadRequestMetadataType0",
+    "InsufficientCreditsDetail",
+    "InsufficientCreditsResponse",
     "KnowledgeBase",
     "KnowledgeBaseListResponseModel",
     "LinkResourcesRequest",
@@ -528,6 +539,7 @@ __all__ = (
     "MemoryBankLastConversationResponse",
     "MemoryBankListResponseModel",
     "MeResponse",
+    "ModalityRateResponse",
     "NonManualEvaluationModeStatResponse",
     "NonManualEvaluationSummaryResponse",
     "OrganizationAlertPreferenceListResponse",

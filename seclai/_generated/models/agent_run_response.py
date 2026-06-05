@@ -39,8 +39,16 @@ class AgentRunResponse:
         governance_input_status (None | str | Unset): Result of the governance input evaluation: safe, blocked, skipped,
             or timed_out.
         governance_input_wait_ms (int | None | Unset): Milliseconds spent waiting for governance input evaluation.
+        hitl_wait_ms (int | None | Unset): Cumulative milliseconds the run was parked waiting for a human decision on a
+            human_in_the_loop step.  Subtracted from active duration in run-detail and duration-stats responses.
         input_scan_status (None | str | Unset): Result of the prompt injection scan: safe, unsafe, skipped, timed_out,
             or error.
+        output_content_type (None | str | Unset): MIME type of `output` — mirrors the terminal step's
+            `output_content_type`.  Consumers interpret `output` differently depending on this value:
+            `application/vnd.seclai.manifest+json` is a multi-asset manifest with shape `{text, attachments: [{storage_key,
+            mime, name, bytes}]}` — fetch each attachment via `GET /authenticated/storage-blobs/{storage_key}`.
+            `text/plain` / `text/*` are free-form text.  `application/json` is a JSON document.  Null on runs that produced
+            no terminal output or that pre-date this column.
         scan_wait_ms (int | None | Unset): Milliseconds spent waiting for prompt injection scan.
         steps (list[AgentRunStepResponse] | None | Unset): Step outputs and per-step timing/credits. Only included when
             requested.
@@ -58,7 +66,9 @@ class AgentRunResponse:
     flagged_policies: list[GovernancePolicyRefResponse] | Unset = UNSET
     governance_input_status: None | str | Unset = UNSET
     governance_input_wait_ms: int | None | Unset = UNSET
+    hitl_wait_ms: int | None | Unset = UNSET
     input_scan_status: None | str | Unset = UNSET
+    output_content_type: None | str | Unset = UNSET
     scan_wait_ms: int | None | Unset = UNSET
     steps: list[AgentRunStepResponse] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -112,11 +122,23 @@ class AgentRunResponse:
         else:
             governance_input_wait_ms = self.governance_input_wait_ms
 
+        hitl_wait_ms: int | None | Unset
+        if isinstance(self.hitl_wait_ms, Unset):
+            hitl_wait_ms = UNSET
+        else:
+            hitl_wait_ms = self.hitl_wait_ms
+
         input_scan_status: None | str | Unset
         if isinstance(self.input_scan_status, Unset):
             input_scan_status = UNSET
         else:
             input_scan_status = self.input_scan_status
+
+        output_content_type: None | str | Unset
+        if isinstance(self.output_content_type, Unset):
+            output_content_type = UNSET
+        else:
+            output_content_type = self.output_content_type
 
         scan_wait_ms: int | None | Unset
         if isinstance(self.scan_wait_ms, Unset):
@@ -158,8 +180,12 @@ class AgentRunResponse:
             field_dict["governance_input_status"] = governance_input_status
         if governance_input_wait_ms is not UNSET:
             field_dict["governance_input_wait_ms"] = governance_input_wait_ms
+        if hitl_wait_ms is not UNSET:
+            field_dict["hitl_wait_ms"] = hitl_wait_ms
         if input_scan_status is not UNSET:
             field_dict["input_scan_status"] = input_scan_status
+        if output_content_type is not UNSET:
+            field_dict["output_content_type"] = output_content_type
         if scan_wait_ms is not UNSET:
             field_dict["scan_wait_ms"] = scan_wait_ms
         if steps is not UNSET:
@@ -254,6 +280,15 @@ class AgentRunResponse:
             d.pop("governance_input_wait_ms", UNSET)
         )
 
+        def _parse_hitl_wait_ms(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        hitl_wait_ms = _parse_hitl_wait_ms(d.pop("hitl_wait_ms", UNSET))
+
         def _parse_input_scan_status(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -262,6 +297,17 @@ class AgentRunResponse:
             return cast(None | str | Unset, data)
 
         input_scan_status = _parse_input_scan_status(d.pop("input_scan_status", UNSET))
+
+        def _parse_output_content_type(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        output_content_type = _parse_output_content_type(
+            d.pop("output_content_type", UNSET)
+        )
 
         def _parse_scan_wait_ms(data: object) -> int | None | Unset:
             if data is None:
@@ -309,7 +355,9 @@ class AgentRunResponse:
             flagged_policies=flagged_policies,
             governance_input_status=governance_input_status,
             governance_input_wait_ms=governance_input_wait_ms,
+            hitl_wait_ms=hitl_wait_ms,
             input_scan_status=input_scan_status,
+            output_content_type=output_content_type,
             scan_wait_ms=scan_wait_ms,
             steps=steps,
         )

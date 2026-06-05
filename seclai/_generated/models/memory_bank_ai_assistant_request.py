@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -23,16 +25,18 @@ class MemoryBankAiAssistantRequest:
 
     Attributes:
         user_input (str): Natural-language description of the memory bank.
-        conversation_id (None | str | Unset): Previous conversation ID to continue.
         current_config (MemoryBankAiAssistantRequestCurrentConfigType0 | None | Unset): Current configuration to refine,
             if any.
+        history_since (datetime.datetime | None | Unset): Optional ISO 8601 timestamp.  When set, only conversation
+            turns created at or after this timestamp are loaded as context, scoping history to the current session so the
+            assistant remembers earlier turns in a multi-turn refinement.
     """
 
     user_input: str
-    conversation_id: None | str | Unset = UNSET
     current_config: MemoryBankAiAssistantRequestCurrentConfigType0 | None | Unset = (
         UNSET
     )
+    history_since: datetime.datetime | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,12 +45,6 @@ class MemoryBankAiAssistantRequest:
         )
 
         user_input = self.user_input
-
-        conversation_id: None | str | Unset
-        if isinstance(self.conversation_id, Unset):
-            conversation_id = UNSET
-        else:
-            conversation_id = self.conversation_id
 
         current_config: dict[str, Any] | None | Unset
         if isinstance(self.current_config, Unset):
@@ -58,6 +56,14 @@ class MemoryBankAiAssistantRequest:
         else:
             current_config = self.current_config
 
+        history_since: None | str | Unset
+        if isinstance(self.history_since, Unset):
+            history_since = UNSET
+        elif isinstance(self.history_since, datetime.datetime):
+            history_since = self.history_since.isoformat()
+        else:
+            history_since = self.history_since
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -65,10 +71,10 @@ class MemoryBankAiAssistantRequest:
                 "user_input": user_input,
             }
         )
-        if conversation_id is not UNSET:
-            field_dict["conversation_id"] = conversation_id
         if current_config is not UNSET:
             field_dict["current_config"] = current_config
+        if history_since is not UNSET:
+            field_dict["history_since"] = history_since
 
         return field_dict
 
@@ -80,15 +86,6 @@ class MemoryBankAiAssistantRequest:
 
         d = dict(src_dict)
         user_input = d.pop("user_input")
-
-        def _parse_conversation_id(data: object) -> None | str | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(None | str | Unset, data)
-
-        conversation_id = _parse_conversation_id(d.pop("conversation_id", UNSET))
 
         def _parse_current_config(
             data: object,
@@ -113,10 +110,27 @@ class MemoryBankAiAssistantRequest:
 
         current_config = _parse_current_config(d.pop("current_config", UNSET))
 
+        def _parse_history_since(data: object) -> datetime.datetime | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                history_since_type_0 = isoparse(data)
+
+                return history_since_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None | Unset, data)
+
+        history_since = _parse_history_since(d.pop("history_since", UNSET))
+
         memory_bank_ai_assistant_request = cls(
             user_input=user_input,
-            conversation_id=conversation_id,
             current_config=current_config,
+            history_since=history_since,
         )
 
         memory_bank_ai_assistant_request.additional_properties = d

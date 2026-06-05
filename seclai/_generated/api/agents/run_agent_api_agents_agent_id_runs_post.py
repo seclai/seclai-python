@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, cast
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
@@ -10,6 +10,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.agent_run_request import AgentRunRequest
 from ...models.agent_run_response import AgentRunResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.insufficient_credits_response import InsufficientCreditsResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -40,14 +41,15 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentRunResponse | Any | HTTPValidationError | None:
+) -> AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | None:
     if response.status_code == 200:
         response_200 = AgentRunResponse.from_dict(response.json())
 
         return response_200
 
     if response.status_code == 402:
-        response_402 = cast(Any, None)
+        response_402 = InsufficientCreditsResponse.from_dict(response.json())
+
         return response_402
 
     if response.status_code == 422:
@@ -63,7 +65,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentRunResponse | Any | HTTPValidationError]:
+) -> Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,7 +80,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[AgentRunResponse | Any | HTTPValidationError]:
+) -> Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]:
     """Run an agent
 
      Start an agent run.
@@ -118,7 +120,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | Any | HTTPValidationError]
+        Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]
     """
 
     kwargs = _get_kwargs(
@@ -140,7 +142,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> AgentRunResponse | Any | HTTPValidationError | None:
+) -> AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | None:
     """Run an agent
 
      Start an agent run.
@@ -180,7 +182,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | Any | HTTPValidationError
+        AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse
     """
 
     return sync_detailed(
@@ -197,7 +199,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[AgentRunResponse | Any | HTTPValidationError]:
+) -> Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]:
     """Run an agent
 
      Start an agent run.
@@ -237,7 +239,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | Any | HTTPValidationError]
+        Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]
     """
 
     kwargs = _get_kwargs(
@@ -257,7 +259,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> AgentRunResponse | Any | HTTPValidationError | None:
+) -> AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | None:
     """Run an agent
 
      Start an agent run.
@@ -297,7 +299,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | Any | HTTPValidationError
+        AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse
     """
 
     return (

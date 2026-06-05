@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -9,6 +9,11 @@ from attrs import field as _attrs_field
 from ..models.pending_processing_completed_failed_status import (
     PendingProcessingCompletedFailedStatus,
 )
+from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.agent_run_tool_call_response import AgentRunToolCallResponse
+
 
 T = TypeVar("T", bound="AgentRunStepResponse")
 
@@ -27,6 +32,8 @@ class AgentRunStepResponse:
         started_at (None | str): Timestamp when the step attempt started.
         status (PendingProcessingCompletedFailedStatus):
         step_type (str): Type of the agent step.
+        tool_calls (list[AgentRunToolCallResponse] | Unset): LLM tool calls made during this step (prompt_call steps
+            only), ordered by execution. Empty for steps that invoked no tools.
     """
 
     agent_step_id: str
@@ -39,6 +46,7 @@ class AgentRunStepResponse:
     started_at: None | str
     status: PendingProcessingCompletedFailedStatus
     step_type: str
+    tool_calls: list[AgentRunToolCallResponse] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -68,6 +76,13 @@ class AgentRunStepResponse:
 
         step_type = self.step_type
 
+        tool_calls: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.tool_calls, Unset):
+            tool_calls = []
+            for tool_calls_item_data in self.tool_calls:
+                tool_calls_item = tool_calls_item_data.to_dict()
+                tool_calls.append(tool_calls_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -84,11 +99,15 @@ class AgentRunStepResponse:
                 "step_type": step_type,
             }
         )
+        if tool_calls is not UNSET:
+            field_dict["tool_calls"] = tool_calls
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.agent_run_tool_call_response import AgentRunToolCallResponse
+
         d = dict(src_dict)
         agent_step_id = d.pop("agent_step_id")
 
@@ -140,6 +159,17 @@ class AgentRunStepResponse:
 
         step_type = d.pop("step_type")
 
+        _tool_calls = d.pop("tool_calls", UNSET)
+        tool_calls: list[AgentRunToolCallResponse] | Unset = UNSET
+        if _tool_calls is not UNSET:
+            tool_calls = []
+            for tool_calls_item_data in _tool_calls:
+                tool_calls_item = AgentRunToolCallResponse.from_dict(
+                    tool_calls_item_data
+                )
+
+                tool_calls.append(tool_calls_item)
+
         agent_run_step_response = cls(
             agent_step_id=agent_step_id,
             credits_used=credits_used,
@@ -151,6 +181,7 @@ class AgentRunStepResponse:
             started_at=started_at,
             status=status,
             step_type=step_type,
+            tool_calls=tool_calls,
         )
 
         agent_run_step_response.additional_properties = d

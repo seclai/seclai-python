@@ -256,6 +256,41 @@ class TestAgentInputUploads:
         client.get_agent_input_upload_status("a1", "u1")
         assert seen == {"method": "GET", "path": "/agents/a1/input-uploads/u1"}
 
+    def test_get_agent_attachment_references(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"requires_uploads": False})
+
+        client = _sync_client(handler)
+        result = client.get_agent_attachment_references("a1")
+        assert seen == {"method": "GET", "path": "/agents/a1/attachment-references"}
+        assert result["requires_uploads"] is False
+
+    def test_download_agent_run_attachment(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["download_name"] = req.url.params.get("download_name")
+            return httpx.Response(status_code=200, content=b"file-bytes")
+
+        client = _sync_client(handler)
+        resp = client.download_agent_run_attachment(
+            "r1", "att1", download_name="report.pdf"
+        )
+        assert seen == {
+            "method": "GET",
+            "path": "/v2/agent-runs/r1/attachments/att1",
+            "download_name": "report.pdf",
+        }
+        resp.read()
+        assert resp.content == b"file-bytes"
+        resp.close()
+
 
 # ---------------------------------------------------------------------------
 # Agent AI Assistant
@@ -1405,6 +1440,21 @@ class TestModels:
         client.get_model_recommendations("m1")
         assert seen["path"] == "/models/m1/recommendations"
 
+    def test_delete_experiment(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return httpx.Response(status_code=204)
+
+        client = _sync_client(handler)
+        client.delete_experiment("exp1")
+        assert seen == {
+            "method": "DELETE",
+            "path": "/models/playground/experiments/exp1",
+        }
+
 
 # ---------------------------------------------------------------------------
 # Search
@@ -1617,6 +1667,55 @@ class TestAsyncMethods:
         client = _async_client(handler)
         await client.cancel_agent_run("r1")
         assert seen == {"method": "POST", "path": "/agents/runs/r1/cancel"}
+
+    @pytest.mark.asyncio
+    async def test_async_get_agent_attachment_references(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"requires_uploads": True})
+
+        client = _async_client(handler)
+        result = await client.get_agent_attachment_references("a1")
+        assert seen == {"method": "GET", "path": "/agents/a1/attachment-references"}
+        assert result["requires_uploads"] is True
+
+    @pytest.mark.asyncio
+    async def test_async_download_agent_run_attachment(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return httpx.Response(status_code=200, content=b"file-bytes")
+
+        client = _async_client(handler)
+        resp = await client.download_agent_run_attachment("r1", "att1")
+        assert seen == {
+            "method": "GET",
+            "path": "/v2/agent-runs/r1/attachments/att1",
+        }
+        await resp.aread()
+        assert resp.content == b"file-bytes"
+        await resp.aclose()
+
+    @pytest.mark.asyncio
+    async def test_async_delete_experiment(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return httpx.Response(status_code=204)
+
+        client = _async_client(handler)
+        await client.delete_experiment("exp1")
+        assert seen == {
+            "method": "DELETE",
+            "path": "/models/playground/experiments/exp1",
+        }
 
     @pytest.mark.asyncio
     async def test_async_run_streaming_agent(self) -> None:
