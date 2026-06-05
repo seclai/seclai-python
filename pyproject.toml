@@ -101,6 +101,10 @@ include = [
 [tool.poetry.dependencies]
 pydantic = "^2.12.5"
 httpx = "^0.28.1"
+# Required at runtime by the generated models: openapi-python-client emits
+# `dateutil.parser.isoparse` for datetime fields, so this must be a runtime
+# dependency (types-python-dateutil below only covers typing stubs).
+python-dateutil = "^2.8.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8,<9"

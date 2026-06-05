@@ -291,6 +291,24 @@ class TestAgentInputUploads:
         assert resp.content == b"file-bytes"
         resp.close()
 
+    def test_download_agent_run_attachment_error_closes_stream(self) -> None:
+        """On an error status the streaming response is closed before raising."""
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=404, content=b"not found")
+            captured["resp"] = resp
+            return resp
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            client.download_agent_run_attachment("r1", "missing")
+        # Body was read so the error carries detail, and the stream is released.
+        assert exc.value.status_code == 404
+        assert captured["resp"].is_closed
+
 
 # ---------------------------------------------------------------------------
 # Agent AI Assistant

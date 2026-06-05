@@ -60,9 +60,6 @@ from seclai._generated.models.content_embeddings_list_response import (
 )
 from seclai._generated.models.file_upload_response import FileUploadResponse
 from seclai._generated.models.http_validation_error import HTTPValidationError
-from seclai._generated.models.insufficient_credits_response import (
-    InsufficientCreditsResponse,
-)
 from seclai._generated.models.source_list_response import SourceListResponse
 from seclai._generated.types import Response as OpenAPIResponse
 from seclai.auth import (
@@ -719,17 +716,10 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        if isinstance(parsed, InsufficientCreditsResponse):
-            # Defensive: a 402 is already raised by _raise_for_openapi_response
-            # above; this narrows the parsed union for the success path.
-            raise SeclaiAPIStatusError(
-                message="Insufficient credits",
-                status_code=int(response.status_code),
-                method="POST",
-                url=self._build_url(path),
-                response_text=None,
-            )
-        return parsed
+        # ``parsed`` can only be the success model here: _raise_for_openapi_response
+        # already raised for any non-200 status, including the 402
+        # InsufficientCreditsResponse envelope.
+        return cast(AgentRunResponse, parsed)
 
     def run_streaming_agent_and_wait(
         self,
@@ -1842,7 +1832,13 @@ class Seclai(_SeclaiBase):
             headers=_merge_request_headers(options=self._options, request_headers=None),
         )
         response = self._client.send(request, stream=True)
-        _raise_for_status(response)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            response.read()
+            response.close()
+            _raise_for_status(response)
         return response
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
@@ -2700,7 +2696,13 @@ class Seclai(_SeclaiBase):
             headers=_merge_request_headers(options=self._options, request_headers=None),
         )
         response = self._client.send(request, stream=True)
-        _raise_for_status(response)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            response.read()
+            response.close()
+            _raise_for_status(response)
         return response
 
     def estimate_source_export(
@@ -4145,17 +4147,10 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        if isinstance(parsed, InsufficientCreditsResponse):
-            # Defensive: a 402 is already raised by _raise_for_openapi_response
-            # above; this narrows the parsed union for the success path.
-            raise SeclaiAPIStatusError(
-                message="Insufficient credits",
-                status_code=int(response.status_code),
-                method="POST",
-                url=self._build_url(path),
-                response_text=None,
-            )
-        return parsed
+        # ``parsed`` can only be the success model here: _raise_for_openapi_response
+        # already raised for any non-200 status, including the 402
+        # InsufficientCreditsResponse envelope.
+        return cast(AgentRunResponse, parsed)
 
     async def run_streaming_agent_and_wait(
         self,
@@ -5265,7 +5260,13 @@ class AsyncSeclai(_SeclaiBase):
             headers=headers,
         )
         response = await self._client.send(request, stream=True)
-        _raise_for_status(response)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            await response.aread()
+            await response.aclose()
+            _raise_for_status(response)
         return response
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
@@ -6138,7 +6139,13 @@ class AsyncSeclai(_SeclaiBase):
             headers=headers,
         )
         response = await self._client.send(request, stream=True)
-        _raise_for_status(response)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising — the caller never receives the
+            # streaming response on the error path.
+            await response.aread()
+            await response.aclose()
+            _raise_for_status(response)
         return response
 
     async def estimate_source_export(
