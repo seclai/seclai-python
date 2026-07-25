@@ -33,6 +33,10 @@ class GenerateAgentStepsResponse:
             if any.
         example_prompts (list[ExamplePrompt] | Unset): Example natural-language prompts that demonstrate the
             capabilities of this AI assistant for the given mode.
+        intent_assessment (None | str | Unset): How the assistant interpreted the request: 'clear' when steps were
+            generated, or an ask-path value (e.g. 'ambiguous_output', 'cannot_build') when it returned no steps and put a
+            clarifying question or blocker in `note`. Mirrors the MCP surface so callers can distinguish a clarification
+            pause from a hard failure.
     """
 
     conversation_id: str
@@ -41,6 +45,7 @@ class GenerateAgentStepsResponse:
     success: bool
     agent_config: GenerateAgentStepsResponseAgentConfigType0 | None | Unset = UNSET
     example_prompts: list[ExamplePrompt] | Unset = UNSET
+    intent_assessment: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -74,6 +79,12 @@ class GenerateAgentStepsResponse:
                 example_prompts_item = example_prompts_item_data.to_dict()
                 example_prompts.append(example_prompts_item)
 
+        intent_assessment: None | str | Unset
+        if isinstance(self.intent_assessment, Unset):
+            intent_assessment = UNSET
+        else:
+            intent_assessment = self.intent_assessment
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -88,6 +99,8 @@ class GenerateAgentStepsResponse:
             field_dict["agent_config"] = agent_config
         if example_prompts is not UNSET:
             field_dict["example_prompts"] = example_prompts
+        if intent_assessment is not UNSET:
+            field_dict["intent_assessment"] = intent_assessment
 
         return field_dict
 
@@ -147,6 +160,15 @@ class GenerateAgentStepsResponse:
 
                 example_prompts.append(example_prompts_item)
 
+        def _parse_intent_assessment(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        intent_assessment = _parse_intent_assessment(d.pop("intent_assessment", UNSET))
+
         generate_agent_steps_response = cls(
             conversation_id=conversation_id,
             note=note,
@@ -154,6 +176,7 @@ class GenerateAgentStepsResponse:
             success=success,
             agent_config=agent_config,
             example_prompts=example_prompts,
+            intent_assessment=intent_assessment,
         )
 
         generate_agent_steps_response.additional_properties = d

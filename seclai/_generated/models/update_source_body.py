@@ -16,17 +16,30 @@ class UpdateSourceBody:
     """Request body for updating a content source.
 
     Attributes:
+        media_types (list[str] | None | Unset): Media kinds to extract from indexed content and embed as multi-modal KB
+            chunks. Subset of ['images', 'video']. Only kinds the source's embedder can index are honored; unsupported
+            values are dropped. [] disables media extraction (text-only).
         name (None | str | Unset): New name.
         polling (None | str | Unset): New polling interval.
         retention_days (int | None | Unset): New retention period in days (null for unlimited). Default: -1.
     """
 
+    media_types: list[str] | None | Unset = UNSET
     name: None | str | Unset = UNSET
     polling: None | str | Unset = UNSET
     retention_days: int | None | Unset = -1
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        media_types: list[str] | None | Unset
+        if isinstance(self.media_types, Unset):
+            media_types = UNSET
+        elif isinstance(self.media_types, list):
+            media_types = self.media_types
+
+        else:
+            media_types = self.media_types
+
         name: None | str | Unset
         if isinstance(self.name, Unset):
             name = UNSET
@@ -48,6 +61,8 @@ class UpdateSourceBody:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
+        if media_types is not UNSET:
+            field_dict["media_types"] = media_types
         if name is not UNSET:
             field_dict["name"] = name
         if polling is not UNSET:
@@ -60,6 +75,23 @@ class UpdateSourceBody:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+
+        def _parse_media_types(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                media_types_type_0 = cast(list[str], data)
+
+                return media_types_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        media_types = _parse_media_types(d.pop("media_types", UNSET))
 
         def _parse_name(data: object) -> None | str | Unset:
             if data is None:
@@ -89,6 +121,7 @@ class UpdateSourceBody:
         retention_days = _parse_retention_days(d.pop("retention_days", UNSET))
 
         update_source_body = cls(
+            media_types=media_types,
             name=name,
             polling=polling,
             retention_days=retention_days,

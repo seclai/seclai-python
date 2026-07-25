@@ -28,6 +28,9 @@ class AgentSummaryResponse:
         name (str): Agent name.
         updated_at (str): ISO 8601 last-updated timestamp.
         default_evaluation_tier (None | str | Unset): Default evaluation tier: fast, balanced, or thorough.
+        disabled (bool | Unset): Whether the agent is paused (disabled). Default: False.
+        disabled_at (None | str | Unset): ISO 8601 timestamp the agent was paused.
+        disabled_reason (None | str | Unset): Why the agent is paused: 'manual' or 'email_overload'.
         evaluation_mode (str | Unset): Evaluation mode: output_expectation, eval_and_retry, or sample_and_flag. Default:
             'eval_and_retry'.
         import_warnings (list[ImportSkipResponse] | None | Unset): One entry per item dropped or substituted during
@@ -52,6 +55,9 @@ class AgentSummaryResponse:
     name: str
     updated_at: str
     default_evaluation_tier: None | str | Unset = UNSET
+    disabled: bool | Unset = False
+    disabled_at: None | str | Unset = UNSET
+    disabled_reason: None | str | Unset = UNSET
     evaluation_mode: str | Unset = "eval_and_retry"
     import_warnings: list[ImportSkipResponse] | None | Unset = UNSET
     max_retries: int | Unset = 3
@@ -84,6 +90,20 @@ class AgentSummaryResponse:
             default_evaluation_tier = UNSET
         else:
             default_evaluation_tier = self.default_evaluation_tier
+
+        disabled = self.disabled
+
+        disabled_at: None | str | Unset
+        if isinstance(self.disabled_at, Unset):
+            disabled_at = UNSET
+        else:
+            disabled_at = self.disabled_at
+
+        disabled_reason: None | str | Unset
+        if isinstance(self.disabled_reason, Unset):
+            disabled_reason = UNSET
+        else:
+            disabled_reason = self.disabled_reason
 
         evaluation_mode = self.evaluation_mode
 
@@ -147,6 +167,12 @@ class AgentSummaryResponse:
         )
         if default_evaluation_tier is not UNSET:
             field_dict["default_evaluation_tier"] = default_evaluation_tier
+        if disabled is not UNSET:
+            field_dict["disabled"] = disabled
+        if disabled_at is not UNSET:
+            field_dict["disabled_at"] = disabled_at
+        if disabled_reason is not UNSET:
+            field_dict["disabled_reason"] = disabled_reason
         if evaluation_mode is not UNSET:
             field_dict["evaluation_mode"] = evaluation_mode
         if import_warnings is not UNSET:
@@ -207,6 +233,26 @@ class AgentSummaryResponse:
         default_evaluation_tier = _parse_default_evaluation_tier(
             d.pop("default_evaluation_tier", UNSET)
         )
+
+        disabled = d.pop("disabled", UNSET)
+
+        def _parse_disabled_at(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        disabled_at = _parse_disabled_at(d.pop("disabled_at", UNSET))
+
+        def _parse_disabled_reason(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        disabled_reason = _parse_disabled_reason(d.pop("disabled_reason", UNSET))
 
         evaluation_mode = d.pop("evaluation_mode", UNSET)
 
@@ -308,6 +354,9 @@ class AgentSummaryResponse:
             name=name,
             updated_at=updated_at,
             default_evaluation_tier=default_evaluation_tier,
+            disabled=disabled,
+            disabled_at=disabled_at,
+            disabled_reason=disabled_reason,
             evaluation_mode=evaluation_mode,
             import_warnings=import_warnings,
             max_retries=max_retries,

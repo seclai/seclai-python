@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -n sync.sh)",
+      "Bash(./sync.sh --check)"
+    ]
+  }
+}

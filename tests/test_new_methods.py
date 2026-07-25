@@ -2113,3 +2113,1001 @@ class TestErrorEdgeCases:
         with pytest.raises(SeclaiAPIStatusError) as exc:
             await client.list_agents()
         assert exc.value.status_code == 502
+
+
+# ---------------------------------------------------------------------------
+# New in this sync: identity, agent pause, email governance, email domains,
+# generation tiers, docs search
+# ---------------------------------------------------------------------------
+
+
+class TestIdentity:
+    """Identity."""
+
+    def test_get_me(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                {"account_id": "acct_1", "organizations": []}, status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.get_me()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/me"
+        assert result == {"account_id": "acct_1", "organizations": []}
+
+    @pytest.mark.asyncio
+    async def test_async_get_me(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                {"account_id": "acct_1", "organizations": []}, status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.get_me()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/me"
+        assert result == {"account_id": "acct_1", "organizations": []}
+
+
+class TestAgentEnableDisable:
+    """Agents — enable / disable."""
+
+    def test_disable_agent(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"id": "a1", "disabled": True}, status=200)
+
+        client = _sync_client(handler)
+        result = client.disable_agent("a1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/a1/disable"
+        assert result == {"id": "a1", "disabled": True}
+
+    def test_enable_agent(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"id": "a1", "disabled": False}, status=200)
+
+        client = _sync_client(handler)
+        result = client.enable_agent("a1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/a1/enable"
+        assert result == {"id": "a1", "disabled": False}
+
+    def test_get_agent_callers(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                [{"id": "a2", "name": "Caller", "disabled": False}], status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.get_agent_callers("a1")
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/a1/callers"
+        assert result == [{"id": "a2", "name": "Caller", "disabled": False}]
+
+    @pytest.mark.asyncio
+    async def test_async_disable_agent(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"id": "a1", "disabled": True}, status=200)
+
+        client = _async_client(handler)
+        result = await client.disable_agent("a1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/a1/disable"
+        assert result == {"id": "a1", "disabled": True}
+
+    @pytest.mark.asyncio
+    async def test_async_enable_agent(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"id": "a1", "disabled": False}, status=200)
+
+        client = _async_client(handler)
+        result = await client.enable_agent("a1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/a1/enable"
+        assert result == {"id": "a1", "disabled": False}
+
+    @pytest.mark.asyncio
+    async def test_async_get_agent_callers(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                [{"id": "a2", "name": "Caller", "disabled": False}], status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.get_agent_callers("a1")
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/a1/callers"
+        assert result == [{"id": "a2", "name": "Caller", "disabled": False}]
+
+
+class TestAgentEmailTriggers:
+    """Agent email triggers."""
+
+    def test_set_email_trigger_config(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {
+                    "trigger_id": "t1",
+                    "agent_id": "a1",
+                    "email_addresses": ["support.acct@agent.seclai.com"],
+                },
+                status=200,
+            )
+
+        client = _sync_client(handler)
+        result = client.set_email_trigger_config("a1", "t1", {"alias": "support"})
+        assert seen["method"] == "PUT"
+        assert seen["path"] == "/agents/a1/triggers/t1/email-config"
+        assert seen["body"] == {"alias": "support"}
+        assert result == {
+            "trigger_id": "t1",
+            "agent_id": "a1",
+            "email_addresses": ["support.acct@agent.seclai.com"],
+        }
+
+    @pytest.mark.asyncio
+    async def test_async_set_email_trigger_config(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {
+                    "trigger_id": "t1",
+                    "agent_id": "a1",
+                    "email_addresses": ["support.acct@agent.seclai.com"],
+                },
+                status=200,
+            )
+
+        client = _async_client(handler)
+        result = await client.set_email_trigger_config("a1", "t1", {"alias": "support"})
+        assert seen["method"] == "PUT"
+        assert seen["path"] == "/agents/a1/triggers/t1/email-config"
+        assert seen["body"] == {"alias": "support"}
+        assert result == {
+            "trigger_id": "t1",
+            "agent_id": "a1",
+            "email_addresses": ["support.acct@agent.seclai.com"],
+        }
+
+
+class TestAgentEmailGovernance:
+    """Agent email governance."""
+
+    def test_list_agent_email_optouts(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"items": [], "total": 0}, status=200)
+
+        client = _sync_client(handler)
+        result = client.list_agent_email_optouts(agent_id="a1", limit=25, offset=50)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/agent-email-optouts"
+        assert seen["params"] == {"agent_id": "a1", "limit": "25", "offset": "50"}
+        assert result == {"items": [], "total": 0}
+
+    def test_list_agent_email_optouts_omits_unset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"items": [], "total": 0}, status=200)
+
+        client = _sync_client(handler)
+        result = client.list_agent_email_optouts()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/agent-email-optouts"
+        assert seen["params"] == {}
+        assert result == {"items": [], "total": 0}
+
+    def test_remove_agent_email_optout(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(None, status=204)
+
+        client = _sync_client(handler)
+        client.remove_agent_email_optout("oo1")
+        assert seen["method"] == "DELETE"
+        assert seen["path"] == "/agents/agent-email-optouts/oo1"
+
+    def test_list_blocked_email_senders(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response(
+                {"items": [], "total": 0, "auto_block_mode": "disabled"}, status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.list_blocked_email_senders(limit=10)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/blocked-email-senders"
+        assert seen["params"] == {"limit": "10"}
+        assert result == {"items": [], "total": 0, "auto_block_mode": "disabled"}
+
+    def test_block_email_sender(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {
+                    "id": "b1",
+                    "sender_email": "spam@example.com",
+                    "match_type": "domain",
+                },
+                status=201,
+            )
+
+        client = _sync_client(handler)
+        result = client.block_email_sender(
+            {"sender_email": "spam@example.com", "match_type": "domain"}
+        )
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/blocked-email-senders"
+        assert seen["body"]["match_type"] == "domain"
+        assert result == {
+            "id": "b1",
+            "sender_email": "spam@example.com",
+            "match_type": "domain",
+        }
+
+    def test_unblock_email_sender(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(None, status=204)
+
+        client = _sync_client(handler)
+        client.unblock_email_sender("b1")
+        assert seen["method"] == "DELETE"
+        assert seen["path"] == "/agents/blocked-email-senders/b1"
+
+    def test_set_auto_block_mode(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {"items": [], "total": 0, "auto_block_mode": "input_and_output"},
+                status=200,
+            )
+
+        client = _sync_client(handler)
+        result = client.set_auto_block_mode({"mode": "input_and_output"})
+        assert seen["method"] == "PUT"
+        assert seen["path"] == "/agents/blocked-email-senders/mode"
+        assert seen["body"] == {"mode": "input_and_output"}
+        assert result == {
+            "items": [],
+            "total": 0,
+            "auto_block_mode": "input_and_output",
+        }
+
+    def test_list_inbound_email_rejections(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response(
+                [{"id": "r1", "reason": "unauthorized_sender"}], status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.list_inbound_email_rejections(agent_id="a1", limit=5)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/inbound-email-rejections"
+        assert seen["params"] == {"agent_id": "a1", "limit": "5"}
+        assert result == [{"id": "r1", "reason": "unauthorized_sender"}]
+
+    def test_get_inbound_email_status(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"paused": True, "queued_backlog": 42}, status=200)
+
+        client = _sync_client(handler)
+        result = client.get_inbound_email_status()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/inbound-email-status"
+        assert result == {"paused": True, "queued_backlog": 42}
+
+    def test_cancel_queued_email_runs(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"cancelled": 7}, status=200)
+
+        client = _sync_client(handler)
+        result = client.cancel_queued_email_runs()
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/inbound-email-status/cancel-queued"
+        assert result == {"cancelled": 7}
+
+    def test_resume_inbound_email(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"resumed": True}, status=200)
+
+        client = _sync_client(handler)
+        result = client.resume_inbound_email()
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/inbound-email-status/resume"
+        assert result == {"resumed": True}
+
+    @pytest.mark.asyncio
+    async def test_async_list_agent_email_optouts(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"items": [], "total": 0}, status=200)
+
+        client = _async_client(handler)
+        result = await client.list_agent_email_optouts(
+            agent_id="a1", limit=25, offset=50
+        )
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/agent-email-optouts"
+        assert seen["params"] == {"agent_id": "a1", "limit": "25", "offset": "50"}
+        assert result == {"items": [], "total": 0}
+
+    @pytest.mark.asyncio
+    async def test_async_list_agent_email_optouts_omits_unset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"items": [], "total": 0}, status=200)
+
+        client = _async_client(handler)
+        result = await client.list_agent_email_optouts()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/agent-email-optouts"
+        assert seen["params"] == {}
+        assert result == {"items": [], "total": 0}
+
+    @pytest.mark.asyncio
+    async def test_async_remove_agent_email_optout(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(None, status=204)
+
+        client = _async_client(handler)
+        await client.remove_agent_email_optout("oo1")
+        assert seen["method"] == "DELETE"
+        assert seen["path"] == "/agents/agent-email-optouts/oo1"
+
+    @pytest.mark.asyncio
+    async def test_async_list_blocked_email_senders(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response(
+                {"items": [], "total": 0, "auto_block_mode": "disabled"}, status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.list_blocked_email_senders(limit=10)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/blocked-email-senders"
+        assert seen["params"] == {"limit": "10"}
+        assert result == {"items": [], "total": 0, "auto_block_mode": "disabled"}
+
+    @pytest.mark.asyncio
+    async def test_async_block_email_sender(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {
+                    "id": "b1",
+                    "sender_email": "spam@example.com",
+                    "match_type": "domain",
+                },
+                status=201,
+            )
+
+        client = _async_client(handler)
+        result = await client.block_email_sender(
+            {"sender_email": "spam@example.com", "match_type": "domain"}
+        )
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/blocked-email-senders"
+        assert seen["body"]["match_type"] == "domain"
+        assert result == {
+            "id": "b1",
+            "sender_email": "spam@example.com",
+            "match_type": "domain",
+        }
+
+    @pytest.mark.asyncio
+    async def test_async_unblock_email_sender(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(None, status=204)
+
+        client = _async_client(handler)
+        await client.unblock_email_sender("b1")
+        assert seen["method"] == "DELETE"
+        assert seen["path"] == "/agents/blocked-email-senders/b1"
+
+    @pytest.mark.asyncio
+    async def test_async_set_auto_block_mode(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {"items": [], "total": 0, "auto_block_mode": "input_and_output"},
+                status=200,
+            )
+
+        client = _async_client(handler)
+        result = await client.set_auto_block_mode({"mode": "input_and_output"})
+        assert seen["method"] == "PUT"
+        assert seen["path"] == "/agents/blocked-email-senders/mode"
+        assert seen["body"] == {"mode": "input_and_output"}
+        assert result == {
+            "items": [],
+            "total": 0,
+            "auto_block_mode": "input_and_output",
+        }
+
+    @pytest.mark.asyncio
+    async def test_async_list_inbound_email_rejections(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response(
+                [{"id": "r1", "reason": "unauthorized_sender"}], status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.list_inbound_email_rejections(agent_id="a1", limit=5)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/inbound-email-rejections"
+        assert seen["params"] == {"agent_id": "a1", "limit": "5"}
+        assert result == [{"id": "r1", "reason": "unauthorized_sender"}]
+
+    @pytest.mark.asyncio
+    async def test_async_get_inbound_email_status(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"paused": True, "queued_backlog": 42}, status=200)
+
+        client = _async_client(handler)
+        result = await client.get_inbound_email_status()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/inbound-email-status"
+        assert result == {"paused": True, "queued_backlog": 42}
+
+    @pytest.mark.asyncio
+    async def test_async_cancel_queued_email_runs(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"cancelled": 7}, status=200)
+
+        client = _async_client(handler)
+        result = await client.cancel_queued_email_runs()
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/inbound-email-status/cancel-queued"
+        assert result == {"cancelled": 7}
+
+    @pytest.mark.asyncio
+    async def test_async_resume_inbound_email(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"resumed": True}, status=200)
+
+        client = _async_client(handler)
+        result = await client.resume_inbound_email()
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/agents/inbound-email-status/resume"
+        assert result == {"resumed": True}
+
+
+class TestEmailDomains:
+    """Email domains."""
+
+    def test_list_email_domains(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"domains": [], "can_add_vanity": True}, status=200)
+
+        client = _sync_client(handler)
+        result = client.list_email_domains()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/email-domains"
+        assert result == {"domains": [], "can_add_vanity": True}
+
+    def test_add_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {"id": "d1", "domain": "agent.example.com", "kind": "custom"},
+                status=200,
+            )
+
+        client = _sync_client(handler)
+        result = client.add_email_domain(
+            {"kind": "custom", "value": "agent.example.com", "delegated": True}
+        )
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains"
+        assert seen["body"]["delegated"] is True
+        assert result == {"id": "d1", "domain": "agent.example.com", "kind": "custom"}
+
+    def test_add_email_domain_vanity_without_delegated(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {"id": "d2", "domain": "acme.seclai.com", "kind": "vanity"}, status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.add_email_domain({"kind": "vanity", "value": "acme"})
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains"
+        assert "delegated" not in seen["body"]
+        assert result == {"id": "d2", "domain": "acme.seclai.com", "kind": "vanity"}
+
+    def test_remove_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                {"removed": True, "cleanup_note": "Delete the NS record"}, status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.remove_email_domain("d1")
+        assert seen["method"] == "DELETE"
+        assert seen["path"] == "/email-domains/d1"
+        assert result == {"removed": True, "cleanup_note": "Delete the NS record"}
+
+    def test_verify_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                {"id": "d1", "status": "verified", "verified": True}, status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.verify_email_domain("d1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/d1/verify"
+        assert result == {"id": "d1", "status": "verified", "verified": True}
+
+    def test_set_primary_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"id": "d1", "is_primary": True}, status=200)
+
+        client = _sync_client(handler)
+        result = client.set_primary_email_domain("d1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/d1/primary"
+        assert result == {"id": "d1", "is_primary": True}
+
+    def test_use_shared_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(None, status=204)
+
+        client = _sync_client(handler)
+        client.use_shared_email_domain()
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/use-shared-domain"
+
+    def test_send_email_domain_test_email(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"sent": True}, status=200)
+
+        client = _sync_client(handler)
+        result = client.send_email_domain_test_email("d1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/d1/test-email"
+        assert result == {"sent": True}
+
+    def test_get_dmarc_summary(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response(
+                {"window_days": 7, "report_count": 2, "total_messages": 100}, status=200
+            )
+
+        client = _sync_client(handler)
+        result = client.get_dmarc_summary("d1", days=7, top_sources=3)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/email-domains/d1/dmarc"
+        assert seen["params"] == {"days": "7", "top_sources": "3"}
+        assert result == {"window_days": 7, "report_count": 2, "total_messages": 100}
+
+    @pytest.mark.asyncio
+    async def test_async_list_email_domains(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"domains": [], "can_add_vanity": True}, status=200)
+
+        client = _async_client(handler)
+        result = await client.list_email_domains()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/email-domains"
+        assert result == {"domains": [], "can_add_vanity": True}
+
+    @pytest.mark.asyncio
+    async def test_async_add_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {"id": "d1", "domain": "agent.example.com", "kind": "custom"},
+                status=200,
+            )
+
+        client = _async_client(handler)
+        result = await client.add_email_domain(
+            {"kind": "custom", "value": "agent.example.com", "delegated": True}
+        )
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains"
+        assert seen["body"]["delegated"] is True
+        assert result == {"id": "d1", "domain": "agent.example.com", "kind": "custom"}
+
+    @pytest.mark.asyncio
+    async def test_async_add_email_domain_vanity_without_delegated(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(
+                {"id": "d2", "domain": "acme.seclai.com", "kind": "vanity"}, status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.add_email_domain({"kind": "vanity", "value": "acme"})
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains"
+        assert "delegated" not in seen["body"]
+        assert result == {"id": "d2", "domain": "acme.seclai.com", "kind": "vanity"}
+
+    @pytest.mark.asyncio
+    async def test_async_remove_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                {"removed": True, "cleanup_note": "Delete the NS record"}, status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.remove_email_domain("d1")
+        assert seen["method"] == "DELETE"
+        assert seen["path"] == "/email-domains/d1"
+        assert result == {"removed": True, "cleanup_note": "Delete the NS record"}
+
+    @pytest.mark.asyncio
+    async def test_async_verify_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(
+                {"id": "d1", "status": "verified", "verified": True}, status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.verify_email_domain("d1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/d1/verify"
+        assert result == {"id": "d1", "status": "verified", "verified": True}
+
+    @pytest.mark.asyncio
+    async def test_async_set_primary_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"id": "d1", "is_primary": True}, status=200)
+
+        client = _async_client(handler)
+        result = await client.set_primary_email_domain("d1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/d1/primary"
+        assert result == {"id": "d1", "is_primary": True}
+
+    @pytest.mark.asyncio
+    async def test_async_use_shared_email_domain(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response(None, status=204)
+
+        client = _async_client(handler)
+        await client.use_shared_email_domain()
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/use-shared-domain"
+
+    @pytest.mark.asyncio
+    async def test_async_send_email_domain_test_email(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"sent": True}, status=200)
+
+        client = _async_client(handler)
+        result = await client.send_email_domain_test_email("d1")
+        assert seen["method"] == "POST"
+        assert seen["path"] == "/email-domains/d1/test-email"
+        assert result == {"sent": True}
+
+    @pytest.mark.asyncio
+    async def test_async_get_dmarc_summary(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response(
+                {"window_days": 7, "report_count": 2, "total_messages": 100}, status=200
+            )
+
+        client = _async_client(handler)
+        result = await client.get_dmarc_summary("d1", days=7, top_sources=3)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/email-domains/d1/dmarc"
+        assert seen["params"] == {"days": "7", "top_sources": "3"}
+        assert result == {"window_days": 7, "report_count": 2, "total_messages": 100}
+
+
+class TestGenerationTiersAndDocsSearch:
+    """Generation tiers + docs search."""
+
+    def test_get_generation_tiers(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"image": {"fast": {"model": "m1"}}}, status=200)
+
+        client = _sync_client(handler)
+        result = client.get_generation_tiers()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/models/generation-tiers"
+        assert result == {"image": {"fast": {"model": "m1"}}}
+
+    def test_search_docs(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"results": []}, status=200)
+
+        client = _sync_client(handler)
+        result = client.search_docs("email triggers", mode="semantic", limit=3)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/docs-search"
+        assert seen["params"] == {
+            "q": "email triggers",
+            "mode": "semantic",
+            "limit": "3",
+        }
+        assert result == {"results": []}
+
+    def test_search_docs_omits_unset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"results": []}, status=200)
+
+        client = _sync_client(handler)
+        result = client.search_docs("webhooks")
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/docs-search"
+        assert seen["params"] == {"q": "webhooks"}
+        assert result == {"results": []}
+
+    @pytest.mark.asyncio
+    async def test_async_get_generation_tiers(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return _json_response({"image": {"fast": {"model": "m1"}}}, status=200)
+
+        client = _async_client(handler)
+        result = await client.get_generation_tiers()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/models/generation-tiers"
+        assert result == {"image": {"fast": {"model": "m1"}}}
+
+    @pytest.mark.asyncio
+    async def test_async_search_docs(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"results": []}, status=200)
+
+        client = _async_client(handler)
+        result = await client.search_docs("email triggers", mode="semantic", limit=3)
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/docs-search"
+        assert seen["params"] == {
+            "q": "email triggers",
+            "mode": "semantic",
+            "limit": "3",
+        }
+        assert result == {"results": []}
+
+    @pytest.mark.asyncio
+    async def test_async_search_docs_omits_unset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"results": []}, status=200)
+
+        client = _async_client(handler)
+        result = await client.search_docs("webhooks")
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/docs-search"
+        assert seen["params"] == {"q": "webhooks"}
+        assert result == {"results": []}

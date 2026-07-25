@@ -151,6 +151,17 @@ https://seclai.github.io/seclai-python/latest/
 
 ## Resources
 
+### Identity
+
+```python
+me = client.get_me()
+print(me["account_id"])
+for org in me["organizations"]:
+    print(org["name"], org["account_id"])
+
+# Act as an organization: Seclai(account_id=org["account_id"])
+```
+
 ### Agents
 
 ```python
@@ -158,6 +169,11 @@ https://seclai.github.io/seclai-python/latest/
 agents = client.list_agents(page=1, limit=20)
 agent = client.create_agent({"name": "My Agent", "description": "..."})
 fetched = client.get_agent("agent_id")
+
+# Pause / resume — a disabled agent stops firing from every trigger path
+callers = client.get_agent_callers("agent_id")  # live agents calling this one
+client.disable_agent("agent_id")  # 409 if any caller above is still live
+client.enable_agent("agent_id")
 updated = client.update_agent("agent_id", {"name": "Renamed"})
 client.delete_agent("agent_id")
 
@@ -499,9 +515,81 @@ prefs = client.list_organization_alert_preferences()
 client.update_organization_alert_preference("org_id", "anomaly", {"enabled": True})
 ```
 
+### Agent email triggers
+
+```python
+# Configure an EMAIL_RECEIVED trigger; omitted fields are left unchanged
+config = client.set_email_trigger_config(
+    "agent_id",
+    "trigger_id",
+    {
+        "alias": "support",
+        "allowed_senders": ["example.com", "ops@partner.com"],
+        "ignore_auto_generated": True,   # drop auto-replies to prevent loops
+        "require_sender_auth": True,     # require SPF or DMARC
+        "queue_on_quota": False,         # park over-rate mail instead of failing
+    },
+)
+print(config["email_addresses"])
+```
+
+### Agent email governance
+
+```python
+# Recipients who opted out of this account's agent emails
+opt_outs = client.list_agent_email_optouts(agent_id="agent_id", limit=50)
+client.remove_agent_email_optout("optout_id")  # opt them back in
+
+# Blocked inbound senders (owner/admin only)
+blocked = client.list_blocked_email_senders(limit=50)
+client.block_email_sender({"sender_email": "spam.example.com", "match_type": "domain"})
+client.unblock_email_sender("blocked_id")
+
+# Auto-block on a governance BLOCK: "disabled" | "input" | "input_and_output"
+client.set_auto_block_mode({"mode": "input_and_output"})
+
+# Inbound mail discarded before running an agent
+rejections = client.list_inbound_email_rejections(agent_id="agent_id")
+
+# Account-wide overload circuit breaker
+status = client.get_inbound_email_status()  # {"paused": ..., "queued_backlog": ...}
+client.cancel_queued_email_runs()  # fail all QUEUED (over-quota parked) runs
+client.resume_inbound_email()      # one-shot; re-arms if still overloaded
+```
+
+### Email domains
+
+Send and receive agent email on your own domain instead of the shared
+`agent.seclai.com`. Requires a user-bound credential; mutations require an
+account owner/admin.
+
+```python
+listing = client.list_email_domains()
+
+vanity = client.add_email_domain({"kind": "vanity", "value": "acme"})
+custom = client.add_email_domain(
+    {"kind": "custom", "value": "agent.mycompany.com", "delegated": True}
+)
+
+# Publish custom["dns_records"], then check without waiting for the sweep
+client.verify_email_domain(custom["id"])
+
+client.set_primary_email_domain(custom["id"])
+client.use_shared_email_domain()  # revert; domains stay configured & verified
+
+client.send_email_domain_test_email(custom["id"])  # always to the account owner
+dmarc = client.get_dmarc_summary(custom["id"], days=30, top_sources=10)
+
+removed = client.remove_email_domain(custom["id"])
+print(removed.get("cleanup_note"))  # set when the domain was Seclai-managed
+```
+
 ### Models
 
 ```python
+# Media-generation quality tiers (fast/balanced/thorough) and what each resolves to
+tiers = client.get_generation_tiers()
+
 alerts = client.list_model_alerts()
 client.mark_model_alert_read("alert_id")
 client.mark_all_model_alerts_read()
@@ -521,6 +609,17 @@ client.delete_experiment("experiment_id")  # soft-delete, preserves audit histor
 ```python
 results = client.search(query="quarterly report")
 filtered = client.search(query="my agent", entity_type="agent", limit=5)
+```
+
+### Documentation search
+
+Results are global (not account-scoped); each carries a `doc_slug` plus an
+optional `anchor` for building a `https://seclai.com/docs/<doc_slug>[#<anchor>]` link.
+
+```python
+hits = client.search_docs("email triggers")                       # fast keyword match
+deep = client.search_docs("how do I stop auto-reply loops",
+                          mode="semantic", limit=5)               # adds a highlight
 ```
 
 ### Top-level AI assistant

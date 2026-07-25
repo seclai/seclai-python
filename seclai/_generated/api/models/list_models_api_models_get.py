@@ -16,6 +16,8 @@ def _get_kwargs(
     provider: None | str | Unset = UNSET,
     supports_tool_use: bool | None | Unset = UNSET,
     supports_thinking: bool | None | Unset = UNSET,
+    supports_input_media: None | str | Unset = UNSET,
+    supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
@@ -44,6 +46,20 @@ def _get_kwargs(
     else:
         json_supports_thinking = supports_thinking
     params["supports_thinking"] = json_supports_thinking
+
+    json_supports_input_media: None | str | Unset
+    if isinstance(supports_input_media, Unset):
+        json_supports_input_media = UNSET
+    else:
+        json_supports_input_media = supports_input_media
+    params["supports_input_media"] = json_supports_input_media
+
+    json_supports_output_media: None | str | Unset
+    if isinstance(supports_output_media, Unset):
+        json_supports_output_media = UNSET
+    else:
+        json_supports_output_media = supports_output_media
+    params["supports_output_media"] = json_supports_output_media
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -98,6 +114,8 @@ def sync_detailed(
     provider: None | str | Unset = UNSET,
     supports_tool_use: bool | None | Unset = UNSET,
     supports_thinking: bool | None | Unset = UNSET,
+    supports_input_media: None | str | Unset = UNSET,
+    supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[ProviderGroupResponse]]:
     """List Models
@@ -111,6 +129,10 @@ def sync_detailed(
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
     - `supports_tool_use`: filter to models with tool calling support
     - `supports_thinking`: filter to models with extended thinking support
+    - `supports_input_media`: filter to models accepting an input modality
+    (`image`/`audio`/`video`/`pdf` or a full MIME)
+    - `supports_output_media`: filter to models producing an output modality (`image`/`audio`/`video`) —
+    e.g. to find generation models
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -119,6 +141,11 @@ def sync_detailed(
         provider (None | str | Unset): Filter by provider name
         supports_tool_use (bool | None | Unset): Filter to models that support tool use
         supports_thinking (bool | None | Unset): Filter to models that support extended thinking
+        supports_input_media (None | str | Unset): Filter to models that accept this input
+            modality — a coarse kind (`image`, `audio`, `video`, `pdf`) or a full MIME.
+        supports_output_media (None | str | Unset): Filter to models that produce this output
+            modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
+            image/audio/video generation models.
         x_account_id (UUID | Unset):
 
     Raises:
@@ -133,6 +160,8 @@ def sync_detailed(
         provider=provider,
         supports_tool_use=supports_tool_use,
         supports_thinking=supports_thinking,
+        supports_input_media=supports_input_media,
+        supports_output_media=supports_output_media,
         x_account_id=x_account_id,
     )
 
@@ -149,6 +178,8 @@ def sync(
     provider: None | str | Unset = UNSET,
     supports_tool_use: bool | None | Unset = UNSET,
     supports_thinking: bool | None | Unset = UNSET,
+    supports_input_media: None | str | Unset = UNSET,
+    supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | list[ProviderGroupResponse] | None:
     """List Models
@@ -162,6 +193,10 @@ def sync(
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
     - `supports_tool_use`: filter to models with tool calling support
     - `supports_thinking`: filter to models with extended thinking support
+    - `supports_input_media`: filter to models accepting an input modality
+    (`image`/`audio`/`video`/`pdf` or a full MIME)
+    - `supports_output_media`: filter to models producing an output modality (`image`/`audio`/`video`) —
+    e.g. to find generation models
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -170,6 +205,11 @@ def sync(
         provider (None | str | Unset): Filter by provider name
         supports_tool_use (bool | None | Unset): Filter to models that support tool use
         supports_thinking (bool | None | Unset): Filter to models that support extended thinking
+        supports_input_media (None | str | Unset): Filter to models that accept this input
+            modality — a coarse kind (`image`, `audio`, `video`, `pdf`) or a full MIME.
+        supports_output_media (None | str | Unset): Filter to models that produce this output
+            modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
+            image/audio/video generation models.
         x_account_id (UUID | Unset):
 
     Raises:
@@ -185,6 +225,8 @@ def sync(
         provider=provider,
         supports_tool_use=supports_tool_use,
         supports_thinking=supports_thinking,
+        supports_input_media=supports_input_media,
+        supports_output_media=supports_output_media,
         x_account_id=x_account_id,
     ).parsed
 
@@ -195,6 +237,8 @@ async def asyncio_detailed(
     provider: None | str | Unset = UNSET,
     supports_tool_use: bool | None | Unset = UNSET,
     supports_thinking: bool | None | Unset = UNSET,
+    supports_input_media: None | str | Unset = UNSET,
+    supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[ProviderGroupResponse]]:
     """List Models
@@ -208,6 +252,10 @@ async def asyncio_detailed(
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
     - `supports_tool_use`: filter to models with tool calling support
     - `supports_thinking`: filter to models with extended thinking support
+    - `supports_input_media`: filter to models accepting an input modality
+    (`image`/`audio`/`video`/`pdf` or a full MIME)
+    - `supports_output_media`: filter to models producing an output modality (`image`/`audio`/`video`) —
+    e.g. to find generation models
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -216,6 +264,11 @@ async def asyncio_detailed(
         provider (None | str | Unset): Filter by provider name
         supports_tool_use (bool | None | Unset): Filter to models that support tool use
         supports_thinking (bool | None | Unset): Filter to models that support extended thinking
+        supports_input_media (None | str | Unset): Filter to models that accept this input
+            modality — a coarse kind (`image`, `audio`, `video`, `pdf`) or a full MIME.
+        supports_output_media (None | str | Unset): Filter to models that produce this output
+            modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
+            image/audio/video generation models.
         x_account_id (UUID | Unset):
 
     Raises:
@@ -230,6 +283,8 @@ async def asyncio_detailed(
         provider=provider,
         supports_tool_use=supports_tool_use,
         supports_thinking=supports_thinking,
+        supports_input_media=supports_input_media,
+        supports_output_media=supports_output_media,
         x_account_id=x_account_id,
     )
 
@@ -244,6 +299,8 @@ async def asyncio(
     provider: None | str | Unset = UNSET,
     supports_tool_use: bool | None | Unset = UNSET,
     supports_thinking: bool | None | Unset = UNSET,
+    supports_input_media: None | str | Unset = UNSET,
+    supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
 ) -> HTTPValidationError | list[ProviderGroupResponse] | None:
     """List Models
@@ -257,6 +314,10 @@ async def asyncio(
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
     - `supports_tool_use`: filter to models with tool calling support
     - `supports_thinking`: filter to models with extended thinking support
+    - `supports_input_media`: filter to models accepting an input modality
+    (`image`/`audio`/`video`/`pdf` or a full MIME)
+    - `supports_output_media`: filter to models producing an output modality (`image`/`audio`/`video`) —
+    e.g. to find generation models
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -265,6 +326,11 @@ async def asyncio(
         provider (None | str | Unset): Filter by provider name
         supports_tool_use (bool | None | Unset): Filter to models that support tool use
         supports_thinking (bool | None | Unset): Filter to models that support extended thinking
+        supports_input_media (None | str | Unset): Filter to models that accept this input
+            modality — a coarse kind (`image`, `audio`, `video`, `pdf`) or a full MIME.
+        supports_output_media (None | str | Unset): Filter to models that produce this output
+            modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
+            image/audio/video generation models.
         x_account_id (UUID | Unset):
 
     Raises:
@@ -281,6 +347,8 @@ async def asyncio(
             provider=provider,
             supports_tool_use=supports_tool_use,
             supports_thinking=supports_thinking,
+            supports_input_media=supports_input_media,
+            supports_output_media=supports_output_media,
             x_account_id=x_account_id,
         )
     ).parsed

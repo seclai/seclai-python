@@ -47,6 +47,7 @@ extend-exclude = '''
   \.git
   | \.mypy_cache
   | \.venv
+  | \.claude
 )/
 '''
 
@@ -67,6 +68,7 @@ plugins = ["pydantic.mypy"]
 exclude = [
   "tests/conftest.py",
   "seclai/_generated/",
+  ".claude/",
 ]
 
 [[tool.mypy.overrides]]
@@ -94,6 +96,7 @@ package-mode = true
 version = "1.0"
 include = [
   "README.md",
+  "CHANGELOG.md",
   "LICENSE",
   "seclai/py.typed",
 ]
@@ -136,6 +139,9 @@ filterwarnings = [
 target-version = "py313"
 line-length = 88
 exclude = [
+    # Vendored from seclai/sdk-tools via git subtree — formatting it here would
+    # create drift from the canonical copy on every lint run.
+    ".claude",
 ]
 
 [tool.ruff.lint]

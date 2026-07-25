@@ -36,8 +36,8 @@ class CreateAgentRequest:
             imported workflow before save. Each key is a source-account UUID (as returned by /agents/preview-import's
             ``unresolved_refs``); each value is the target-account UUID to substitute. Used to relink knowledge bases,
             memory banks, source connections, and sub-agents on cross-account imports.
-        trigger_type (str | Unset): Trigger type: dynamic_input, template_input, schedule, new_content. Default:
-            'dynamic_input'.
+        trigger_type (str | Unset): Trigger type: dynamic_input, template_input, schedule, new_content, email_received.
+            Default: 'dynamic_input'.
     """
 
     name: str

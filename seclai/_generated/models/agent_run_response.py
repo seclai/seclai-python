@@ -46,12 +46,16 @@ class AgentRunResponse:
         output_content_type (None | str | Unset): MIME type of `output` — mirrors the terminal step's
             `output_content_type`.  Consumers interpret `output` differently depending on this value:
             `application/vnd.seclai.manifest+json` is a multi-asset manifest with shape `{text, attachments: [{storage_key,
-            mime, name, bytes}]}` — fetch each attachment via `GET /authenticated/storage-blobs/{storage_key}`.
-            `text/plain` / `text/*` are free-form text.  `application/json` is a JSON document.  Null on runs that produced
-            no terminal output or that pre-date this column.
+            mime, name, bytes}]}` — fetch each attachment via `GET /api/v2/agent-runs/{run_id}/attachments/{attachment_id}`,
+            where `attachment_id` is the URL-safe base64 of the attachment's `storage_key` (accepts an API key or OAuth
+            token).  `text/plain` / `text/*` are free-form text.  `application/json` is a JSON document.  Null on runs that
+            produced no terminal output or that pre-date this column.
         scan_wait_ms (int | None | Unset): Milliseconds spent waiting for prompt injection scan.
         steps (list[AgentRunStepResponse] | None | Unset): Step outputs and per-step timing/credits. Only included when
             requested.
+        wait_ms (int | None | Unset): Cumulative milliseconds the run was parked on standard-mode wait steps.
+            Subtracted from active duration in run-detail and duration-stats responses, exactly like hitl_wait_ms.  Priority
+            waits block inline and are not counted here.
     """
 
     attempts: list[AgentRunAttemptResponse]
@@ -71,6 +75,7 @@ class AgentRunResponse:
     output_content_type: None | str | Unset = UNSET
     scan_wait_ms: int | None | Unset = UNSET
     steps: list[AgentRunStepResponse] | None | Unset = UNSET
+    wait_ms: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -158,6 +163,12 @@ class AgentRunResponse:
         else:
             steps = self.steps
 
+        wait_ms: int | None | Unset
+        if isinstance(self.wait_ms, Unset):
+            wait_ms = UNSET
+        else:
+            wait_ms = self.wait_ms
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -190,6 +201,8 @@ class AgentRunResponse:
             field_dict["scan_wait_ms"] = scan_wait_ms
         if steps is not UNSET:
             field_dict["steps"] = steps
+        if wait_ms is not UNSET:
+            field_dict["wait_ms"] = wait_ms
 
         return field_dict
 
@@ -342,6 +355,15 @@ class AgentRunResponse:
 
         steps = _parse_steps(d.pop("steps", UNSET))
 
+        def _parse_wait_ms(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        wait_ms = _parse_wait_ms(d.pop("wait_ms", UNSET))
+
         agent_run_response = cls(
             attempts=attempts,
             credits_=credits_,
@@ -360,6 +382,7 @@ class AgentRunResponse:
             output_content_type=output_content_type,
             scan_wait_ms=scan_wait_ms,
             steps=steps,
+            wait_ms=wait_ms,
         )
 
         agent_run_response.additional_properties = d
