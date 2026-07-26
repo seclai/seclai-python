@@ -12,6 +12,9 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.modality_rate_response import ModalityRateResponse
+    from ..models.prompt_model_response_generation_params_type_0 import (
+        PromptModelResponseGenerationParamsType0,
+    )
     from ..models.prompt_model_response_payload_schema_type_0 import (
         PromptModelResponsePayloadSchemaType0,
     )
@@ -40,6 +43,20 @@ class PromptModelResponse:
         deprecated_at (datetime.datetime | None | Unset):
         family (None | str | Unset):
         family_generation (float | None | Unset):
+        generation_credits_per_unit (float | None | Unset): Per-unit credit cost for a dedicated media-generation model,
+            in the unit named by ``generation_params.pricing_unit`` (per image / per second / per character / per output
+            token). Multiply by the produced unit count (images, seconds, characters) for the run cost. None for token-
+            billed (non-generation) models.
+        generation_params (None | PromptModelResponseGenerationParamsType0 | Unset): Media-generation descriptor
+            (modality, pricing_unit, and modality-specific constraints). NULL for text LLMs; present for image/audio/video
+            generation models. See schemas.generation_params.
+        generation_unit_label (None | str | Unset): Human suffix for the per-unit generation rate (e.g. ``/image``,
+            ``/second``, ``/1k chars``, ``/1k tokens``) — single-sourced from the pricing unit so clients render cost
+            without re-deriving the mapping. None for non-generation models. Char/token rates are shown per 1,000 (the ``/1k
+            …`` suffix), so scale ``generation_credits_per_unit`` accordingly for those units.
+        image_generation_tool_credits_per_image (float | None | Unset): Per-image credit cost of using the built-in
+            image_generation tool (it runs gpt-image-1). Set only for models that actually support the tool (tool-use
+            capable); None otherwise.
         input_1h_cache_write_credits_per_1000_tokens (float | None | Unset):
         input_5m_cache_write_credits_per_1000_tokens (float | None | Unset):
         input_cache_hit_credits_per_1000_tokens (float | None | Unset):
@@ -85,6 +102,10 @@ class PromptModelResponse:
     deprecated_at: datetime.datetime | None | Unset = UNSET
     family: None | str | Unset = UNSET
     family_generation: float | None | Unset = UNSET
+    generation_credits_per_unit: float | None | Unset = UNSET
+    generation_params: None | PromptModelResponseGenerationParamsType0 | Unset = UNSET
+    generation_unit_label: None | str | Unset = UNSET
+    image_generation_tool_credits_per_image: float | None | Unset = UNSET
     input_1h_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
     input_5m_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
     input_cache_hit_credits_per_1000_tokens: float | None | Unset = UNSET
@@ -116,6 +137,9 @@ class PromptModelResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.prompt_model_response_generation_params_type_0 import (
+            PromptModelResponseGenerationParamsType0,
+        )
         from ..models.prompt_model_response_payload_schema_type_0 import (
             PromptModelResponsePayloadSchemaType0,
         )
@@ -159,6 +183,36 @@ class PromptModelResponse:
             family_generation = UNSET
         else:
             family_generation = self.family_generation
+
+        generation_credits_per_unit: float | None | Unset
+        if isinstance(self.generation_credits_per_unit, Unset):
+            generation_credits_per_unit = UNSET
+        else:
+            generation_credits_per_unit = self.generation_credits_per_unit
+
+        generation_params: dict[str, Any] | None | Unset
+        if isinstance(self.generation_params, Unset):
+            generation_params = UNSET
+        elif isinstance(
+            self.generation_params, PromptModelResponseGenerationParamsType0
+        ):
+            generation_params = self.generation_params.to_dict()
+        else:
+            generation_params = self.generation_params
+
+        generation_unit_label: None | str | Unset
+        if isinstance(self.generation_unit_label, Unset):
+            generation_unit_label = UNSET
+        else:
+            generation_unit_label = self.generation_unit_label
+
+        image_generation_tool_credits_per_image: float | None | Unset
+        if isinstance(self.image_generation_tool_credits_per_image, Unset):
+            image_generation_tool_credits_per_image = UNSET
+        else:
+            image_generation_tool_credits_per_image = (
+                self.image_generation_tool_credits_per_image
+            )
 
         input_1h_cache_write_credits_per_1000_tokens: float | None | Unset
         if isinstance(self.input_1h_cache_write_credits_per_1000_tokens, Unset):
@@ -354,6 +408,16 @@ class PromptModelResponse:
             field_dict["family"] = family
         if family_generation is not UNSET:
             field_dict["family_generation"] = family_generation
+        if generation_credits_per_unit is not UNSET:
+            field_dict["generation_credits_per_unit"] = generation_credits_per_unit
+        if generation_params is not UNSET:
+            field_dict["generation_params"] = generation_params
+        if generation_unit_label is not UNSET:
+            field_dict["generation_unit_label"] = generation_unit_label
+        if image_generation_tool_credits_per_image is not UNSET:
+            field_dict["image_generation_tool_credits_per_image"] = (
+                image_generation_tool_credits_per_image
+            )
         if input_1h_cache_write_credits_per_1000_tokens is not UNSET:
             field_dict["input_1h_cache_write_credits_per_1000_tokens"] = (
                 input_1h_cache_write_credits_per_1000_tokens
@@ -424,6 +488,9 @@ class PromptModelResponse:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.modality_rate_response import ModalityRateResponse
+        from ..models.prompt_model_response_generation_params_type_0 import (
+            PromptModelResponseGenerationParamsType0,
+        )
         from ..models.prompt_model_response_payload_schema_type_0 import (
             PromptModelResponsePayloadSchemaType0,
         )
@@ -485,6 +552,64 @@ class PromptModelResponse:
             return cast(float | None | Unset, data)
 
         family_generation = _parse_family_generation(d.pop("family_generation", UNSET))
+
+        def _parse_generation_credits_per_unit(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        generation_credits_per_unit = _parse_generation_credits_per_unit(
+            d.pop("generation_credits_per_unit", UNSET)
+        )
+
+        def _parse_generation_params(
+            data: object,
+        ) -> None | PromptModelResponseGenerationParamsType0 | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                generation_params_type_0 = (
+                    PromptModelResponseGenerationParamsType0.from_dict(data)
+                )
+
+                return generation_params_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | PromptModelResponseGenerationParamsType0 | Unset, data)
+
+        generation_params = _parse_generation_params(d.pop("generation_params", UNSET))
+
+        def _parse_generation_unit_label(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        generation_unit_label = _parse_generation_unit_label(
+            d.pop("generation_unit_label", UNSET)
+        )
+
+        def _parse_image_generation_tool_credits_per_image(
+            data: object,
+        ) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        image_generation_tool_credits_per_image = (
+            _parse_image_generation_tool_credits_per_image(
+                d.pop("image_generation_tool_credits_per_image", UNSET)
+            )
+        )
 
         def _parse_input_1h_cache_write_credits_per_1000_tokens(
             data: object,
@@ -822,6 +947,10 @@ class PromptModelResponse:
             deprecated_at=deprecated_at,
             family=family,
             family_generation=family_generation,
+            generation_credits_per_unit=generation_credits_per_unit,
+            generation_params=generation_params,
+            generation_unit_label=generation_unit_label,
+            image_generation_tool_credits_per_image=image_generation_tool_credits_per_image,
             input_1h_cache_write_credits_per_1000_tokens=input_1h_cache_write_credits_per_1000_tokens,
             input_5m_cache_write_credits_per_1000_tokens=input_5m_cache_write_credits_per_1000_tokens,
             input_cache_hit_credits_per_1000_tokens=input_cache_hit_credits_per_1000_tokens,

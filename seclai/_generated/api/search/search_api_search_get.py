@@ -95,7 +95,7 @@ def sync_detailed(
     UUIDs are matched exactly; keywords are matched by name and description (case-insensitive
     substring).  Results are ranked: name-prefix > name-substring > description-substring.  Searchable
     types: agent, knowledge_base, source_connection, solution, memory_bank, alert, api_key,
-    governance_policy.
+    governance_policy, mcp_client.
 
     Args:
         q (str): Search query
@@ -140,7 +140,7 @@ def sync(
     UUIDs are matched exactly; keywords are matched by name and description (case-insensitive
     substring).  Results are ranked: name-prefix > name-substring > description-substring.  Searchable
     types: agent, knowledge_base, source_connection, solution, memory_bank, alert, api_key,
-    governance_policy.
+    governance_policy, mcp_client.
 
     Args:
         q (str): Search query
@@ -180,7 +180,7 @@ async def asyncio_detailed(
     UUIDs are matched exactly; keywords are matched by name and description (case-insensitive
     substring).  Results are ranked: name-prefix > name-substring > description-substring.  Searchable
     types: agent, knowledge_base, source_connection, solution, memory_bank, alert, api_key,
-    governance_policy.
+    governance_policy, mcp_client.
 
     Args:
         q (str): Search query
@@ -223,7 +223,7 @@ async def asyncio(
     UUIDs are matched exactly; keywords are matched by name and description (case-insensitive
     substring).  Results are ranked: name-prefix > name-substring > description-substring.  Searchable
     types: agent, knowledge_base, source_connection, solution, memory_bank, alert, api_key,
-    governance_policy.
+    governance_policy, mcp_client.
 
     Args:
         q (str): Search query

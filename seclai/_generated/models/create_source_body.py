@@ -27,6 +27,9 @@ class CreateSourceBody:
         embedding_model (None | str | Unset): Embedding model override.
         index_mode (None | SourceIndexMode | Unset): Index mode for custom_index sources: fast_and_cheap (default),
             balanced, slow_and_thorough, or custom.
+        media_types (list[str] | None | Unset): Media kinds to extract from indexed content and embed as multi-modal KB
+            chunks. Subset of ['images', 'video']. Only kinds the source's embedder can index are honored; unsupported
+            values are dropped. Omit / [] for text-only.
         polling (None | str | Unset): Polling interval (e.g. hourly, daily).
         polling_action (None | str | Unset): Polling action.
         polling_max_items (int | None | Unset): Max items per poll.
@@ -42,6 +45,7 @@ class CreateSourceBody:
     dimensions: int | None | Unset = UNSET
     embedding_model: None | str | Unset = UNSET
     index_mode: None | SourceIndexMode | Unset = UNSET
+    media_types: list[str] | None | Unset = UNSET
     polling: None | str | Unset = UNSET
     polling_action: None | str | Unset = UNSET
     polling_max_items: int | None | Unset = UNSET
@@ -91,6 +95,15 @@ class CreateSourceBody:
             index_mode = self.index_mode.value
         else:
             index_mode = self.index_mode
+
+        media_types: list[str] | None | Unset
+        if isinstance(self.media_types, Unset):
+            media_types = UNSET
+        elif isinstance(self.media_types, list):
+            media_types = self.media_types
+
+        else:
+            media_types = self.media_types
 
         polling: None | str | Unset
         if isinstance(self.polling, Unset):
@@ -142,6 +155,8 @@ class CreateSourceBody:
             field_dict["embedding_model"] = embedding_model
         if index_mode is not UNSET:
             field_dict["index_mode"] = index_mode
+        if media_types is not UNSET:
+            field_dict["media_types"] = media_types
         if polling is not UNSET:
             field_dict["polling"] = polling
         if polling_action is not UNSET:
@@ -224,6 +239,23 @@ class CreateSourceBody:
 
         index_mode = _parse_index_mode(d.pop("index_mode", UNSET))
 
+        def _parse_media_types(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                media_types_type_0 = cast(list[str], data)
+
+                return media_types_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        media_types = _parse_media_types(d.pop("media_types", UNSET))
+
         def _parse_polling(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -278,6 +310,7 @@ class CreateSourceBody:
             dimensions=dimensions,
             embedding_model=embedding_model,
             index_mode=index_mode,
+            media_types=media_types,
             polling=polling,
             polling_action=polling_action,
             polling_max_items=polling_max_items,

@@ -47,6 +47,8 @@ class SourceResponse:
         has_historical_data (bool | Unset): Indicates if the source connection has historical data. Default: False.
         index_mode (None | SourceIndexMode | Unset): Index mode for custom_index sources: fast_and_cheap, balanced,
             slow_and_thorough, or custom.
+        media_types (list[str] | Unset): Media kinds extracted from indexed content and embedded as multi-modal KB
+            chunks (subset of ['images', 'video']). Empty = text-only.
         readonly (bool | Unset): Indicates if the source connection is read-only. Default: False.
         system_managed (bool | Unset): Indicates if this source is automatically managed by the system (e.g., agent
             traces). Default: False.
@@ -80,6 +82,7 @@ class SourceResponse:
     free_retention_days: int | None | Unset = UNSET
     has_historical_data: bool | Unset = False
     index_mode: None | SourceIndexMode | Unset = UNSET
+    media_types: list[str] | Unset = UNSET
     readonly: bool | Unset = False
     system_managed: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -198,6 +201,10 @@ class SourceResponse:
         else:
             index_mode = self.index_mode
 
+        media_types: list[str] | Unset = UNSET
+        if not isinstance(self.media_types, Unset):
+            media_types = self.media_types
+
         readonly = self.readonly
 
         system_managed = self.system_managed
@@ -250,6 +257,8 @@ class SourceResponse:
             field_dict["has_historical_data"] = has_historical_data
         if index_mode is not UNSET:
             field_dict["index_mode"] = index_mode
+        if media_types is not UNSET:
+            field_dict["media_types"] = media_types
         if readonly is not UNSET:
             field_dict["readonly"] = readonly
         if system_managed is not UNSET:
@@ -453,6 +462,8 @@ class SourceResponse:
 
         index_mode = _parse_index_mode(d.pop("index_mode", UNSET))
 
+        media_types = cast(list[str], d.pop("media_types", UNSET))
+
         readonly = d.pop("readonly", UNSET)
 
         system_managed = d.pop("system_managed", UNSET)
@@ -486,6 +497,7 @@ class SourceResponse:
             free_retention_days=free_retention_days,
             has_historical_data=has_historical_data,
             index_mode=index_mode,
+            media_types=media_types,
             readonly=readonly,
             system_managed=system_managed,
         )

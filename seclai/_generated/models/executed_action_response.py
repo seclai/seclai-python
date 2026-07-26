@@ -19,6 +19,8 @@ class ExecutedActionResponse:
         action_type (str): Type of the executed action.
         description (str): Human-readable description.
         error (None | str | Unset): Error message if failed.
+        needs_clarification (bool | Unset): True when the action paused for a clarifying question rather than failing.
+            The created resource is kept and the question is in ``description``/``error``. Default: False.
         resource_id (None | str | Unset): ID of the affected resource.
         resource_type (None | str | Unset): Type of the affected resource.
         success (bool | Unset): Whether the action succeeded. Default: True.
@@ -27,6 +29,7 @@ class ExecutedActionResponse:
     action_type: str
     description: str
     error: None | str | Unset = UNSET
+    needs_clarification: bool | Unset = False
     resource_id: None | str | Unset = UNSET
     resource_type: None | str | Unset = UNSET
     success: bool | Unset = True
@@ -42,6 +45,8 @@ class ExecutedActionResponse:
             error = UNSET
         else:
             error = self.error
+
+        needs_clarification = self.needs_clarification
 
         resource_id: None | str | Unset
         if isinstance(self.resource_id, Unset):
@@ -67,6 +72,8 @@ class ExecutedActionResponse:
         )
         if error is not UNSET:
             field_dict["error"] = error
+        if needs_clarification is not UNSET:
+            field_dict["needs_clarification"] = needs_clarification
         if resource_id is not UNSET:
             field_dict["resource_id"] = resource_id
         if resource_type is not UNSET:
@@ -92,6 +99,8 @@ class ExecutedActionResponse:
 
         error = _parse_error(d.pop("error", UNSET))
 
+        needs_clarification = d.pop("needs_clarification", UNSET)
+
         def _parse_resource_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -116,6 +125,7 @@ class ExecutedActionResponse:
             action_type=action_type,
             description=description,
             error=error,
+            needs_clarification=needs_clarification,
             resource_id=resource_id,
             resource_type=resource_type,
             success=success,

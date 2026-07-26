@@ -1541,6 +1541,17 @@ class Seclai(_SeclaiBase):
             if created_payload is not None:
                 created_payload.close()
 
+    # ── Identity ──────────────────────────────────────────────────────────────────
+
+    def get_me(self) -> dict[str, Any]:
+        """Get the authenticated user's identity.
+
+        Returns:
+            The caller's personal ``account_id`` and the organizations they belong to.
+
+        """
+        return cast(dict[str, Any], self.request("GET", "/me"))
+
     # ── Agents ────────────────────────────────────────────────────────────────
 
     def list_agents(self, *, page: int = 1, limit: int = 50) -> dict[str, Any]:
@@ -1605,6 +1616,45 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
         """
         self.request("DELETE", f"/agents/{agent_id}")
+
+    def disable_agent(self, agent_id: str) -> dict[str, Any]:
+        """Pause (disable) an agent so it stops firing from every trigger path.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The updated agent summary.
+
+        """
+        return cast(dict[str, Any], self.request("POST", f"/agents/{agent_id}/disable"))
+
+    def enable_agent(self, agent_id: str) -> dict[str, Any]:
+        """Resume (enable) a paused agent.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The updated agent summary.
+
+        """
+        return cast(dict[str, Any], self.request("POST", f"/agents/{agent_id}/enable"))
+
+    def get_agent_callers(self, agent_id: str) -> list[dict[str, Any]]:
+        """List the live agents that call this agent via a ``call_agent`` step.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The calling agents; each must be disabled before this agent can be paused.
+
+        """
+        return cast(
+            list[dict[str, Any]],
+            self.request("GET", f"/agents/{agent_id}/callers"),
+        )
 
     # ── Agent Export ────────────────────────────────────────────────────────────
 
@@ -2194,6 +2244,198 @@ class Seclai(_SeclaiBase):
                 "GET",
                 "/agents/evaluation-results/non-manual-summary",
                 params={"agent_id": agent_id},
+            ),
+        )
+
+    # ── Agent Email Governance ────────────────────────────────────────────────────
+
+    def list_agent_email_optouts(
+        self,
+        *,
+        agent_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
+        """List recipients who have opted out of this account's agent emails.
+
+        Args:
+            agent_id: Filter to one agent (account-wide opt-outs still apply).
+            limit: Page size (1-200, default 50).
+            offset: Rows to skip.
+
+        Returns:
+            The page of opt-outs plus the total count.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/agents/agent-email-optouts",
+                params=_strip_none(
+                    {"agent_id": agent_id, "limit": limit, "offset": offset}
+                ),
+            ),
+        )
+
+    def remove_agent_email_optout(self, optout_id: str) -> None:
+        """Revoke an opt-out, opting the recipient back in to agent emails.
+
+        Args:
+            optout_id: Opt-out identifier.
+
+        """
+        self.request("DELETE", f"/agents/agent-email-optouts/{optout_id}")
+
+    def list_blocked_email_senders(
+        self,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
+        """List the account's blocked inbound email senders and the auto-block mode.
+
+        Args:
+            limit: Page size (1-200, default 50).
+            offset: Rows to skip.
+
+        Returns:
+            The page of blocked senders plus ``auto_block_mode``.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/agents/blocked-email-senders",
+                params=_strip_none({"limit": limit, "offset": offset}),
+            ),
+        )
+
+    def block_email_sender(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Add a sender address or a whole domain to the account blocklist.
+
+        Args:
+            body: ``sender_email`` plus optional ``match_type`` (``address``
+                default, or ``domain``) and ``note``.
+
+        Returns:
+            The blocked-sender entry.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", "/agents/blocked-email-senders", json=body),
+        )
+
+    def unblock_email_sender(self, blocked_id: str) -> None:
+        """Remove a blocked sender by id.
+
+        Args:
+            blocked_id: Blocked-sender identifier.
+
+        """
+        self.request("DELETE", f"/agents/blocked-email-senders/{blocked_id}")
+
+    def set_auto_block_mode(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Set whether a governance BLOCK auto-adds the sender to the blocklist.
+
+        Args:
+            body: ``mode``: ``disabled``, ``input``, or ``input_and_output``.
+
+        Returns:
+            The updated blocked-sender list.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("PUT", "/agents/blocked-email-senders/mode", json=body),
+        )
+
+    def list_inbound_email_rejections(
+        self,
+        *,
+        agent_id: str | None = None,
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """List recent inbound emails discarded before running an agent.
+
+        Args:
+            agent_id: Filter to a single agent's rejections.
+            limit: Maximum results (1-200, default 50).
+
+        Returns:
+            The discarded inbound emails.
+
+        """
+        return cast(
+            list[dict[str, Any]],
+            self.request(
+                "GET",
+                "/agents/inbound-email-rejections",
+                params=_strip_none({"agent_id": agent_id, "limit": limit}),
+            ),
+        )
+
+    def get_inbound_email_status(self) -> dict[str, Any]:
+        """Get the account's inbound-email overload status.
+
+        Returns:
+            Whether the breaker has paused inbound mail, and the queued backlog size.
+
+        """
+        return cast(dict[str, Any], self.request("GET", "/agents/inbound-email-status"))
+
+    def cancel_queued_email_runs(self) -> dict[str, Any]:
+        """Fail all of the account's QUEUED (over-quota parked) inbound-email runs.
+
+        Returns:
+            The count cancelled.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", "/agents/inbound-email-status/cancel-queued"),
+        )
+
+    def resume_inbound_email(self) -> dict[str, Any]:
+        """Manually lift the account-wide inbound-email pause.
+
+        Returns:
+            Whether the pause was lifted. One-shot: the breaker re-arms if still overloaded.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", "/agents/inbound-email-status/resume"),
+        )
+
+    # ── Agent Email Triggers ──────────────────────────────────────────────────────
+
+    def set_email_trigger_config(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        body: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Configure an agent's EMAIL_RECEIVED trigger.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier.
+            body: Fields to set (alias, allowed_senders, ignore_auto_generated,
+                require_sender_auth, queue_on_quota). Omitted fields are unchanged.
+
+        Returns:
+            The trigger's resolved email address(es) and config.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/agents/{agent_id}/triggers/{trigger_id}/email-config",
+                json=body,
             ),
         )
 
@@ -3498,6 +3740,15 @@ class Seclai(_SeclaiBase):
         """
         return self.request("GET", f"/models/{model_id}/details")
 
+    def get_generation_tiers(self) -> dict[str, Any]:
+        """List the media-generation quality tiers and what each resolves to.
+
+        Returns:
+            Each ``(modality, tier)`` mapped to its generator, credits, and price label.
+
+        """
+        return cast(dict[str, Any], self.request("GET", "/models/generation-tiers"))
+
     # ── Model Playground Experiments ──────────────────────────────────────────
 
     def list_experiments(
@@ -3605,6 +3856,148 @@ class Seclai(_SeclaiBase):
             "/search",
             params=_strip_none(
                 {"query": query, "limit": limit, "entity_type": entity_type}
+            ),
+        )
+
+    # ── Email Domains ─────────────────────────────────────────────────────────────
+
+    def list_email_domains(self) -> dict[str, Any]:
+        """List the account's agent-email domains and plan capabilities.
+
+        Returns:
+            Domains with verification status and required DNS records.
+
+        """
+        return cast(dict[str, Any], self.request("GET", "/email-domains"))
+
+    def add_email_domain(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Add and provision a vanity or custom agent-email domain.
+
+        Args:
+            body: ``kind`` (``vanity``/``custom``) and ``value``; optional
+                ``delegated`` (default false) to let Seclai manage the zone.
+
+        Returns:
+            The new domain, including the DNS records to publish.
+
+        """
+        return cast(dict[str, Any], self.request("POST", "/email-domains", json=body))
+
+    def remove_email_domain(self, domain_id: str) -> dict[str, Any]:
+        """Remove a domain and tear down its SES identity and DNS.
+
+        Args:
+            domain_id: Domain identifier.
+
+        Returns:
+            ``removed``, plus a ``cleanup_note`` when the domain was Seclai-managed.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("DELETE", f"/email-domains/{domain_id}"),
+        )
+
+    def verify_email_domain(self, domain_id: str) -> dict[str, Any]:
+        """Re-poll SES and DNS for this domain now ('Check now').
+
+        Args:
+            domain_id: Domain identifier.
+
+        Returns:
+            The updated status and DNS-record check results.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", f"/email-domains/{domain_id}/verify"),
+        )
+
+    def set_primary_email_domain(self, domain_id: str) -> dict[str, Any]:
+        """Promote a verified domain to the account's primary domain.
+
+        Args:
+            domain_id: Domain identifier; must already be verified.
+
+        Returns:
+            The updated domain.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", f"/email-domains/{domain_id}/primary"),
+        )
+
+    def use_shared_email_domain(self) -> None:
+        """Revert to the shared ``agent.seclai.com`` sending/inbound domain."""
+        self.request("POST", "/email-domains/use-shared-domain")
+
+    def send_email_domain_test_email(self, domain_id: str) -> dict[str, Any]:
+        """Send a test message from a verified domain to the account owner.
+
+        Args:
+            domain_id: Domain identifier.
+
+        Returns:
+            Whether the message was sent.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", f"/email-domains/{domain_id}/test-email"),
+        )
+
+    def get_dmarc_summary(
+        self,
+        domain_id: str,
+        *,
+        days: int | None = None,
+        top_sources: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the DMARC aggregate-report summary for a domain.
+
+        Args:
+            domain_id: Domain identifier.
+            days: Window length in days (default 30).
+            top_sources: Number of top failing sources to return (default 10).
+
+        Returns:
+            Pass rate, disposition breakdown, and top failing source IPs.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/email-domains/{domain_id}/dmarc",
+                params=_strip_none({"days": days, "top_sources": top_sources}),
+            ),
+        )
+
+    def search_docs(
+        self,
+        query: str,
+        *,
+        mode: str | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """Search the Seclai documentation by content.
+
+        Args:
+            query: Search query (1-200 chars).
+            mode: ``keyword`` (default; titles and summaries) or ``semantic`` (body).
+            limit: Maximum results (1-20, default 8).
+
+        Returns:
+            Matching pages, each with a ``doc_slug`` and optional section ``anchor``.
+
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/docs-search",
+                params=_strip_none({"q": query, "mode": mode, "limit": limit}),
             ),
         )
 
@@ -4959,6 +5352,17 @@ class AsyncSeclai(_SeclaiBase):
             if created_payload is not None:
                 created_payload.close()
 
+    # ── Identity ──────────────────────────────────────────────────────────────────
+
+    async def get_me(self) -> dict[str, Any]:
+        """Get the authenticated user's identity.
+
+        Returns:
+            The caller's personal ``account_id`` and the organizations they belong to.
+
+        """
+        return cast(dict[str, Any], await self.request("GET", "/me"))
+
     # ── Agents ────────────────────────────────────────────────────────────────
 
     async def list_agents(self, *, page: int = 1, limit: int = 50) -> dict[str, Any]:
@@ -5023,6 +5427,51 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
         """
         await self.request("DELETE", f"/agents/{agent_id}")
+
+    async def disable_agent(self, agent_id: str) -> dict[str, Any]:
+        """Pause (disable) an agent so it stops firing from every trigger path.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The updated agent summary.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", f"/agents/{agent_id}/disable"),
+        )
+
+    async def enable_agent(self, agent_id: str) -> dict[str, Any]:
+        """Resume (enable) a paused agent.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The updated agent summary.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", f"/agents/{agent_id}/enable"),
+        )
+
+    async def get_agent_callers(self, agent_id: str) -> list[dict[str, Any]]:
+        """List the live agents that call this agent via a ``call_agent`` step.
+
+        Args:
+            agent_id: Agent identifier.
+
+        Returns:
+            The calling agents; each must be disabled before this agent can be paused.
+
+        """
+        return cast(
+            list[dict[str, Any]],
+            await self.request("GET", f"/agents/{agent_id}/callers"),
+        )
 
     # ── Agent Export ──────────────────────────────────────────────────────────
 
@@ -5622,6 +6071,201 @@ class AsyncSeclai(_SeclaiBase):
                 "GET",
                 "/agents/evaluation-results/non-manual-summary",
                 params={"agent_id": agent_id},
+            ),
+        )
+
+    # ── Agent Email Governance ────────────────────────────────────────────────────
+
+    async def list_agent_email_optouts(
+        self,
+        *,
+        agent_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
+        """List recipients who have opted out of this account's agent emails.
+
+        Args:
+            agent_id: Filter to one agent (account-wide opt-outs still apply).
+            limit: Page size (1-200, default 50).
+            offset: Rows to skip.
+
+        Returns:
+            The page of opt-outs plus the total count.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/agents/agent-email-optouts",
+                params=_strip_none(
+                    {"agent_id": agent_id, "limit": limit, "offset": offset}
+                ),
+            ),
+        )
+
+    async def remove_agent_email_optout(self, optout_id: str) -> None:
+        """Revoke an opt-out, opting the recipient back in to agent emails.
+
+        Args:
+            optout_id: Opt-out identifier.
+
+        """
+        await self.request("DELETE", f"/agents/agent-email-optouts/{optout_id}")
+
+    async def list_blocked_email_senders(
+        self,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
+        """List the account's blocked inbound email senders and the auto-block mode.
+
+        Args:
+            limit: Page size (1-200, default 50).
+            offset: Rows to skip.
+
+        Returns:
+            The page of blocked senders plus ``auto_block_mode``.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/agents/blocked-email-senders",
+                params=_strip_none({"limit": limit, "offset": offset}),
+            ),
+        )
+
+    async def block_email_sender(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Add a sender address or a whole domain to the account blocklist.
+
+        Args:
+            body: ``sender_email`` plus optional ``match_type`` (``address``
+                default, or ``domain``) and ``note``.
+
+        Returns:
+            The blocked-sender entry.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", "/agents/blocked-email-senders", json=body),
+        )
+
+    async def unblock_email_sender(self, blocked_id: str) -> None:
+        """Remove a blocked sender by id.
+
+        Args:
+            blocked_id: Blocked-sender identifier.
+
+        """
+        await self.request("DELETE", f"/agents/blocked-email-senders/{blocked_id}")
+
+    async def set_auto_block_mode(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Set whether a governance BLOCK auto-adds the sender to the blocklist.
+
+        Args:
+            body: ``mode``: ``disabled``, ``input``, or ``input_and_output``.
+
+        Returns:
+            The updated blocked-sender list.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("PUT", "/agents/blocked-email-senders/mode", json=body),
+        )
+
+    async def list_inbound_email_rejections(
+        self,
+        *,
+        agent_id: str | None = None,
+        limit: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """List recent inbound emails discarded before running an agent.
+
+        Args:
+            agent_id: Filter to a single agent's rejections.
+            limit: Maximum results (1-200, default 50).
+
+        Returns:
+            The discarded inbound emails.
+
+        """
+        return cast(
+            list[dict[str, Any]],
+            await self.request(
+                "GET",
+                "/agents/inbound-email-rejections",
+                params=_strip_none({"agent_id": agent_id, "limit": limit}),
+            ),
+        )
+
+    async def get_inbound_email_status(self) -> dict[str, Any]:
+        """Get the account's inbound-email overload status.
+
+        Returns:
+            Whether the breaker has paused inbound mail, and the queued backlog size.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("GET", "/agents/inbound-email-status"),
+        )
+
+    async def cancel_queued_email_runs(self) -> dict[str, Any]:
+        """Fail all of the account's QUEUED (over-quota parked) inbound-email runs.
+
+        Returns:
+            The count cancelled.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", "/agents/inbound-email-status/cancel-queued"),
+        )
+
+    async def resume_inbound_email(self) -> dict[str, Any]:
+        """Manually lift the account-wide inbound-email pause.
+
+        Returns:
+            Whether the pause was lifted. One-shot: the breaker re-arms if still overloaded.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", "/agents/inbound-email-status/resume"),
+        )
+
+    # ── Agent Email Triggers ──────────────────────────────────────────────────────
+
+    async def set_email_trigger_config(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        body: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Configure an agent's EMAIL_RECEIVED trigger.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier.
+            body: Fields to set (alias, allowed_senders, ignore_auto_generated,
+                require_sender_auth, queue_on_quota). Omitted fields are unchanged.
+
+        Returns:
+            The trigger's resolved email address(es) and config.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/agents/{agent_id}/triggers/{trigger_id}/email-config",
+                json=body,
             ),
         )
 
@@ -6953,6 +7597,18 @@ class AsyncSeclai(_SeclaiBase):
         """
         return await self.request("GET", f"/models/{model_id}/details")
 
+    async def get_generation_tiers(self) -> dict[str, Any]:
+        """List the media-generation quality tiers and what each resolves to.
+
+        Returns:
+            Each ``(modality, tier)`` mapped to its generator, credits, and price label.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("GET", "/models/generation-tiers"),
+        )
+
     # ── Model Playground Experiments ──────────────────────────────────────────
 
     async def list_experiments(
@@ -7062,6 +7718,151 @@ class AsyncSeclai(_SeclaiBase):
             "/search",
             params=_strip_none(
                 {"query": query, "limit": limit, "entity_type": entity_type}
+            ),
+        )
+
+    # ── Email Domains ─────────────────────────────────────────────────────────────
+
+    async def list_email_domains(self) -> dict[str, Any]:
+        """List the account's agent-email domains and plan capabilities.
+
+        Returns:
+            Domains with verification status and required DNS records.
+
+        """
+        return cast(dict[str, Any], await self.request("GET", "/email-domains"))
+
+    async def add_email_domain(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Add and provision a vanity or custom agent-email domain.
+
+        Args:
+            body: ``kind`` (``vanity``/``custom``) and ``value``; optional
+                ``delegated`` (default false) to let Seclai manage the zone.
+
+        Returns:
+            The new domain, including the DNS records to publish.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", "/email-domains", json=body),
+        )
+
+    async def remove_email_domain(self, domain_id: str) -> dict[str, Any]:
+        """Remove a domain and tear down its SES identity and DNS.
+
+        Args:
+            domain_id: Domain identifier.
+
+        Returns:
+            ``removed``, plus a ``cleanup_note`` when the domain was Seclai-managed.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("DELETE", f"/email-domains/{domain_id}"),
+        )
+
+    async def verify_email_domain(self, domain_id: str) -> dict[str, Any]:
+        """Re-poll SES and DNS for this domain now ('Check now').
+
+        Args:
+            domain_id: Domain identifier.
+
+        Returns:
+            The updated status and DNS-record check results.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", f"/email-domains/{domain_id}/verify"),
+        )
+
+    async def set_primary_email_domain(self, domain_id: str) -> dict[str, Any]:
+        """Promote a verified domain to the account's primary domain.
+
+        Args:
+            domain_id: Domain identifier; must already be verified.
+
+        Returns:
+            The updated domain.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", f"/email-domains/{domain_id}/primary"),
+        )
+
+    async def use_shared_email_domain(self) -> None:
+        """Revert to the shared ``agent.seclai.com`` sending/inbound domain."""
+        await self.request("POST", "/email-domains/use-shared-domain")
+
+    async def send_email_domain_test_email(self, domain_id: str) -> dict[str, Any]:
+        """Send a test message from a verified domain to the account owner.
+
+        Args:
+            domain_id: Domain identifier.
+
+        Returns:
+            Whether the message was sent.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", f"/email-domains/{domain_id}/test-email"),
+        )
+
+    async def get_dmarc_summary(
+        self,
+        domain_id: str,
+        *,
+        days: int | None = None,
+        top_sources: int | None = None,
+    ) -> dict[str, Any]:
+        """Get the DMARC aggregate-report summary for a domain.
+
+        Args:
+            domain_id: Domain identifier.
+            days: Window length in days (default 30).
+            top_sources: Number of top failing sources to return (default 10).
+
+        Returns:
+            Pass rate, disposition breakdown, and top failing source IPs.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/email-domains/{domain_id}/dmarc",
+                params=_strip_none({"days": days, "top_sources": top_sources}),
+            ),
+        )
+
+    async def search_docs(
+        self,
+        query: str,
+        *,
+        mode: str | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """Search the Seclai documentation by content.
+
+        Args:
+            query: Search query (1-200 chars).
+            mode: ``keyword`` (default; titles and summaries) or ``semantic`` (body).
+            limit: Maximum results (1-20, default 8).
+
+        Returns:
+            Matching pages, each with a ``doc_slug`` and optional section ``anchor``.
+
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/docs-search",
+                params=_strip_none({"q": query, "mode": mode, "limit": limit}),
             ),
         )
 

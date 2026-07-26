@@ -6,7 +6,9 @@ class PendingProcessingCompletedFailedStatus(str, Enum):
     FAILED = "failed"
     PENDING = "pending"
     PROCESSING = "processing"
+    QUEUED = "queued"
     WAITING_HUMAN = "waiting_human"
+    WAITING_SCHEDULED = "waiting_scheduled"
 
     def __str__(self) -> str:
         return str(self.value)
