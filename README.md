@@ -186,19 +186,32 @@ shapes, so they keep working either way — but the metadata moves:
 
 | Method | Before | From 2026-07-27 |
 | --- | --- | --- |
-| `list_evaluation_criteria_page()` | bare list | `data` + `pagination` |
-| `list_run_evaluation_results_page()` | bare list | `data` + `pagination` |
-| `list_alert_configs()` | `configs` + `total` | `data` + `pagination` |
-| `list_model_alerts()` | `alerts` + `total` | `data` + `pagination` |
+| Method | Before | From 2026-07-27 | Legacy paging |
+| --- | --- | --- | --- |
+| `list_evaluation_criteria_page()` | bare list | `data` + `pagination` | none — returns everything |
+| `list_run_evaluation_results_page()` | bare list | `data` + `pagination` | none — returns everything |
+| `list_alert_configs()` | `configs` + `total` | `data` + `pagination` | `page` / `limit` |
+| `list_model_alerts()` | `alerts` + `total` | `data` + `pagination` | `page` (sent as `offset`) / `limit` |
+| `list_experiments()` | `experiments` + `total` | `data` + `pagination` | `limit` / `offset` |
+| `get_generation_tiers()` | `tiers` | `data` + `pagination` | none |
 
-Read the last two with `result.get("data", result.get("configs", []))` and
-`result.get("data", result.get("alerts", []))`, and prefer `pagination` over the
-flat keys. The legacy keys will be deprecated and then removed once the canonical
-envelope is the default.
+`unwrap_items()` reads either shape, so a call site does not have to branch on
+the version:
 
-Note that `page` and `limit` have no effect on the legacy shape — it is
-unpaginated and always returns everything — so a paginate-until-empty loop only
-terminates once you have opted in.
+```python
+from seclai import unwrap_items
+
+items = unwrap_items(client.list_alert_configs(), "configs")
+items = unwrap_items(client.list_model_alerts(), "alerts")
+```
+
+Prefer `pagination` over the flat keys. The legacy keys will be deprecated and
+then removed once the canonical envelope is the default.
+
+The two evaluation endpoints are **unpaginated** on the legacy shape — they
+ignore `page`/`limit` and return everything — so a paginate-until-empty loop over
+them only terminates once you have opted in. The other four paginate on either
+shape.
 
 ## Resources
 

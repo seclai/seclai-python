@@ -92,17 +92,56 @@ class AgentRunStreamRequest(TypedDict):
 SECLAI_API_URL = os.getenv("SECLAI_API_URL", "https://seclai.com")
 
 
-def _unwrap_data(payload: Any) -> list[dict[str, Any]]:
-    """Return the items of a list endpoint, whichever wire shape it used.
+def unwrap_items(payload: Any, *legacy_keys: str) -> list[dict[str, Any]]:
+    """Return the items of a version-gated list endpoint, whichever shape it used.
 
-    Several endpoints are moving from a bare JSON array to a paginated
-    ``{"data": [...], "total", "page", "limit"}`` envelope. Both shapes are live
-    realities during the rollout, so a client that decodes only one breaks on
-    the day the other ships.
+    Six endpoints key their list differently depending on the ``Seclai-Version``
+    the request resolves to. On the legacy baseline it is a bare JSON array or a
+    per-resource key (``configs``, ``alerts``, ``tiers``, ``experiments``); from
+    ``2026-07-27`` it is the canonical
+    ``{"data": [...], "pagination": {...}}`` envelope. Both are live during the
+    rollout, so reading only one breaks the day the other arrives.
+
+    Args:
+        payload: The decoded response body.
+        legacy_keys: Per-resource keys this endpoint uses before ``2026-07-27``,
+            tried in order after ``data``.
+
+    Returns:
+        The items. Never ``None`` — an explicit ``{"data": null}`` yields ``[]``.
+
+    Raises:
+        SeclaiError: If the payload is neither a list nor an object carrying one
+            of the expected keys. Returning ``[]`` for an unrecognised envelope
+            would report "no results" for what is really a shape the client
+            cannot read, which is indistinguishable from a genuinely empty page.
     """
+    if isinstance(payload, list):
+        return cast(list[dict[str, Any]], payload)
     if isinstance(payload, dict):
-        return cast(list[dict[str, Any]], payload.get("data", []))
-    return cast(list[dict[str, Any]], payload)
+        for key in ("data", *legacy_keys):
+            if key in payload:
+                items = payload[key]
+                if items is None:
+                    return []
+                if isinstance(items, list):
+                    return cast(list[dict[str, Any]], items)
+                raise SeclaiError(
+                    f"Expected a list under {key!r}, got {type(items).__name__}."
+                )
+        expected = ", ".join(repr(k) for k in ("data", *legacy_keys))
+        raise SeclaiError(
+            f"Unrecognised list response: expected a bare array or an object "
+            f"with one of {expected}, got keys {sorted(payload)}."
+        )
+    raise SeclaiError(
+        f"Unrecognised list response: expected a list or object, "
+        f"got {type(payload).__name__}."
+    )
+
+
+#: Deprecated alias kept for internal call sites; use :func:`unwrap_items`.
+_unwrap_data = unwrap_items
 
 
 def _strip_none(params: dict[str, Any]) -> dict[str, Any]:
@@ -223,6 +262,8 @@ class ClientOptions:
         api_key_header: HTTP header name used to transmit the API key.
         default_headers: Extra headers included on every request.
         api_version: Dated API version sent as ``Seclai-Version``, or ``None``.
+        allow_unknown_api_version: Whether a version this release was not built
+            against is permitted, for the header and for ``update_api_version``.
     """
 
     auth_state: AuthState
@@ -230,6 +271,7 @@ class ClientOptions:
     api_key_header: str
     default_headers: Mapping[str, str]
     api_version: str | None = None
+    allow_unknown_api_version: bool = False
 
 
 def _build_default_headers(
@@ -262,7 +304,13 @@ def _build_default_headers(
     if api_version:
         headers["seclai-version"] = api_version
     if default_headers:
-        headers.update(default_headers)
+        # Case-insensitively, so a caller-supplied `Seclai-Version` (or any other
+        # differently-cased default) replaces ours rather than joining it. httpx
+        # emits both keys otherwise and the server picks one arbitrarily.
+        lowered = {k.lower(): k for k in headers}
+        for key, value in default_headers.items():
+            headers.pop(lowered.get(key.lower(), key), None)
+            headers[key] = value
     return headers
 
 
@@ -317,13 +365,33 @@ async def _merge_request_headers_async(
 
 
 def _raise_for_status(response: httpx.Response) -> None:
-    """Raise `SeclaiAPIStatusError` when the response status is not successful."""
+    """Raise on a non-success status, `SeclaiAPIValidationError` for a 422.
+
+    The generated-client path has always distinguished the two; this one did not,
+    so every method built on :meth:`Seclai.request` — most of the SDK — reported a
+    validation failure as a bare status error and discarded the field-level
+    detail the API returned.
+    """
     if 200 <= response.status_code < 400:
         return
     try:
         response_text = response.text
     except Exception:
         response_text = None
+    if response.status_code == 422:
+        try:
+            payload = response.json()
+        except Exception:
+            payload = None
+        if isinstance(payload, dict) and "detail" in payload:
+            raise SeclaiAPIValidationError(
+                message="Validation error",
+                status_code=response.status_code,
+                method=response.request.method,
+                url=str(response.request.url),
+                response_text=response_text,
+                validation_error=HTTPValidationError.from_dict(payload),
+            )
     raise SeclaiAPIStatusError(
         message=f"Request failed with status {response.status_code}",
         status_code=response.status_code,
@@ -417,6 +485,7 @@ class _SeclaiBase:
             api_key_header=api_key_header,
             default_headers=default_headers or {},
             api_version=api_version,
+            allow_unknown_api_version=allow_unknown_api_version,
         )
 
         self._generated_client_instance: GeneratedClient | None = None
@@ -1626,7 +1695,22 @@ class Seclai(_SeclaiBase):
             The updated version state. ``effective_version`` describes this
             request, not the pin just written — a ``Seclai-Version`` header still
             overrides the pin.
+
+        Raises:
+            SeclaiConfigurationError: If ``version`` is one this release was not
+                built against. The pin is account-wide and sticky, so an unknown
+                version here would silently reshape responses for every
+                header-less caller on the account, not just this client — a wider
+                blast radius than the ``api_version`` option the constructor
+                already guards. Pass ``allow_unknown_api_version=True`` to the
+                client to override.
         """
+        try:
+            validate_api_version(
+                version, allow_unknown=self._options.allow_unknown_api_version
+            )
+        except ValueError as e:
+            raise SeclaiConfigurationError(str(e)) from e
         return cast(
             dict[str, Any],
             self.request("PUT", "/version", json={"version": version}),
@@ -1843,11 +1927,20 @@ class Seclai(_SeclaiBase):
         ``POST .../cancel`` route, and no operation that deletes a run.
         Rejected when the run has already reached a terminal state.
 
+        Hits the same endpoint as :meth:`delete_agent_run`, but through
+        :meth:`request` rather than the generated client, so a caller-supplied
+        ``http_client`` applies. Both now surface a 422 as
+        :class:`SeclaiAPIValidationError`.
+
         Args:
             run_id: Run identifier.
 
         Returns:
-            The updated agent run.
+            The updated agent run, as a plain dict.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
         """
         return cast(dict[str, Any], self.request("DELETE", f"/agents/runs/{run_id}"))
 
@@ -2030,16 +2123,26 @@ class Seclai(_SeclaiBase):
 
         Args:
             agent_id: Agent identifier.
-            step_type: Step type to look up. **Required by the API** — the
-                endpoint answers 422 without it. Optional here only so the
-                existing signature keeps compiling; every call needs it.
+            step_type: Step type to look up. Required by the API. Keyword-only
+                with no default so the released one-argument signature still
+                imports, but a call that omits it cannot succeed.
             step_id: Filter to a single step.
             limit: Max turns to return (1-50, default 10).
             offset: Number of recent turns to skip.
 
         Returns:
             Conversation history with the AI assistant.
+
+        Raises:
+            ValueError: If ``step_type`` is missing. The API marks it required,
+                so omitting it answers 422 naming the wire parameter; failing
+                here names the argument instead, and makes the broken call
+                obvious rather than deferring it to the server.
         """
+        if not step_type:
+            raise ValueError(
+                "step_type is required by the API; pass e.g. step_type='llm'."
+            )
         return cast(
             dict[str, Any],
             self.request(
@@ -2389,13 +2492,20 @@ class Seclai(_SeclaiBase):
         )
 
     def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
-        """Get the non-manual evaluation summary for an agent.
+        """Get the non-manual evaluation summary, scoped to an agent when opted in.
 
         Args:
-            agent_id: Agent identifier.
+            agent_id: Agent identifier. Scoping is part of the ``2026-07-27``
+                changeset: on the legacy baseline the API **ignores** it and
+                always returns the account-wide rollup, so set
+                ``api_version="2026-07-27"`` (or pin the account) to get
+                per-agent numbers.
 
         Returns:
-            Summary of automated evaluation results.
+            Summary of automated evaluation results — for ``agent_id`` when the
+            client has opted in, account-wide otherwise. The two are
+            indistinguishable in the payload, so check the client's
+            ``api_version`` rather than the response.
         """
         return cast(
             dict[str, Any],
@@ -3724,11 +3834,12 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            The configurations, under ``configs`` alongside ``total`` by default.
-            Once the client opts in with ``api_version="2026-07-27"`` or later
-            the endpoint returns the canonical ``{data, pagination}`` envelope
-            instead, so the top-level key changes — read it with
-            ``result.get("data", result.get("configs", []))``.
+            The configurations, under ``configs`` alongside ``total`` by default,
+            and under ``data`` with ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(client.list_alert_configs(), "configs")
         """
         return self.request(
             "GET",
@@ -3825,16 +3936,20 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            The alerts, under ``alerts`` alongside ``total`` by default. Once the
-            client opts in with ``api_version="2026-07-27"`` or later the endpoint
-            returns the canonical ``{data, pagination}`` envelope instead, so the
-            top-level key changes — read it with
-            ``result.get("data", result.get("alerts", []))``.
+            The alerts, under ``alerts`` alongside ``total`` by default, and under
+            ``data`` with ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(client.list_model_alerts(), "alerts")
         """
+        # `offset` is declared `minimum: 0`, so a defensive caller passing page=0
+        # would turn a previously-ignored parameter into a hard 422.
+        offset = max(page - 1, 0) * limit
         return self.request(
             "GET",
             "/models/alerts",
-            params=_strip_none({"offset": (page - 1) * limit, "limit": limit}),
+            params=_strip_none({"offset": offset, "limit": limit}),
         )
 
     def mark_all_model_alerts_read(self) -> None:
@@ -3914,8 +4029,13 @@ class Seclai(_SeclaiBase):
         """List the media-generation quality tiers and what each resolves to.
 
         Returns:
-            Each ``(modality, tier)`` mapped to its generator, credits, and price label.
+            Each ``(modality, tier)`` mapped to its generator, credits, and price
+            label — under ``tiers`` by default, and under ``data`` with
+            ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
 
+                items = unwrap_items(client.get_generation_tiers(), "tiers")
         """
         return cast(dict[str, Any], self.request("GET", "/models/generation-tiers"))
 
@@ -3940,7 +4060,12 @@ class Seclai(_SeclaiBase):
             offset: Pagination offset.
 
         Returns:
-            Paginated list of experiments.
+            The experiments, under ``experiments`` alongside ``total`` by default,
+            and under ``data`` with ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(client.list_experiments(), "experiments")
         """
         return self.request(
             "GET",
@@ -5568,7 +5693,22 @@ class AsyncSeclai(_SeclaiBase):
             The updated version state. ``effective_version`` describes this
             request, not the pin just written — a ``Seclai-Version`` header still
             overrides the pin.
+
+        Raises:
+            SeclaiConfigurationError: If ``version`` is one this release was not
+                built against. The pin is account-wide and sticky, so an unknown
+                version here would silently reshape responses for every
+                header-less caller on the account, not just this client — a wider
+                blast radius than the ``api_version`` option the constructor
+                already guards. Pass ``allow_unknown_api_version=True`` to the
+                client to override.
         """
+        try:
+            validate_api_version(
+                version, allow_unknown=self._options.allow_unknown_api_version
+            )
+        except ValueError as e:
+            raise SeclaiConfigurationError(str(e)) from e
         return cast(
             dict[str, Any],
             await self.request("PUT", "/version", json={"version": version}),
@@ -5793,11 +5933,20 @@ class AsyncSeclai(_SeclaiBase):
         ``POST .../cancel`` route, and no operation that deletes a run.
         Rejected when the run has already reached a terminal state.
 
+        Hits the same endpoint as :meth:`delete_agent_run`, but through
+        :meth:`request` rather than the generated client, so a caller-supplied
+        ``http_client`` applies. Both now surface a 422 as
+        :class:`SeclaiAPIValidationError`.
+
         Args:
             run_id: Run identifier.
 
         Returns:
-            The updated agent run.
+            The updated agent run, as a plain dict.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
         """
         return cast(
             dict[str, Any], await self.request("DELETE", f"/agents/runs/{run_id}")
@@ -5990,16 +6139,26 @@ class AsyncSeclai(_SeclaiBase):
 
         Args:
             agent_id: Agent identifier.
-            step_type: Step type to look up. **Required by the API** — the
-                endpoint answers 422 without it. Optional here only so the
-                existing signature keeps compiling; every call needs it.
+            step_type: Step type to look up. Required by the API. Keyword-only
+                with no default so the released one-argument signature still
+                imports, but a call that omits it cannot succeed.
             step_id: Filter to a single step.
             limit: Max turns to return (1-50, default 10).
             offset: Number of recent turns to skip.
 
         Returns:
             Conversation history with the AI assistant.
+
+        Raises:
+            ValueError: If ``step_type`` is missing. The API marks it required,
+                so omitting it answers 422 naming the wire parameter; failing
+                here names the argument instead, and makes the broken call
+                obvious rather than deferring it to the server.
         """
+        if not step_type:
+            raise ValueError(
+                "step_type is required by the API; pass e.g. step_type='llm'."
+            )
         return cast(
             dict[str, Any],
             await self.request(
@@ -6349,13 +6508,20 @@ class AsyncSeclai(_SeclaiBase):
         )
 
     async def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
-        """Get the non-manual evaluation summary for an agent.
+        """Get the non-manual evaluation summary, scoped to an agent when opted in.
 
         Args:
-            agent_id: Agent identifier.
+            agent_id: Agent identifier. Scoping is part of the ``2026-07-27``
+                changeset: on the legacy baseline the API **ignores** it and
+                always returns the account-wide rollup, so set
+                ``api_version="2026-07-27"`` (or pin the account) to get
+                per-agent numbers.
 
         Returns:
-            Summary of automated evaluation results.
+            Summary of automated evaluation results — for ``agent_id`` when the
+            client has opted in, account-wide otherwise. The two are
+            indistinguishable in the payload, so check the client's
+            ``api_version`` rather than the response.
         """
         return cast(
             dict[str, Any],
@@ -7712,11 +7878,12 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            The configurations, under ``configs`` alongside ``total`` by default.
-            Once the client opts in with ``api_version="2026-07-27"`` or later
-            the endpoint returns the canonical ``{data, pagination}`` envelope
-            instead, so the top-level key changes — read it with
-            ``result.get("data", result.get("configs", []))``.
+            The configurations, under ``configs`` alongside ``total`` by default,
+            and under ``data`` with ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(client.list_alert_configs(), "configs")
         """
         return await self.request(
             "GET",
@@ -7815,16 +7982,20 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            The alerts, under ``alerts`` alongside ``total`` by default. Once the
-            client opts in with ``api_version="2026-07-27"`` or later the endpoint
-            returns the canonical ``{data, pagination}`` envelope instead, so the
-            top-level key changes — read it with
-            ``result.get("data", result.get("alerts", []))``.
+            The alerts, under ``alerts`` alongside ``total`` by default, and under
+            ``data`` with ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(await client.list_model_alerts(), "alerts")
         """
+        # `offset` is declared `minimum: 0`, so a defensive caller passing page=0
+        # would turn a previously-ignored parameter into a hard 422.
+        offset = max(page - 1, 0) * limit
         return await self.request(
             "GET",
             "/models/alerts",
-            params=_strip_none({"offset": (page - 1) * limit, "limit": limit}),
+            params=_strip_none({"offset": offset, "limit": limit}),
         )
 
     async def mark_all_model_alerts_read(self) -> None:
@@ -7904,8 +8075,13 @@ class AsyncSeclai(_SeclaiBase):
         """List the media-generation quality tiers and what each resolves to.
 
         Returns:
-            Each ``(modality, tier)`` mapped to its generator, credits, and price label.
+            Each ``(modality, tier)`` mapped to its generator, credits, and price
+            label — under ``tiers`` by default, and under ``data`` with
+            ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
 
+                items = unwrap_items(client.get_generation_tiers(), "tiers")
         """
         return cast(
             dict[str, Any],

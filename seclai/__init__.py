@@ -39,6 +39,7 @@ from .seclai import (
     SeclaiConfigurationError,
     SeclaiError,
     SeclaiStreamingError,
+    unwrap_items,
 )
 from .versions import DEFAULT_API_VERSION, LATEST_API_VERSION, ApiVersion
 
@@ -49,6 +50,7 @@ __all__ = [
     "DEFAULT_SSO_DOMAIN",
     "DEFAULT_SSO_REGION",
     "JSONValue",
+    "unwrap_items",
     "Seclai",
     "SeclaiAPIStatusError",
     "SeclaiAPIValidationError",

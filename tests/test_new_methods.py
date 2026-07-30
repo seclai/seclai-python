@@ -22,21 +22,28 @@ from seclai import versions as seclai_versions
 # ---------------------------------------------------------------------------
 
 
-def _sync_client(handler) -> Seclai:
+def _sync_client(handler, **options: Any) -> Seclai:
+    """A client wired to a MockTransport, with teardown.
+
+    Takes **options so a test needing `api_version` or
+    `allow_unknown_api_version` does not have to hand-build a client — three
+    that did leaked their httpx client, and one reached the live base URL
+    because it passed no transport at all.
+    """
     transport = httpx.MockTransport(handler)
     http_client = httpx.Client(base_url="https://example.invalid", transport=transport)
-    client = Seclai(api_key="test", http_client=http_client)
+    client = Seclai(api_key="test", http_client=http_client, **options)
     # Ensure the externally-provided httpx client is closed when the SDK client closes.
     client._owns_client = True
     return client
 
 
-def _async_client(handler) -> AsyncSeclai:
+def _async_client(handler, **options: Any) -> AsyncSeclai:
     transport = httpx.MockTransport(handler)
     http_client = httpx.AsyncClient(
         base_url="https://example.invalid", transport=transport
     )
-    client = AsyncSeclai(api_key="test", http_client=http_client)
+    client = AsyncSeclai(api_key="test", http_client=http_client, **options)
     client._owns_client = True
     return client
 
@@ -354,11 +361,20 @@ class TestAgentAIAssistant:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
+            seen["query"] = dict(req.url.params)
             return _json_response({"conversations": []})
 
         client = _sync_client(handler)
-        client.get_agent_ai_conversation_history("a1")
+        client.get_agent_ai_conversation_history("a1", step_type="llm", limit=5)
         assert seen["path"] == "/agents/a1/ai-assistant/conversations"
+        # The API marks step_type required; asserting only the path is what let
+        # this method ship unable to send it.
+        assert seen["query"] == {"step_type": "llm", "limit": "5"}
+
+    def test_get_agent_ai_conversation_history_requires_step_type(self) -> None:
+        client = _sync_client(lambda req: _json_response({"conversations": []}))
+        with pytest.raises(ValueError, match="step_type is required"):
+            client.get_agent_ai_conversation_history("a1")
 
     def test_mark_agent_ai_suggestion(self) -> None:
         seen: dict[str, Any] = {}
@@ -565,11 +581,15 @@ class TestAgentEvaluations:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            # A bare array: the legacy shape this endpoint actually returns. The
+            # previous fixture used `{"items": []}`, a shape the API never sends,
+            # and passed only because the unwrap helper failed open.
+            return _json_response([{"id": "er1"}])
 
         client = _sync_client(handler)
-        client.list_run_evaluation_results("a1", "r1")
+        result = client.list_run_evaluation_results("a1", "r1")
         assert seen["path"] == "/agents/a1/runs/r1/evaluation-results"
+        assert result == [{"id": "er1"}]
 
     def test_list_evaluation_runs(self) -> None:
         seen: dict[str, Any] = {}
@@ -3200,16 +3220,28 @@ class TestApiVersion:
             seen["headers"] = dict(req.headers)
             return _json_response({"data": []})
 
-        transport = httpx.MockTransport(handler)
-        client = Seclai(
-            api_key="k",
-            api_version="2026-07-27",
-            http_client=httpx.Client(
-                base_url="https://example.invalid", transport=transport
-            ),
-        )
+        client = _sync_client(handler, api_version="2026-07-27")
         client.list_agents()
         assert seen["headers"]["seclai-version"] == "2026-07-27"
+
+    def test_caller_supplied_version_header_overrides_rather_than_duplicates(
+        self,
+    ) -> None:
+        # httpx emits both keys if the cases differ, and the server then picks
+        # one arbitrarily.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(
+            handler,
+            api_version="2026-07-01",
+            default_headers={"Seclai-Version": "2026-07-27"},
+        )
+        client.list_agents()
+        assert seen["values"] == ["2026-07-27"]
 
     def test_get_api_version(self) -> None:
         seen: dict[str, Any] = {}
@@ -3217,12 +3249,16 @@ class TestApiVersion:
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
             seen["method"] = req.method
+            # All five fields the spec marks required, using versions the server
+            # actually knows. The previous fixture omitted `default_version` and
+            # invented `2026-01-01`, modelling a state no server can produce.
             return _json_response(
                 {
                     "pinned_version": None,
-                    "effective_version": "2026-01-01",
+                    "effective_version": "2026-07-01",
+                    "default_version": "2026-07-01",
                     "latest_version": "2026-07-27",
-                    "known_versions": ["2026-01-01", "2026-07-27"],
+                    "known_versions": ["2026-07-01", "2026-07-27"],
                 }
             )
 
@@ -3231,6 +3267,7 @@ class TestApiVersion:
         assert seen["method"] == "GET"
         assert seen["path"] == "/version"
         assert result["latest_version"] == "2026-07-27"
+        assert result["default_version"] == "2026-07-01"
 
     def test_update_api_version_sends_explicit_null_to_clear(self) -> None:
         # null is the documented way to clear the pin, so it must reach the wire
@@ -3382,18 +3419,168 @@ class TestApiVersionConstants:
             seen["headers"] = dict(req.headers)
             return _json_response({"data": []})
 
-        transport = httpx.MockTransport(handler)
-        client = Seclai(
-            api_key="k",
-            api_version="2099-01-01",
-            allow_unknown_api_version=True,
-            http_client=httpx.Client(
-                base_url="https://example.invalid", transport=transport
-            ),
+        client = _sync_client(
+            handler, api_version="2099-01-01", allow_unknown_api_version=True
         )
         client.list_agents()
         assert seen["headers"]["seclai-version"] == "2099-01-01"
 
     def test_a_known_version_needs_no_escape_hatch(self) -> None:
-        client = Seclai(api_key="k", api_version=seclai_versions.LATEST_API_VERSION)
+        # Constructed through the helper: building a bare Seclai() here made a
+        # real httpx.Client against the live base URL, inert only because the
+        # test never issued a request.
+        client = _sync_client(
+            lambda req: _json_response({"data": []}),
+            api_version=seclai_versions.LATEST_API_VERSION,
+        )
         assert client._options.api_version == seclai_versions.LATEST_API_VERSION
+
+    def test_update_api_version_rejects_an_unknown_pin(self) -> None:
+        # The account pin is sticky and applies to every header-less caller on
+        # the account, so it needs the guard at least as much as the header does.
+        client = _sync_client(lambda req: _json_response({"pinned_version": None}))
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            client.update_api_version("2099-01-01")
+        assert "2099-01-01" in str(exc.value)
+
+    def test_update_api_version_honours_the_escape_hatch(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return _json_response({"pinned_version": "2099-01-01"})
+
+        client = _sync_client(handler, allow_unknown_api_version=True)
+        client.update_api_version("2099-01-01")
+        assert seen["body"] == {"version": "2099-01-01"}
+
+
+class TestAsyncParityForNewBehaviour:
+    """AsyncSeclai hand-duplicates every method, so nothing in the sync tests
+    proves the async copy behaves the same. Each case here mirrors a sync test
+    of behaviour added or changed in this release; a typo in one async body
+    would otherwise ship green."""
+
+    @pytest.mark.asyncio
+    async def test_version_header_omitted_unless_opted_in(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["headers"] = dict(req.headers)
+            return _json_response({"data": []})
+
+        client = _async_client(handler)
+        await client.list_agents()
+        assert "seclai-version" not in seen["headers"]
+
+    @pytest.mark.asyncio
+    async def test_version_header_sent_when_set(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["headers"] = dict(req.headers)
+            return _json_response({"data": []})
+
+        client = _async_client(handler, api_version="2026-07-27")
+        await client.list_agents()
+        assert seen["headers"]["seclai-version"] == "2026-07-27"
+
+    @pytest.mark.asyncio
+    async def test_get_and_update_api_version(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.setdefault("calls", []).append((req.method, req.url.path))
+            if req.method == "PUT":
+                seen["body"] = json.loads(req.content)
+            return _json_response({"pinned_version": None})
+
+        client = _async_client(handler)
+        await client.get_api_version()
+        await client.update_api_version(None)
+        assert seen["calls"] == [("GET", "/version"), ("PUT", "/version")]
+        assert seen["body"] == {"version": None}
+
+    @pytest.mark.asyncio
+    async def test_update_api_version_rejects_an_unknown_pin(self) -> None:
+        client = _async_client(lambda req: _json_response({"pinned_version": None}))
+        with pytest.raises(seclai.SeclaiConfigurationError):
+            await client.update_api_version("2099-01-01")
+
+    @pytest.mark.asyncio
+    async def test_list_alerts_does_not_send_severity(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"data": []})
+
+        client = _async_client(handler)
+        await client.list_alerts(severity="high")
+        assert "severity" not in seen["query"]
+
+    @pytest.mark.asyncio
+    async def test_list_model_alerts_translates_page_to_offset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"alerts": []})
+
+        client = _async_client(handler)
+        await client.list_model_alerts(page=3, limit=25)
+        assert seen["query"] == {"offset": "50", "limit": "25"}
+
+    @pytest.mark.asyncio
+    async def test_list_model_alerts_never_sends_a_negative_offset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"alerts": []})
+
+        client = _async_client(handler)
+        await client.list_model_alerts(page=0, limit=25)
+        assert seen["query"]["offset"] == "0"
+
+    @pytest.mark.asyncio
+    async def test_evaluation_criteria_accepts_either_wire_shape(self) -> None:
+        legacy = _async_client(lambda req: _json_response([{"id": "ec1"}]))
+        assert await legacy.list_evaluation_criteria("a1") == [{"id": "ec1"}]
+
+        canonical = _async_client(
+            lambda req: _json_response(
+                {"data": [{"id": "ec1"}], "pagination": {"total": 1}}
+            )
+        )
+        assert await canonical.list_evaluation_criteria("a1") == [{"id": "ec1"}]
+        page = await canonical.list_evaluation_criteria_page("a1")
+        assert page["pagination"]["total"] == 1
+
+    @pytest.mark.asyncio
+    async def test_run_evaluation_results_accepts_either_wire_shape(self) -> None:
+        legacy = _async_client(lambda req: _json_response([{"id": "er1"}]))
+        assert await legacy.list_run_evaluation_results("a1", "r1") == [{"id": "er1"}]
+
+        canonical = _async_client(lambda req: _json_response({"data": [{"id": "er1"}]}))
+        assert await canonical.list_run_evaluation_results("a1", "r1") == [
+            {"id": "er1"}
+        ]
+
+    @pytest.mark.asyncio
+    async def test_conversation_history_requires_step_type(self) -> None:
+        client = _async_client(lambda req: _json_response({"conversations": []}))
+        with pytest.raises(ValueError, match="step_type is required"):
+            await client.get_agent_ai_conversation_history("a1")
+
+    @pytest.mark.asyncio
+    async def test_conversation_history_sends_step_type(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"conversations": []})
+
+        client = _async_client(handler)
+        await client.get_agent_ai_conversation_history("a1", step_type="llm")
+        assert seen["query"] == {"step_type": "llm"}

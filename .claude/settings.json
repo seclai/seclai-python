@@ -2,9 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(bash -n sync.sh)",
-      "Bash(./sync.sh --check)",
-      "Bash(dotnet build *)",
-      "Bash(dotnet test *)"
+      "Bash(./sync.sh --check)"
     ]
   }
 }
