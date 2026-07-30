@@ -21,6 +21,8 @@
 
 ### Fixed
 
+- Validate the `Seclai-Version` that survives the header merge, and drop every differently-cased duplicate. Two spellings in `default_headers` previously bypassed the guard and put two values on the wire
+- Validate a `Seclai-Version` supplied through `default_headers`, not just the `api_version` argument. `default_headers` is applied last so it wins, which left the unknown-version guard one header away from being bypassed
 - Raise `SeclaiAPIValidationError` rather than a bare `SeclaiAPIStatusError` on a 422 from any method built on `request()` — most of the SDK. Only the generated-client path distinguished the two, so field-level validation detail was being discarded everywhere else
 - Send `step_type` from `get_agent_ai_conversation_history()`, along with `step_id`, `limit` and `offset`. The API marks `step_type` required and the method had no way to supply it, so every call answered 422. Omitting it now raises `ValueError` naming the argument instead of deferring to a 422 naming the wire parameter
 - Raise from `unwrap_items()` on a list response in a shape the client cannot read, rather than returning `[]`. Reporting "no results" for an unrecognised envelope is indistinguishable from a genuinely empty page

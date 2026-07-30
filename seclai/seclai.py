@@ -307,9 +307,13 @@ def _build_default_headers(
         # Case-insensitively, so a caller-supplied `Seclai-Version` (or any other
         # differently-cased default) replaces ours rather than joining it. httpx
         # emits both keys otherwise and the server picks one arbitrarily.
-        lowered = {k.lower(): k for k in headers}
+        #
+        # Recomputed per key rather than once up front: `default_headers` may
+        # itself carry two spellings of one header, and a snapshot taken before
+        # the loop would not see the first of them being added.
         for key, value in default_headers.items():
-            headers.pop(lowered.get(key.lower(), key), None)
+            for existing in [k for k in headers if k.lower() == key.lower()]:
+                del headers[existing]
             headers[key] = value
     return headers
 
@@ -472,12 +476,26 @@ class _SeclaiBase:
         except RuntimeError as e:
             raise SeclaiConfigurationError(str(e)) from e
 
+        # `default_headers` is applied last so an explicit header wins, which
+        # means it can also carry a Seclai-Version. Validate whichever value
+        # actually reaches the wire, not just the argument — otherwise the guard
+        # is one header away from being bypassed.
+        # The LAST matching key, because that is the one the header merge keeps.
+        # Taking the first match would approve a value the client never sends
+        # when `default_headers` carries two spellings of the same header.
+        header_version = None
+        for k, v in (default_headers or {}).items():
+            if k.lower() == "seclai-version":
+                header_version = v
         try:
-            api_version = validate_api_version(
-                api_version, allow_unknown=allow_unknown_api_version
+            validate_api_version(
+                header_version or api_version, allow_unknown=allow_unknown_api_version
             )
         except ValueError as e:
-            raise SeclaiConfigurationError(str(e)) from e
+            source = (
+                "default_headers['Seclai-Version']" if header_version else "api_version"
+            )
+            raise SeclaiConfigurationError(f"{e} (via {source})") from e
 
         self._options = ClientOptions(
             auth_state=auth_state,

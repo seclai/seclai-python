@@ -3584,3 +3584,74 @@ class TestAsyncParityForNewBehaviour:
         client = _async_client(handler)
         await client.get_agent_ai_conversation_history("a1", step_type="llm")
         assert seen["query"] == {"step_type": "llm"}
+
+
+class TestVersionGuardCannotBeBypassed:
+    """`default_headers` is applied last so it wins, which means it can carry a
+    Seclai-Version. Validating only the argument left the guard one header away
+    from being bypassed."""
+
+    def test_unknown_version_in_default_headers_is_rejected(self) -> None:
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            Seclai(api_key="k", default_headers={"Seclai-Version": "2099-01-01"})
+        assert "2099-01-01" in str(exc.value)
+        assert "default_headers" in str(exc.value)
+
+    def test_a_lowercase_header_key_is_caught_too(self) -> None:
+        with pytest.raises(seclai.SeclaiConfigurationError):
+            Seclai(api_key="k", default_headers={"seclai-version": "2099-01-01"})
+
+    def test_the_escape_hatch_still_covers_the_header_form(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(
+            handler,
+            default_headers={"Seclai-Version": "2099-01-01"},
+            allow_unknown_api_version=True,
+        )
+        client.list_agents()
+        assert seen["values"] == ["2099-01-01"]
+
+    def test_a_known_version_in_default_headers_needs_no_escape_hatch(self) -> None:
+        client = _sync_client(
+            lambda req: _json_response({"data": []}),
+            default_headers={"Seclai-Version": seclai_versions.LATEST_API_VERSION},
+        )
+        assert client is not None
+
+
+class TestDuplicateVersionHeaderSpellings:
+    """`default_headers` can carry two spellings of one header. The guard must
+    approve the value that survives the merge, and the merge must leave one."""
+
+    def test_a_second_spelling_cannot_slip_past_the_guard(self) -> None:
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            Seclai(
+                api_key="k",
+                default_headers={
+                    "Seclai-Version": seclai_versions.LATEST_API_VERSION,
+                    "seclai-version": "2099-01-01",
+                },
+            )
+        assert "2099-01-01" in str(exc.value)
+
+    def test_only_one_value_reaches_the_wire(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(
+            handler,
+            default_headers={
+                "Seclai-Version": seclai_versions.DEFAULT_API_VERSION,
+                "seclai-version": seclai_versions.LATEST_API_VERSION,
+            },
+        )
+        client.list_agents()
+        assert seen["values"] == [seclai_versions.LATEST_API_VERSION]
