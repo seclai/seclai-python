@@ -16,10 +16,14 @@ def _get_kwargs(
     agent_id: None | str | Unset = UNSET,
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -87,6 +91,7 @@ def sync_detailed(
     agent_id: None | str | Unset = UNSET,
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[InboundEmailRejectionResponse]]:
     """List discarded inbound emails
 
@@ -100,6 +105,7 @@ def sync_detailed(
         agent_id (None | str | Unset): Filter to a single agent's rejections
         limit (int | Unset):  Default: 50.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -113,6 +119,7 @@ def sync_detailed(
         agent_id=agent_id,
         limit=limit,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -128,6 +135,7 @@ def sync(
     agent_id: None | str | Unset = UNSET,
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | list[InboundEmailRejectionResponse] | None:
     """List discarded inbound emails
 
@@ -141,6 +149,7 @@ def sync(
         agent_id (None | str | Unset): Filter to a single agent's rejections
         limit (int | Unset):  Default: 50.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -155,6 +164,7 @@ def sync(
         agent_id=agent_id,
         limit=limit,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -164,6 +174,7 @@ async def asyncio_detailed(
     agent_id: None | str | Unset = UNSET,
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[InboundEmailRejectionResponse]]:
     """List discarded inbound emails
 
@@ -177,6 +188,7 @@ async def asyncio_detailed(
         agent_id (None | str | Unset): Filter to a single agent's rejections
         limit (int | Unset):  Default: 50.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -190,6 +202,7 @@ async def asyncio_detailed(
         agent_id=agent_id,
         limit=limit,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -203,6 +216,7 @@ async def asyncio(
     agent_id: None | str | Unset = UNSET,
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | list[InboundEmailRejectionResponse] | None:
     """List discarded inbound emails
 
@@ -216,6 +230,7 @@ async def asyncio(
         agent_id (None | str | Unset): Filter to a single agent's rejections
         limit (int | Unset):  Default: 50.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -231,5 +246,6 @@ async def asyncio(
             agent_id=agent_id,
             limit=limit,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

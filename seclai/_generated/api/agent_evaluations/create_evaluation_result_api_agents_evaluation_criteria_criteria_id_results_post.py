@@ -18,10 +18,14 @@ def _get_kwargs(
     *,
     body: CreateEvaluationResultRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -74,6 +78,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: CreateEvaluationResultRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[EvaluationResultResponse | HTTPValidationError]:
     """Create Evaluation Result
 
@@ -86,6 +91,7 @@ def sync_detailed(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateEvaluationResultRequest): Request body for recording an evaluation result.
 
     Raises:
@@ -100,6 +106,7 @@ def sync_detailed(
         criteria_id=criteria_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -115,6 +122,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: CreateEvaluationResultRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> EvaluationResultResponse | HTTPValidationError | None:
     """Create Evaluation Result
 
@@ -127,6 +135,7 @@ def sync(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateEvaluationResultRequest): Request body for recording an evaluation result.
 
     Raises:
@@ -142,6 +151,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -151,6 +161,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: CreateEvaluationResultRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[EvaluationResultResponse | HTTPValidationError]:
     """Create Evaluation Result
 
@@ -163,6 +174,7 @@ async def asyncio_detailed(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateEvaluationResultRequest): Request body for recording an evaluation result.
 
     Raises:
@@ -177,6 +189,7 @@ async def asyncio_detailed(
         criteria_id=criteria_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -190,6 +203,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: CreateEvaluationResultRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> EvaluationResultResponse | HTTPValidationError | None:
     """Create Evaluation Result
 
@@ -202,6 +216,7 @@ async def asyncio(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateEvaluationResultRequest): Request body for recording an evaluation result.
 
     Raises:
@@ -218,5 +233,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

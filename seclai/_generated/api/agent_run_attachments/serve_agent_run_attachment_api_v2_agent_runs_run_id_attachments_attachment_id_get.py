@@ -18,10 +18,14 @@ def _get_kwargs(
     *,
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -84,6 +88,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[File | HTTPValidationError]:
     """Download an agent-run attachment
 
@@ -108,6 +113,7 @@ def sync_detailed(
         attachment_id (str):
         download_name (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -122,6 +128,7 @@ def sync_detailed(
         attachment_id=attachment_id,
         download_name=download_name,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -138,6 +145,7 @@ def sync(
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> File | HTTPValidationError | None:
     """Download an agent-run attachment
 
@@ -162,6 +170,7 @@ def sync(
         attachment_id (str):
         download_name (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -177,6 +186,7 @@ def sync(
         client=client,
         download_name=download_name,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -187,6 +197,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[File | HTTPValidationError]:
     """Download an agent-run attachment
 
@@ -211,6 +222,7 @@ async def asyncio_detailed(
         attachment_id (str):
         download_name (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -225,6 +237,7 @@ async def asyncio_detailed(
         attachment_id=attachment_id,
         download_name=download_name,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -239,6 +252,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> File | HTTPValidationError | None:
     """Download an agent-run attachment
 
@@ -263,6 +277,7 @@ async def asyncio(
         attachment_id (str):
         download_name (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -279,5 +294,6 @@ async def asyncio(
             client=client,
             download_name=download_name,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

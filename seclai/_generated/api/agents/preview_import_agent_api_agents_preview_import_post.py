@@ -18,10 +18,14 @@ def _get_kwargs(
     *,
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -71,20 +75,22 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse]:
     """Preview an agent_definition import
 
-     Validate an `agent_definition` payload (the same shape produced by `GET
-    /api/agents/{agent_id}/export`) without creating or modifying any agent. On success returns a
-    summary the client can show before commit (counts of steps, schedules, alert configs, evaluation
-    criteria, governance policies). On failure returns the same 422 body shape used by `POST
-    /api/agents` and `PUT /api/agents/{id}` so callers can render line/column-anchored errors.
+     Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
+    without creating or modifying any agent. On success returns a summary the client can show before
+    commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
+    failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
+    render line/column-anchored errors.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentImportPreviewRequest): Dry-run import request — same payload shape as the
             export endpoint.
 
@@ -99,6 +105,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -113,20 +120,22 @@ def sync(
     client: AuthenticatedClient | Client,
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | None:
     """Preview an agent_definition import
 
-     Validate an `agent_definition` payload (the same shape produced by `GET
-    /api/agents/{agent_id}/export`) without creating or modifying any agent. On success returns a
-    summary the client can show before commit (counts of steps, schedules, alert configs, evaluation
-    criteria, governance policies). On failure returns the same 422 body shape used by `POST
-    /api/agents` and `PUT /api/agents/{id}` so callers can render line/column-anchored errors.
+     Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
+    without creating or modifying any agent. On success returns a summary the client can show before
+    commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
+    failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
+    render line/column-anchored errors.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentImportPreviewRequest): Dry-run import request — same payload shape as the
             export endpoint.
 
@@ -142,6 +151,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -150,20 +160,22 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse]:
     """Preview an agent_definition import
 
-     Validate an `agent_definition` payload (the same shape produced by `GET
-    /api/agents/{agent_id}/export`) without creating or modifying any agent. On success returns a
-    summary the client can show before commit (counts of steps, schedules, alert configs, evaluation
-    criteria, governance policies). On failure returns the same 422 body shape used by `POST
-    /api/agents` and `PUT /api/agents/{id}` so callers can render line/column-anchored errors.
+     Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
+    without creating or modifying any agent. On success returns a summary the client can show before
+    commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
+    failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
+    render line/column-anchored errors.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentImportPreviewRequest): Dry-run import request — same payload shape as the
             export endpoint.
 
@@ -178,6 +190,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -190,20 +203,22 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | None:
     """Preview an agent_definition import
 
-     Validate an `agent_definition` payload (the same shape produced by `GET
-    /api/agents/{agent_id}/export`) without creating or modifying any agent. On success returns a
-    summary the client can show before commit (counts of steps, schedules, alert configs, evaluation
-    criteria, governance policies). On failure returns the same 422 body shape used by `POST
-    /api/agents` and `PUT /api/agents/{id}` so callers can render line/column-anchored errors.
+     Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
+    without creating or modifying any agent. On success returns a summary the client can show before
+    commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
+    failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
+    render line/column-anchored errors.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentImportPreviewRequest): Dry-run import request — same payload shape as the
             export endpoint.
 
@@ -220,5 +235,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

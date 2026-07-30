@@ -7,11 +7,9 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.api_ai_memory_bank_accept_api_ai_assistant_memory_bank_conversation_id_patch_response_api_ai_memory_bank_accept_api_ai_assistant_memory_bank_conversation_id_patch import (
-    ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch,
-)
 from ...models.http_validation_error import HTTPValidationError
 from ...models.memory_bank_accept_request import MemoryBankAcceptRequest
+from ...models.ok_response import OkResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -20,10 +18,14 @@ def _get_kwargs(
     *,
     body: MemoryBankAcceptRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "patch",
@@ -42,15 +44,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch
-    | HTTPValidationError
-    | None
-):
+) -> HTTPValidationError | OkResponse | None:
     if response.status_code == 200:
-        response_200 = ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch.from_dict(
-            response.json()
-        )
+        response_200 = OkResponse.from_dict(response.json())
 
         return response_200
 
@@ -67,10 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch
-    | HTTPValidationError
-]:
+) -> Response[HTTPValidationError | OkResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -85,10 +78,8 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | OkResponse]:
     """Accept or decline a memory bank AI suggestion
 
      Update the acceptance status of a memory bank AI assistant conversation turn. Set ``accepted`` to
@@ -100,6 +91,7 @@ def sync_detailed(
     Args:
         conversation_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:
@@ -107,13 +99,14 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch | HTTPValidationError]
+        Response[HTTPValidationError | OkResponse]
     """
 
     kwargs = _get_kwargs(
         conversation_id=conversation_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -129,11 +122,8 @@ def sync(
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | OkResponse | None:
     """Accept or decline a memory bank AI suggestion
 
      Update the acceptance status of a memory bank AI assistant conversation turn. Set ``accepted`` to
@@ -145,6 +135,7 @@ def sync(
     Args:
         conversation_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:
@@ -152,7 +143,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch | HTTPValidationError
+        HTTPValidationError | OkResponse
     """
 
     return sync_detailed(
@@ -160,6 +151,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -169,10 +161,8 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | OkResponse]:
     """Accept or decline a memory bank AI suggestion
 
      Update the acceptance status of a memory bank AI assistant conversation turn. Set ``accepted`` to
@@ -184,6 +174,7 @@ async def asyncio_detailed(
     Args:
         conversation_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:
@@ -191,13 +182,14 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch | HTTPValidationError]
+        Response[HTTPValidationError | OkResponse]
     """
 
     kwargs = _get_kwargs(
         conversation_id=conversation_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -211,11 +203,8 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: MemoryBankAcceptRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | OkResponse | None:
     """Accept or decline a memory bank AI suggestion
 
      Update the acceptance status of a memory bank AI assistant conversation turn. Set ``accepted`` to
@@ -227,6 +216,7 @@ async def asyncio(
     Args:
         conversation_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MemoryBankAcceptRequest): Accept or decline a memory bank AI suggestion.
 
     Raises:
@@ -234,7 +224,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatchResponseApiAiMemoryBankAcceptApiAiAssistantMemoryBankConversationIdPatch | HTTPValidationError
+        HTTPValidationError | OkResponse
     """
 
     return (
@@ -243,5 +233,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

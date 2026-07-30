@@ -6,14 +6,11 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar(
-    "T",
-    bound="CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost",
-)
+T = TypeVar("T", bound="ExperimentDetailResponseResultDataType0")
 
 
 @_attrs_define
-class CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost:
+class ExperimentDetailResponseResultDataType0:
     """ """
 
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -27,14 +24,10 @@ class CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemor
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        compact_memory_bank_api_memory_banks_memory_bank_id_compact_post_response_compact_memory_bank_api_memory_banks_memory_bank_id_compact_post = (
-            cls()
-        )
+        experiment_detail_response_result_data_type_0 = cls()
 
-        compact_memory_bank_api_memory_banks_memory_bank_id_compact_post_response_compact_memory_bank_api_memory_banks_memory_bank_id_compact_post.additional_properties = (
-            d
-        )
-        return compact_memory_bank_api_memory_banks_memory_bank_id_compact_post_response_compact_memory_bank_api_memory_banks_memory_bank_id_compact_post
+        experiment_detail_response_result_data_type_0.additional_properties = d
+        return experiment_detail_response_result_data_type_0
 
     @property
     def additional_keys(self) -> list[str]:

@@ -6,28 +6,52 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="SearchApiSearchGetResponseSearchApiSearchGet")
+T = TypeVar("T", bound="CompactionScheduledResponse")
 
 
 @_attrs_define
-class SearchApiSearchGetResponseSearchApiSearchGet:
-    """ """
+class CompactionScheduledResponse:
+    """Acknowledgement that an on-demand compaction run was scheduled.
 
+    Attributes:
+        memory_bank_id (str):
+        status (str):
+    """
+
+    memory_bank_id: str
+    status: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        memory_bank_id = self.memory_bank_id
+
+        status = self.status
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
+        field_dict.update(
+            {
+                "memory_bank_id": memory_bank_id,
+                "status": status,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        search_api_search_get_response_search_api_search_get = cls()
+        memory_bank_id = d.pop("memory_bank_id")
 
-        search_api_search_get_response_search_api_search_get.additional_properties = d
-        return search_api_search_get_response_search_api_search_get
+        status = d.pop("status")
+
+        compaction_scheduled_response = cls(
+            memory_bank_id=memory_bank_id,
+            status=status,
+        )
+
+        compaction_scheduled_response.additional_properties = d
+        return compaction_scheduled_response
 
     @property
     def additional_keys(self) -> list[str]:

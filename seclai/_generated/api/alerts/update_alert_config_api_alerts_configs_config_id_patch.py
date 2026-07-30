@@ -7,10 +7,8 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.alert_config_response import AlertConfigResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...models.update_alert_config_api_alerts_configs_config_id_patch_response_update_alert_config_api_alerts_configs_config_id_patch import (
-    UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch,
-)
 from ...models.update_alert_config_request import UpdateAlertConfigRequest
 from ...types import UNSET, Response, Unset
 
@@ -20,10 +18,14 @@ def _get_kwargs(
     *,
     body: UpdateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "patch",
@@ -42,15 +44,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    HTTPValidationError
-    | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
-    | None
-):
+) -> AlertConfigResponse | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch.from_dict(
-            response.json()
-        )
+        response_200 = AlertConfigResponse.from_dict(response.json())
 
         return response_200
 
@@ -67,10 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    HTTPValidationError
-    | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
-]:
+) -> Response[AlertConfigResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -85,10 +78,8 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertConfigResponse | HTTPValidationError]:
     """Update alert config
 
      Update an alert configuration. Only provided fields are updated.
@@ -99,6 +90,7 @@ def sync_detailed(
     Args:
         config_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:
@@ -106,13 +98,14 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch]
+        Response[AlertConfigResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         config_id=config_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -128,11 +121,8 @@ def sync(
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertConfigResponse | HTTPValidationError | None:
     """Update alert config
 
      Update an alert configuration. Only provided fields are updated.
@@ -143,6 +133,7 @@ def sync(
     Args:
         config_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:
@@ -150,7 +141,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
+        AlertConfigResponse | HTTPValidationError
     """
 
     return sync_detailed(
@@ -158,6 +149,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -167,10 +159,8 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertConfigResponse | HTTPValidationError]:
     """Update alert config
 
      Update an alert configuration. Only provided fields are updated.
@@ -181,6 +171,7 @@ async def asyncio_detailed(
     Args:
         config_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:
@@ -188,13 +179,14 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch]
+        Response[AlertConfigResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         config_id=config_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -208,11 +200,8 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: UpdateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertConfigResponse | HTTPValidationError | None:
     """Update alert config
 
      Update an alert configuration. Only provided fields are updated.
@@ -223,6 +212,7 @@ async def asyncio(
     Args:
         config_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateAlertConfigRequest):
 
     Raises:
@@ -230,7 +220,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UpdateAlertConfigApiAlertsConfigsConfigIdPatchResponseUpdateAlertConfigApiAlertsConfigsConfigIdPatch
+        AlertConfigResponse | HTTPValidationError
     """
 
     return (
@@ -239,5 +229,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

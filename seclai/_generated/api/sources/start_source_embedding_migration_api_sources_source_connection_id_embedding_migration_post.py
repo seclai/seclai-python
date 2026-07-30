@@ -22,10 +22,14 @@ def _get_kwargs(
     *,
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -82,13 +86,14 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | SourceEmbeddingMigrationResponse]:
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
 
-    The migration runs asynchronously in the background.  Poll `GET /api/sources/{id}/embedding-
-    migration` to track progress.
+    The migration runs asynchronously in the background.  Poll `GET /sources/{id}/embedding-migration`
+    to track progress.
 
     Optionally override chunking configuration (`chunk_size`, `chunk_overlap`, `chunk_language`,
     `chunk_separators`, `chunk_regex_separators`).  When a chunking field is omitted (null), the current
@@ -102,6 +107,7 @@ def sync_detailed(
     Args:
         source_connection_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (StartSourceEmbeddingMigrationRequest): Request payload to start a source embedding
             migration.
 
@@ -117,6 +123,7 @@ def sync_detailed(
         source_connection_id=source_connection_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -132,13 +139,14 @@ def sync(
     client: AuthenticatedClient | Client,
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | SourceEmbeddingMigrationResponse | None:
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
 
-    The migration runs asynchronously in the background.  Poll `GET /api/sources/{id}/embedding-
-    migration` to track progress.
+    The migration runs asynchronously in the background.  Poll `GET /sources/{id}/embedding-migration`
+    to track progress.
 
     Optionally override chunking configuration (`chunk_size`, `chunk_overlap`, `chunk_language`,
     `chunk_separators`, `chunk_regex_separators`).  When a chunking field is omitted (null), the current
@@ -152,6 +160,7 @@ def sync(
     Args:
         source_connection_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (StartSourceEmbeddingMigrationRequest): Request payload to start a source embedding
             migration.
 
@@ -168,6 +177,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -177,13 +187,14 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | SourceEmbeddingMigrationResponse]:
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
 
-    The migration runs asynchronously in the background.  Poll `GET /api/sources/{id}/embedding-
-    migration` to track progress.
+    The migration runs asynchronously in the background.  Poll `GET /sources/{id}/embedding-migration`
+    to track progress.
 
     Optionally override chunking configuration (`chunk_size`, `chunk_overlap`, `chunk_language`,
     `chunk_separators`, `chunk_regex_separators`).  When a chunking field is omitted (null), the current
@@ -197,6 +208,7 @@ async def asyncio_detailed(
     Args:
         source_connection_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (StartSourceEmbeddingMigrationRequest): Request payload to start a source embedding
             migration.
 
@@ -212,6 +224,7 @@ async def asyncio_detailed(
         source_connection_id=source_connection_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -225,13 +238,14 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | SourceEmbeddingMigrationResponse | None:
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
 
-    The migration runs asynchronously in the background.  Poll `GET /api/sources/{id}/embedding-
-    migration` to track progress.
+    The migration runs asynchronously in the background.  Poll `GET /sources/{id}/embedding-migration`
+    to track progress.
 
     Optionally override chunking configuration (`chunk_size`, `chunk_overlap`, `chunk_language`,
     `chunk_separators`, `chunk_regex_separators`).  When a chunking field is omitted (null), the current
@@ -245,6 +259,7 @@ async def asyncio(
     Args:
         source_connection_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (StartSourceEmbeddingMigrationRequest): Request payload to start a source embedding
             migration.
 
@@ -262,5 +277,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

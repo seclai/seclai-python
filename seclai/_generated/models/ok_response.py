@@ -6,43 +6,54 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar(
-    "T", bound="GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item"
-)
+T = TypeVar("T", bound="OkResponse")
 
 
 @_attrs_define
-class GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item:
-    """ """
+class OkResponse:
+    """A minimal ``{"ok": true}`` acknowledgement for state-mutating actions
+    that have no richer resource to return (e.g. accept/decline a suggestion).
 
-    additional_properties: dict[str, str] = _attrs_field(init=False, factory=dict)
+        Attributes:
+            ok (bool):
+    """
+
+    ok: bool
+    additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        ok = self.ok
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
+        field_dict.update(
+            {
+                "ok": ok,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        get_agents_using_bank_api_memory_banks_memory_bank_id_agents_get_response_200_item = (
-            cls()
+        ok = d.pop("ok")
+
+        ok_response = cls(
+            ok=ok,
         )
 
-        get_agents_using_bank_api_memory_banks_memory_bank_id_agents_get_response_200_item.additional_properties = (
-            d
-        )
-        return get_agents_using_bank_api_memory_banks_memory_bank_id_agents_get_response_200_item
+        ok_response.additional_properties = d
+        return ok_response
 
     @property
     def additional_keys(self) -> list[str]:
         return list(self.additional_properties.keys())
 
-    def __getitem__(self, key: str) -> str:
+    def __getitem__(self, key: str) -> Any:
         return self.additional_properties[key]
 
-    def __setitem__(self, key: str, value: str) -> None:
+    def __setitem__(self, key: str, value: Any) -> None:
         self.additional_properties[key] = value
 
     def __delitem__(self, key: str) -> None:

@@ -19,10 +19,14 @@ def _get_kwargs(
     supports_input_media: None | str | Unset = UNSET,
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -117,6 +121,7 @@ def sync_detailed(
     supports_input_media: None | str | Unset = UNSET,
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[ProviderGroupResponse]]:
     """List Models
 
@@ -147,6 +152,7 @@ def sync_detailed(
             modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
             image/audio/video generation models.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -163,6 +169,7 @@ def sync_detailed(
         supports_input_media=supports_input_media,
         supports_output_media=supports_output_media,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -181,6 +188,7 @@ def sync(
     supports_input_media: None | str | Unset = UNSET,
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | list[ProviderGroupResponse] | None:
     """List Models
 
@@ -211,6 +219,7 @@ def sync(
             modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
             image/audio/video generation models.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -228,6 +237,7 @@ def sync(
         supports_input_media=supports_input_media,
         supports_output_media=supports_output_media,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -240,6 +250,7 @@ async def asyncio_detailed(
     supports_input_media: None | str | Unset = UNSET,
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[ProviderGroupResponse]]:
     """List Models
 
@@ -270,6 +281,7 @@ async def asyncio_detailed(
             modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
             image/audio/video generation models.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -286,6 +298,7 @@ async def asyncio_detailed(
         supports_input_media=supports_input_media,
         supports_output_media=supports_output_media,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -302,6 +315,7 @@ async def asyncio(
     supports_input_media: None | str | Unset = UNSET,
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | list[ProviderGroupResponse] | None:
     """List Models
 
@@ -332,6 +346,7 @@ async def asyncio(
             modality — a coarse kind (`image`, `audio`, `video`) or a full MIME. Use to find
             image/audio/video generation models.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -350,5 +365,6 @@ async def asyncio(
             supports_input_media=supports_input_media,
             supports_output_media=supports_output_media,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

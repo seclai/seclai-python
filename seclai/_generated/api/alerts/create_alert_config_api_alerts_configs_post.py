@@ -6,9 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.create_alert_config_api_alerts_configs_post_response_create_alert_config_api_alerts_configs_post import (
-    CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost,
-)
+from ...models.alert_config_response import AlertConfigResponse
 from ...models.create_alert_config_request import CreateAlertConfigRequest
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
@@ -18,10 +16,14 @@ def _get_kwargs(
     *,
     body: CreateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -38,15 +40,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost
-    | HTTPValidationError
-    | None
-):
+) -> AlertConfigResponse | HTTPValidationError | None:
     if response.status_code == 201:
-        response_201 = CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost.from_dict(
-            response.json()
-        )
+        response_201 = AlertConfigResponse.from_dict(response.json())
 
         return response_201
 
@@ -63,10 +59,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost
-    | HTTPValidationError
-]:
+) -> Response[AlertConfigResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -80,10 +73,8 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: CreateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertConfigResponse | HTTPValidationError]:
     """Create alert config
 
      Create a new alert configuration.
@@ -102,6 +93,7 @@ def sync_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAlertConfigRequest):
 
     Raises:
@@ -109,12 +101,13 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost | HTTPValidationError]
+        Response[AlertConfigResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -129,11 +122,8 @@ def sync(
     client: AuthenticatedClient | Client,
     body: CreateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertConfigResponse | HTTPValidationError | None:
     """Create alert config
 
      Create a new alert configuration.
@@ -152,6 +142,7 @@ def sync(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAlertConfigRequest):
 
     Raises:
@@ -159,13 +150,14 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost | HTTPValidationError
+        AlertConfigResponse | HTTPValidationError
     """
 
     return sync_detailed(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -174,10 +166,8 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: CreateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertConfigResponse | HTTPValidationError]:
     """Create alert config
 
      Create a new alert configuration.
@@ -196,6 +186,7 @@ async def asyncio_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAlertConfigRequest):
 
     Raises:
@@ -203,12 +194,13 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost | HTTPValidationError]
+        Response[AlertConfigResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -221,11 +213,8 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: CreateAlertConfigRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertConfigResponse | HTTPValidationError | None:
     """Create alert config
 
      Create a new alert configuration.
@@ -244,6 +233,7 @@ async def asyncio(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAlertConfigRequest):
 
     Raises:
@@ -251,7 +241,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CreateAlertConfigApiAlertsConfigsPostResponseCreateAlertConfigApiAlertsConfigsPost | HTTPValidationError
+        AlertConfigResponse | HTTPValidationError
     """
 
     return (
@@ -259,5 +249,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

@@ -15,16 +15,28 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
+    agent_id: None | str | Unset = UNSET,
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
 
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
+
     params: dict[str, Any] = {}
+
+    json_agent_id: None | str | Unset
+    if isinstance(agent_id, Unset):
+        json_agent_id = UNSET
+    else:
+        json_agent_id = agent_id
+    params["agent_id"] = json_agent_id
 
     params["days"] = days
 
@@ -87,23 +99,33 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
+    agent_id: None | str | Unset = UNSET,
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | NonManualEvaluationSummaryResponse]:
     """Get Non Manual Evaluation Summary
 
-     Get account-level evaluation summary for API key clients.
+     Get an evaluation summary for API key clients.
 
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
 
+    The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
+    (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline
+    always receive the account-wide rollup; ``agent_id`` is ignored for them so
+    the endpoint's behavior is frozen. With ``2026-07-27`` or later, the summary
+    is scoped to ``agent_id`` when supplied (and returns 404 if it doesn't exist).
+
     Args:
+        agent_id (None | str | Unset): Scope the summary to a single agent. Omit for account-wide.
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -114,10 +136,12 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
+        agent_id=agent_id,
         days=days,
         start_date=start_date,
         end_date=end_date,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -130,23 +154,33 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
+    agent_id: None | str | Unset = UNSET,
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | NonManualEvaluationSummaryResponse | None:
     """Get Non Manual Evaluation Summary
 
-     Get account-level evaluation summary for API key clients.
+     Get an evaluation summary for API key clients.
 
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
 
+    The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
+    (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline
+    always receive the account-wide rollup; ``agent_id`` is ignored for them so
+    the endpoint's behavior is frozen. With ``2026-07-27`` or later, the summary
+    is scoped to ``agent_id`` when supplied (and returns 404 if it doesn't exist).
+
     Args:
+        agent_id (None | str | Unset): Scope the summary to a single agent. Omit for account-wide.
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -158,33 +192,45 @@ def sync(
 
     return sync_detailed(
         client=client,
+        agent_id=agent_id,
         days=days,
         start_date=start_date,
         end_date=end_date,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
+    agent_id: None | str | Unset = UNSET,
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | NonManualEvaluationSummaryResponse]:
     """Get Non Manual Evaluation Summary
 
-     Get account-level evaluation summary for API key clients.
+     Get an evaluation summary for API key clients.
 
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
 
+    The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
+    (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline
+    always receive the account-wide rollup; ``agent_id`` is ignored for them so
+    the endpoint's behavior is frozen. With ``2026-07-27`` or later, the summary
+    is scoped to ``agent_id`` when supplied (and returns 404 if it doesn't exist).
+
     Args:
+        agent_id (None | str | Unset): Scope the summary to a single agent. Omit for account-wide.
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -195,10 +241,12 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
+        agent_id=agent_id,
         days=days,
         start_date=start_date,
         end_date=end_date,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -209,23 +257,33 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
+    agent_id: None | str | Unset = UNSET,
     days: int | Unset = 30,
     start_date: None | str | Unset = UNSET,
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | NonManualEvaluationSummaryResponse | None:
     """Get Non Manual Evaluation Summary
 
-     Get account-level evaluation summary for API key clients.
+     Get an evaluation summary for API key clients.
 
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
 
+    The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
+    (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline
+    always receive the account-wide rollup; ``agent_id`` is ignored for them so
+    the endpoint's behavior is frozen. With ``2026-07-27`` or later, the summary
+    is scoped to ``agent_id`` when supplied (and returns 404 if it doesn't exist).
+
     Args:
+        agent_id (None | str | Unset): Scope the summary to a single agent. Omit for account-wide.
         days (int | Unset):  Default: 30.
         start_date (None | str | Unset):
         end_date (None | str | Unset):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -238,9 +296,11 @@ async def asyncio(
     return (
         await asyncio_detailed(
             client=client,
+            agent_id=agent_id,
             days=days,
             start_date=start_date,
             end_date=end_date,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

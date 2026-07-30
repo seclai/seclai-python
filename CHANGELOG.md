@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.5.0] - 2026-07-27
+
+### Changed
+
+- Document the version-gated top-level key on `list_alert_configs()`, `list_model_alerts()`, `list_experiments()` and `get_generation_tiers()`. All four flip from a per-resource key to the canonical `{data, pagination}` envelope once `api_version` is `2026-07-27` or later
+- Note on `get_non_manual_evaluation_summary()` that `agent_id` scoping is part of the `2026-07-27` changeset. On the legacy baseline the API ignores it and returns the account-wide rollup, which is indistinguishable from a scoped result in the payload
+- Accept either wire shape from `list_run_evaluation_results()`, and return the results rather than an envelope. It was annotated `dict` while the default API returns a bare array
+- Stop sending `severity` from `list_alerts()`. `GET /alerts` declares no such filter, so it never filtered, and it becomes a 422 once `api_version` is `2026-07-27` or later. The argument is still accepted and ignored
+- Accept either wire shape from `list_evaluation_criteria()`. The endpoint answers with a bare list by default and the canonical `{data, pagination}` envelope once opted in, so the client reads both and keeps returning a list
+- Sync the bundled OpenAPI spec with the API fixes found while updating the SDKs: `agent_id` is now declared on the non-manual evaluation summary, and `page`/`limit` on the evaluation and alert-config listings
+
+### Added
+
+- Add the `ApiVersion` string enum plus `DEFAULT_API_VERSION` and `LATEST_API_VERSION`. An `api_version` this release was not built against raises `SeclaiConfigurationError`, since a newer version can reshape responses this client would mis-decode; pass `allow_unknown_api_version=True` to override
+- Add `list_evaluation_criteria_page()` and `list_run_evaluation_results_page()` for the canonical `{data, pagination}` envelope, which those endpoints emit once `api_version` is `2026-07-27` or later
+- Add an `api_version` client option, sent as the `Seclai-Version` header, opting into dated API changes released on or before that date. Omitted by default, so upgrading the SDK alone never changes response shapes
+- Add `get_api_version()` and `update_api_version()` to read the version a request resolves to and to pin or clear the account's version. `update_api_version()` applies the same unknown-version guard as the client option, since the pin is account-wide and affects every header-less caller
+- Add `unwrap_items()`, which reads a version-gated list response in either shape so a call site does not have to branch on the API version
+
+### Fixed
+
+- Validate the `Seclai-Version` that survives the header merge, and drop every differently-cased duplicate. Two spellings in `default_headers` previously bypassed the guard and put two values on the wire
+- Validate a `Seclai-Version` supplied through `default_headers`, not just the `api_version` argument. `default_headers` is applied last so it wins, which left the unknown-version guard one header away from being bypassed
+- Raise `SeclaiAPIValidationError` rather than a bare `SeclaiAPIStatusError` on a 422 from any method built on `request()` — most of the SDK. Only the generated-client path distinguished the two, so field-level validation detail was being discarded everywhere else
+- Send `step_type` from `get_agent_ai_conversation_history()`, along with `step_id`, `limit` and `offset`. The API marks `step_type` required and the method had no way to supply it, so every call answered 422. Omitting it now raises `ValueError` naming the argument instead of deferring to a 422 naming the wire parameter
+- Raise from `unwrap_items()` on a list response in a shape the client cannot read, rather than returning `[]`. Reporting "no results" for an unrecognised envelope is indistinguishable from a genuinely empty page
+- Floor the `list_model_alerts()` page translation at zero. `offset` is declared `minimum: 0`, so `page=0` turned a previously-ignored parameter into a hard 422
+- Paginate `list_model_alerts()` with the `offset` the endpoint declares instead of `page`, which it does not accept — every page after the first returned page 1
+- Request `GET /sources` rather than `GET /sources/`. The trailing-slash form is no longer declared by the API
+- Send `q` rather than `query` from `search()`. The API requires `q`, so every search call had been failing validation since 1.1.0
+- Cancel a run with `DELETE /agents/runs/{run_id}`. `cancel_agent_run()` posted to `/agents/runs/{run_id}/cancel`, a path the API has never exposed, so cancelling always failed
+
 ## [1.4.0] - 2026-07-25
 
 ### Changed
@@ -126,6 +158,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.5.0]: https://github.com/seclai/seclai-python/releases/tag/1.5.0
 [1.4.0]: https://github.com/seclai/seclai-python/releases/tag/1.4.0
 [1.3.0]: https://github.com/seclai/seclai-python/releases/tag/1.3.0
 [1.2.0]: https://github.com/seclai/seclai-python/releases/tag/1.2.0

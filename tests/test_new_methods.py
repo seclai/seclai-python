@@ -7,33 +7,43 @@ query parameters, and JSON body are sent via ``MockTransport``.
 from __future__ import annotations
 
 import json
+import pathlib
 from typing import Any
 
 import httpx
 import pytest
 
+import seclai
 from seclai import AsyncSeclai, Seclai
+from seclai import versions as seclai_versions
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
-def _sync_client(handler) -> Seclai:
+def _sync_client(handler, **options: Any) -> Seclai:
+    """A client wired to a MockTransport, with teardown.
+
+    Takes **options so a test needing `api_version` or
+    `allow_unknown_api_version` does not have to hand-build a client — three
+    that did leaked their httpx client, and one reached the live base URL
+    because it passed no transport at all.
+    """
     transport = httpx.MockTransport(handler)
     http_client = httpx.Client(base_url="https://example.invalid", transport=transport)
-    client = Seclai(api_key="test", http_client=http_client)
+    client = Seclai(api_key="test", http_client=http_client, **options)
     # Ensure the externally-provided httpx client is closed when the SDK client closes.
     client._owns_client = True
     return client
 
 
-def _async_client(handler) -> AsyncSeclai:
+def _async_client(handler, **options: Any) -> AsyncSeclai:
     transport = httpx.MockTransport(handler)
     http_client = httpx.AsyncClient(
         base_url="https://example.invalid", transport=transport
     )
-    client = AsyncSeclai(api_key="test", http_client=http_client)
+    client = AsyncSeclai(api_key="test", http_client=http_client, **options)
     client._owns_client = True
     return client
 
@@ -218,7 +228,10 @@ class TestAgentRunsAdditional:
 
         client = _sync_client(handler)
         client.cancel_agent_run("r1")
-        assert seen == {"method": "POST", "path": "/agents/runs/r1/cancel"}
+        # Cancellation is DELETE on the run resource. This asserted
+        # POST /agents/runs/{id}/cancel, a path the API has never had, so it
+        # confirmed a 404-ing method rather than catching it.
+        assert seen == {"method": "DELETE", "path": "/agents/runs/r1"}
 
 
 # ---------------------------------------------------------------------------
@@ -348,11 +361,20 @@ class TestAgentAIAssistant:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
+            seen["query"] = dict(req.url.params)
             return _json_response({"conversations": []})
 
         client = _sync_client(handler)
-        client.get_agent_ai_conversation_history("a1")
+        client.get_agent_ai_conversation_history("a1", step_type="llm", limit=5)
         assert seen["path"] == "/agents/a1/ai-assistant/conversations"
+        # The API marks step_type required; asserting only the path is what let
+        # this method ship unable to send it.
+        assert seen["query"] == {"step_type": "llm", "limit": "5"}
+
+    def test_get_agent_ai_conversation_history_requires_step_type(self) -> None:
+        client = _sync_client(lambda req: _json_response({"conversations": []}))
+        with pytest.raises(ValueError, match="step_type is required"):
+            client.get_agent_ai_conversation_history("a1")
 
     def test_mark_agent_ai_suggestion(self) -> None:
         seen: dict[str, Any] = {}
@@ -374,15 +396,64 @@ class TestAgentAIAssistant:
 
 class TestAgentEvaluations:
     def test_list_evaluation_criteria(self) -> None:
+        # Asserting only the path let the 2026-07 change through: the endpoint
+        # started returning a paginated envelope instead of a bare list and this
+        # test, which discarded the body, stayed green while callers broke.
         seen: dict[str, Any] = {}
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response([])
+            seen["query"] = dict(req.url.params)
+            return _json_response(
+                {
+                    "data": [{"id": "ec1"}],
+                    "pagination": {
+                        "page": 2,
+                        "limit": 25,
+                        "total": 7,
+                        "pages": 1,
+                        "has_next": False,
+                        "has_prev": True,
+                    },
+                }
+            )
 
         client = _sync_client(handler)
-        client.list_evaluation_criteria("a1")
+        result = client.list_evaluation_criteria("a1", page=2, limit=25)
         assert seen["path"] == "/agents/a1/evaluation-criteria"
+        assert seen["query"] == {"page": "2", "limit": "25"}
+        assert result == [{"id": "ec1"}]
+
+    def test_list_evaluation_criteria_accepts_a_bare_list(self) -> None:
+        # The endpoint answered with a bare array before 2026-07 and that change
+        # is not deployed yet, so both shapes are live. Decoding only one breaks
+        # the client the day the other ships.
+        def handler(req: httpx.Request) -> httpx.Response:
+            return _json_response([{"id": "ec1"}])
+
+        client = _sync_client(handler)
+        assert client.list_evaluation_criteria("a1") == [{"id": "ec1"}]
+
+    def test_list_evaluation_criteria_page_exposes_metadata(self) -> None:
+        def handler(req: httpx.Request) -> httpx.Response:
+            return _json_response(
+                {
+                    "data": [{"id": "ec1"}],
+                    "pagination": {
+                        "page": 2,
+                        "limit": 25,
+                        "total": 7,
+                        "pages": 1,
+                        "has_next": False,
+                        "has_prev": True,
+                    },
+                }
+            )
+
+        client = _sync_client(handler)
+        page = client.list_evaluation_criteria_page("a1", page=2, limit=25)
+        assert page["data"] == [{"id": "ec1"}]
+        assert page["pagination"]["total"] == 7
 
     def test_create_evaluation_criteria(self) -> None:
         seen: dict[str, Any] = {}
@@ -510,11 +581,15 @@ class TestAgentEvaluations:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            # A bare array: the legacy shape this endpoint actually returns. The
+            # previous fixture used `{"items": []}`, a shape the API never sends,
+            # and passed only because the unwrap helper failed open.
+            return _json_response([{"id": "er1"}])
 
         client = _sync_client(handler)
-        client.list_run_evaluation_results("a1", "r1")
+        result = client.list_run_evaluation_results("a1", "r1")
         assert seen["path"] == "/agents/a1/runs/r1/evaluation-results"
+        assert result == [{"id": "er1"}]
 
     def test_list_evaluation_runs(self) -> None:
         seen: dict[str, Any] = {}
@@ -1485,13 +1560,17 @@ class TestSearch:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
+            seen["q"] = req.url.params.get("q")
             seen["query"] = req.url.params.get("query")
             return _json_response({"results": []})
 
         client = _sync_client(handler)
         client.search(query="hello")
         assert seen["path"] == "/search"
-        assert seen["query"] == "hello"
+        # The spec names this parameter `q` and marks it required; sending
+        # `query` instead produced a 422 on every call.
+        assert seen["q"] == "hello"
+        assert seen["query"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -1639,13 +1718,15 @@ class TestAsyncMethods:
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
+            seen["q"] = req.url.params.get("q")
             seen["query"] = req.url.params.get("query")
             return _json_response({"results": []})
 
         client = _async_client(handler)
         await client.search(query="test")
         assert seen["path"] == "/search"
-        assert seen["query"] == "test"
+        assert seen["q"] == "test"
+        assert seen["query"] is None
 
     @pytest.mark.asyncio
     async def test_async_create_memory_bank(self) -> None:
@@ -1684,7 +1765,7 @@ class TestAsyncMethods:
 
         client = _async_client(handler)
         await client.cancel_agent_run("r1")
-        assert seen == {"method": "POST", "path": "/agents/runs/r1/cancel"}
+        assert seen == {"method": "DELETE", "path": "/agents/runs/r1"}
 
     @pytest.mark.asyncio
     async def test_async_get_agent_attachment_references(self) -> None:
@@ -2085,10 +2166,15 @@ class TestErrorEdgeCases:
             seen["params"] = dict(req.url.params)
             return _json_response({"items": []})
 
+        # Uses `status`, which the endpoint declares. This previously asserted
+        # that `severity` reached the wire — a parameter GET /alerts has never
+        # accepted — so the test confirmed the defect instead of catching it.
         client = _sync_client(handler)
-        client.list_alerts(status=None, severity="high")
+        client.list_alerts(status=None)
         assert "status" not in seen["params"]
-        assert seen["params"]["severity"] == "high"
+
+        client.list_alerts(status="triggered")
+        assert seen["params"]["status"] == "triggered"
 
     def test_request_passes_custom_headers(self) -> None:
         """Per-request headers should be merged."""
@@ -3111,3 +3197,461 @@ class TestGenerationTiersAndDocsSearch:
         assert seen["path"] == "/docs-search"
         assert seen["params"] == {"q": "webhooks"}
         assert result == {"results": []}
+
+
+class TestApiVersion:
+    def test_version_header_omitted_unless_opted_in(self) -> None:
+        # The point of the option: upgrading the SDK must not silently move an
+        # account onto a newer API version and change response shapes.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["headers"] = dict(req.headers)
+            return _json_response({"data": []})
+
+        client = _sync_client(handler)
+        client.list_agents()
+        assert "seclai-version" not in seen["headers"]
+
+    def test_version_header_sent_when_set(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["headers"] = dict(req.headers)
+            return _json_response({"data": []})
+
+        client = _sync_client(handler, api_version="2026-07-27")
+        client.list_agents()
+        assert seen["headers"]["seclai-version"] == "2026-07-27"
+
+    def test_caller_supplied_version_header_overrides_rather_than_duplicates(
+        self,
+    ) -> None:
+        # httpx emits both keys if the cases differ, and the server then picks
+        # one arbitrarily.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(
+            handler,
+            api_version="2026-07-01",
+            default_headers={"Seclai-Version": "2026-07-27"},
+        )
+        client.list_agents()
+        assert seen["values"] == ["2026-07-27"]
+
+    def test_get_api_version(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["path"] = req.url.path
+            seen["method"] = req.method
+            # All five fields the spec marks required, using versions the server
+            # actually knows. The previous fixture omitted `default_version` and
+            # invented `2026-01-01`, modelling a state no server can produce.
+            return _json_response(
+                {
+                    "pinned_version": None,
+                    "effective_version": "2026-07-01",
+                    "default_version": "2026-07-01",
+                    "latest_version": "2026-07-27",
+                    "known_versions": ["2026-07-01", "2026-07-27"],
+                }
+            )
+
+        client = _sync_client(handler)
+        result = client.get_api_version()
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/version"
+        assert result["latest_version"] == "2026-07-27"
+        assert result["default_version"] == "2026-07-01"
+
+    def test_update_api_version_sends_explicit_null_to_clear(self) -> None:
+        # null is the documented way to clear the pin, so it must reach the wire
+        # rather than being dropped as an unset value.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response({"pinned_version": None})
+
+        client = _sync_client(handler)
+        client.update_api_version(None)
+        assert seen["method"] == "PUT"
+        assert seen["path"] == "/version"
+        assert seen["body"] == {"version": None}
+
+
+class TestVersionGatedListShapes:
+    """Endpoints whose response shape depends on the Seclai-Version header.
+
+    The legacy shape is a bare, unpaginated array; opting in yields the canonical
+    {data, pagination} envelope. Both are live, so each accessor must read both.
+    """
+
+    def test_run_evaluation_results_accepts_a_bare_array(self) -> None:
+        def handler(req: httpx.Request) -> httpx.Response:
+            return _json_response([{"id": "er1"}])
+
+        client = _sync_client(handler)
+        assert client.list_run_evaluation_results("a1", "r1") == [{"id": "er1"}]
+
+    def test_run_evaluation_results_unwraps_the_canonical_envelope(self) -> None:
+        def handler(req: httpx.Request) -> httpx.Response:
+            return _json_response(
+                {
+                    "data": [{"id": "er1"}],
+                    "pagination": {
+                        "page": 1,
+                        "limit": 50,
+                        "total": 1,
+                        "pages": 1,
+                        "has_next": False,
+                        "has_prev": False,
+                    },
+                }
+            )
+
+        client = _sync_client(handler)
+        assert client.list_run_evaluation_results("a1", "r1") == [{"id": "er1"}]
+
+    def test_run_evaluation_results_page_exposes_pagination(self) -> None:
+        def handler(req: httpx.Request) -> httpx.Response:
+            return _json_response(
+                {
+                    "data": [{"id": "er1"}],
+                    "pagination": {
+                        "page": 2,
+                        "limit": 25,
+                        "total": 7,
+                        "pages": 1,
+                        "has_next": False,
+                        "has_prev": True,
+                    },
+                }
+            )
+
+        client = _sync_client(handler)
+        page = client.list_run_evaluation_results_page("a1", "r1", page=2, limit=25)
+        assert page["pagination"]["total"] == 7
+
+    def test_run_evaluation_results_page_omits_pagination_on_legacy(self) -> None:
+        def handler(req: httpx.Request) -> httpx.Response:
+            return _json_response([{"id": "er1"}])
+
+        client = _sync_client(handler)
+        page = client.list_run_evaluation_results_page("a1", "r1")
+        assert page == {"data": [{"id": "er1"}]}
+        assert "pagination" not in page
+
+
+class TestUndeclaredQueryParams:
+    """Params the endpoint does not declare become 422s once a caller opts in."""
+
+    def test_list_alerts_does_not_send_severity(self) -> None:
+        # GET /alerts declares no severity filter. It never filtered anything,
+        # and sending it is a hard 422 under api_version 2026-07-27+.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"data": []})
+
+        client = _sync_client(handler)
+        client.list_alerts(severity="high")
+        assert "severity" not in seen["query"]
+
+    def test_list_model_alerts_translates_page_to_offset(self) -> None:
+        # /models/alerts declares limit/offset, not page, so page 2 used to
+        # return page 1.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"data": []})
+
+        client = _sync_client(handler)
+        client.list_model_alerts(page=3, limit=25)
+        assert seen["query"] == {"offset": "50", "limit": "25"}
+        assert "page" not in seen["query"]
+
+
+class TestApiVersionConstants:
+    def test_members_are_plain_strings(self) -> None:
+        # StrEnum members must be usable anywhere a str is, since api_version is
+        # typed `str | None` and lands straight in a header. Compared through a
+        # str-typed variable: mypy rejects a direct literal comparison as
+        # non-overlapping, which is a quirk of enum narrowing rather than a
+        # runtime difference.
+        member = seclai_versions.ApiVersion.V2026_07_27
+        raw: str = "2026-07-27"
+        assert member == raw
+        assert member.value == raw
+        assert isinstance(member, str)
+
+    def test_default_and_latest_track_the_spec(self) -> None:
+        spec = json.loads(
+            (
+                pathlib.Path(__file__).parent.parent / "openapi" / "seclai.openapi.json"
+            ).read_text()
+        )["x-seclai-versions"]
+        assert seclai_versions.DEFAULT_API_VERSION == spec["default"]
+        assert seclai_versions.LATEST_API_VERSION == spec["latest"]
+        assert [v.value for v in seclai_versions.ApiVersion] == spec["known"]
+
+    def test_an_unknown_version_is_rejected(self) -> None:
+        # A newer server version can reshape responses, and the client would
+        # mis-decode them silently rather than error. Fail closed at construction.
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            Seclai(api_key="k", api_version="2099-01-01")
+        assert "2099-01-01" in str(exc.value)
+        assert "allow_unknown_api_version" in str(exc.value)
+
+    def test_an_unknown_version_is_allowed_when_asked(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["headers"] = dict(req.headers)
+            return _json_response({"data": []})
+
+        client = _sync_client(
+            handler, api_version="2099-01-01", allow_unknown_api_version=True
+        )
+        client.list_agents()
+        assert seen["headers"]["seclai-version"] == "2099-01-01"
+
+    def test_a_known_version_needs_no_escape_hatch(self) -> None:
+        # Constructed through the helper: building a bare Seclai() here made a
+        # real httpx.Client against the live base URL, inert only because the
+        # test never issued a request.
+        client = _sync_client(
+            lambda req: _json_response({"data": []}),
+            api_version=seclai_versions.LATEST_API_VERSION,
+        )
+        assert client._options.api_version == seclai_versions.LATEST_API_VERSION
+
+    def test_update_api_version_rejects_an_unknown_pin(self) -> None:
+        # The account pin is sticky and applies to every header-less caller on
+        # the account, so it needs the guard at least as much as the header does.
+        client = _sync_client(lambda req: _json_response({"pinned_version": None}))
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            client.update_api_version("2099-01-01")
+        assert "2099-01-01" in str(exc.value)
+
+    def test_update_api_version_honours_the_escape_hatch(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return _json_response({"pinned_version": "2099-01-01"})
+
+        client = _sync_client(handler, allow_unknown_api_version=True)
+        client.update_api_version("2099-01-01")
+        assert seen["body"] == {"version": "2099-01-01"}
+
+
+class TestAsyncParityForNewBehaviour:
+    """AsyncSeclai hand-duplicates every method, so nothing in the sync tests
+    proves the async copy behaves the same. Each case here mirrors a sync test
+    of behaviour added or changed in this release; a typo in one async body
+    would otherwise ship green."""
+
+    @pytest.mark.asyncio
+    async def test_version_header_omitted_unless_opted_in(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["headers"] = dict(req.headers)
+            return _json_response({"data": []})
+
+        client = _async_client(handler)
+        await client.list_agents()
+        assert "seclai-version" not in seen["headers"]
+
+    @pytest.mark.asyncio
+    async def test_version_header_sent_when_set(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["headers"] = dict(req.headers)
+            return _json_response({"data": []})
+
+        client = _async_client(handler, api_version="2026-07-27")
+        await client.list_agents()
+        assert seen["headers"]["seclai-version"] == "2026-07-27"
+
+    @pytest.mark.asyncio
+    async def test_get_and_update_api_version(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.setdefault("calls", []).append((req.method, req.url.path))
+            if req.method == "PUT":
+                seen["body"] = json.loads(req.content)
+            return _json_response({"pinned_version": None})
+
+        client = _async_client(handler)
+        await client.get_api_version()
+        await client.update_api_version(None)
+        assert seen["calls"] == [("GET", "/version"), ("PUT", "/version")]
+        assert seen["body"] == {"version": None}
+
+    @pytest.mark.asyncio
+    async def test_update_api_version_rejects_an_unknown_pin(self) -> None:
+        client = _async_client(lambda req: _json_response({"pinned_version": None}))
+        with pytest.raises(seclai.SeclaiConfigurationError):
+            await client.update_api_version("2099-01-01")
+
+    @pytest.mark.asyncio
+    async def test_list_alerts_does_not_send_severity(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"data": []})
+
+        client = _async_client(handler)
+        await client.list_alerts(severity="high")
+        assert "severity" not in seen["query"]
+
+    @pytest.mark.asyncio
+    async def test_list_model_alerts_translates_page_to_offset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"alerts": []})
+
+        client = _async_client(handler)
+        await client.list_model_alerts(page=3, limit=25)
+        assert seen["query"] == {"offset": "50", "limit": "25"}
+
+    @pytest.mark.asyncio
+    async def test_list_model_alerts_never_sends_a_negative_offset(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"alerts": []})
+
+        client = _async_client(handler)
+        await client.list_model_alerts(page=0, limit=25)
+        assert seen["query"]["offset"] == "0"
+
+    @pytest.mark.asyncio
+    async def test_evaluation_criteria_accepts_either_wire_shape(self) -> None:
+        legacy = _async_client(lambda req: _json_response([{"id": "ec1"}]))
+        assert await legacy.list_evaluation_criteria("a1") == [{"id": "ec1"}]
+
+        canonical = _async_client(
+            lambda req: _json_response(
+                {"data": [{"id": "ec1"}], "pagination": {"total": 1}}
+            )
+        )
+        assert await canonical.list_evaluation_criteria("a1") == [{"id": "ec1"}]
+        page = await canonical.list_evaluation_criteria_page("a1")
+        assert page["pagination"]["total"] == 1
+
+    @pytest.mark.asyncio
+    async def test_run_evaluation_results_accepts_either_wire_shape(self) -> None:
+        legacy = _async_client(lambda req: _json_response([{"id": "er1"}]))
+        assert await legacy.list_run_evaluation_results("a1", "r1") == [{"id": "er1"}]
+
+        canonical = _async_client(lambda req: _json_response({"data": [{"id": "er1"}]}))
+        assert await canonical.list_run_evaluation_results("a1", "r1") == [
+            {"id": "er1"}
+        ]
+
+    @pytest.mark.asyncio
+    async def test_conversation_history_requires_step_type(self) -> None:
+        client = _async_client(lambda req: _json_response({"conversations": []}))
+        with pytest.raises(ValueError, match="step_type is required"):
+            await client.get_agent_ai_conversation_history("a1")
+
+    @pytest.mark.asyncio
+    async def test_conversation_history_sends_step_type(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["query"] = dict(req.url.params)
+            return _json_response({"conversations": []})
+
+        client = _async_client(handler)
+        await client.get_agent_ai_conversation_history("a1", step_type="llm")
+        assert seen["query"] == {"step_type": "llm"}
+
+
+class TestVersionGuardCannotBeBypassed:
+    """`default_headers` is applied last so it wins, which means it can carry a
+    Seclai-Version. Validating only the argument left the guard one header away
+    from being bypassed."""
+
+    def test_unknown_version_in_default_headers_is_rejected(self) -> None:
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            Seclai(api_key="k", default_headers={"Seclai-Version": "2099-01-01"})
+        assert "2099-01-01" in str(exc.value)
+        assert "default_headers" in str(exc.value)
+
+    def test_a_lowercase_header_key_is_caught_too(self) -> None:
+        with pytest.raises(seclai.SeclaiConfigurationError):
+            Seclai(api_key="k", default_headers={"seclai-version": "2099-01-01"})
+
+    def test_the_escape_hatch_still_covers_the_header_form(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(
+            handler,
+            default_headers={"Seclai-Version": "2099-01-01"},
+            allow_unknown_api_version=True,
+        )
+        client.list_agents()
+        assert seen["values"] == ["2099-01-01"]
+
+    def test_a_known_version_in_default_headers_needs_no_escape_hatch(self) -> None:
+        client = _sync_client(
+            lambda req: _json_response({"data": []}),
+            default_headers={"Seclai-Version": seclai_versions.LATEST_API_VERSION},
+        )
+        assert client is not None
+
+
+class TestDuplicateVersionHeaderSpellings:
+    """`default_headers` can carry two spellings of one header. The guard must
+    approve the value that survives the merge, and the merge must leave one."""
+
+    def test_a_second_spelling_cannot_slip_past_the_guard(self) -> None:
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            Seclai(
+                api_key="k",
+                default_headers={
+                    "Seclai-Version": seclai_versions.LATEST_API_VERSION,
+                    "seclai-version": "2099-01-01",
+                },
+            )
+        assert "2099-01-01" in str(exc.value)
+
+    def test_only_one_value_reaches_the_wire(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(
+            handler,
+            default_headers={
+                "Seclai-Version": seclai_versions.DEFAULT_API_VERSION,
+                "seclai-version": seclai_versions.LATEST_API_VERSION,
+            },
+        )
+        client.list_agents()
+        assert seen["values"] == [seclai_versions.LATEST_API_VERSION]

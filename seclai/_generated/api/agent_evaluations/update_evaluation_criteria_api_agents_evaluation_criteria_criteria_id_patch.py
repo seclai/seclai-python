@@ -18,10 +18,14 @@ def _get_kwargs(
     *,
     body: UpdateEvaluationCriteriaRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "patch",
@@ -74,6 +78,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: UpdateEvaluationCriteriaRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[EvaluationCriteriaResponse | HTTPValidationError]:
     """Update Evaluation Criteria
 
@@ -86,6 +91,7 @@ def sync_detailed(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
             Retry settings and sample frequency are set at the agent level.
@@ -102,6 +108,7 @@ def sync_detailed(
         criteria_id=criteria_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -117,6 +124,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: UpdateEvaluationCriteriaRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> EvaluationCriteriaResponse | HTTPValidationError | None:
     """Update Evaluation Criteria
 
@@ -129,6 +137,7 @@ def sync(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
             Retry settings and sample frequency are set at the agent level.
@@ -146,6 +155,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -155,6 +165,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: UpdateEvaluationCriteriaRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[EvaluationCriteriaResponse | HTTPValidationError]:
     """Update Evaluation Criteria
 
@@ -167,6 +178,7 @@ async def asyncio_detailed(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
             Retry settings and sample frequency are set at the agent level.
@@ -183,6 +195,7 @@ async def asyncio_detailed(
         criteria_id=criteria_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -196,6 +209,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: UpdateEvaluationCriteriaRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> EvaluationCriteriaResponse | HTTPValidationError | None:
     """Update Evaluation Criteria
 
@@ -208,6 +222,7 @@ async def asyncio(
     Args:
         criteria_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
             Retry settings and sample frequency are set at the agent level.
@@ -226,5 +241,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

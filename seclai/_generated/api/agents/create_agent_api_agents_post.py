@@ -18,10 +18,14 @@ def _get_kwargs(
     *,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -75,6 +79,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
     """Create an agent
 
@@ -86,7 +91,7 @@ def sync_detailed(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /api/agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
@@ -104,6 +109,7 @@ def sync_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAgentRequest):
 
     Raises:
@@ -117,6 +123,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -131,6 +138,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
     """Create an agent
 
@@ -142,7 +150,7 @@ def sync(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /api/agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
@@ -160,6 +168,7 @@ def sync(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAgentRequest):
 
     Raises:
@@ -174,6 +183,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -182,6 +192,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
     """Create an agent
 
@@ -193,7 +204,7 @@ async def asyncio_detailed(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /api/agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
@@ -211,6 +222,7 @@ async def asyncio_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAgentRequest):
 
     Raises:
@@ -224,6 +236,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -236,6 +249,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
     """Create an agent
 
@@ -247,7 +261,7 @@ async def asyncio(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /api/agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
@@ -265,6 +279,7 @@ async def asyncio(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (CreateAgentRequest):
 
     Raises:
@@ -280,5 +295,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed
