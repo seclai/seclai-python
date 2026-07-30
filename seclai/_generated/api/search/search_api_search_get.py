@@ -7,9 +7,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
-from ...models.search_api_search_get_response_search_api_search_get import (
-    SearchApiSearchGetResponseSearchApiSearchGet,
-)
+from ...models.search_response import SearchResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -19,10 +17,14 @@ def _get_kwargs(
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -51,11 +53,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet | None:
+) -> HTTPValidationError | SearchResponse | None:
     if response.status_code == 200:
-        response_200 = SearchApiSearchGetResponseSearchApiSearchGet.from_dict(
-            response.json()
-        )
+        response_200 = SearchResponse.from_dict(response.json())
 
         return response_200
 
@@ -72,7 +72,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet]:
+) -> Response[HTTPValidationError | SearchResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,7 +88,8 @@ def sync_detailed(
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | SearchResponse]:
     """Search resources
 
      Search across all resource types in your account.  Accepts a free-text keyword query or a UUID.
@@ -103,13 +104,14 @@ def sync_detailed(
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet]
+        Response[HTTPValidationError | SearchResponse]
     """
 
     kwargs = _get_kwargs(
@@ -117,6 +119,7 @@ def sync_detailed(
         limit=limit,
         entity_type=entity_type,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -133,7 +136,8 @@ def sync(
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet | None:
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | SearchResponse | None:
     """Search resources
 
      Search across all resource types in your account.  Accepts a free-text keyword query or a UUID.
@@ -148,13 +152,14 @@ def sync(
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet
+        HTTPValidationError | SearchResponse
     """
 
     return sync_detailed(
@@ -163,6 +168,7 @@ def sync(
         limit=limit,
         entity_type=entity_type,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -173,7 +179,8 @@ async def asyncio_detailed(
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | SearchResponse]:
     """Search resources
 
      Search across all resource types in your account.  Accepts a free-text keyword query or a UUID.
@@ -188,13 +195,14 @@ async def asyncio_detailed(
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet]
+        Response[HTTPValidationError | SearchResponse]
     """
 
     kwargs = _get_kwargs(
@@ -202,6 +210,7 @@ async def asyncio_detailed(
         limit=limit,
         entity_type=entity_type,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -216,7 +225,8 @@ async def asyncio(
     limit: int | Unset = 10,
     entity_type: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet | None:
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | SearchResponse | None:
     """Search resources
 
      Search across all resource types in your account.  Accepts a free-text keyword query or a UUID.
@@ -231,13 +241,14 @@ async def asyncio(
         entity_type (None | str | Unset): Optional entity type filter (e.g. 'agent',
             'knowledge_base')
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | SearchApiSearchGetResponseSearchApiSearchGet
+        HTTPValidationError | SearchResponse
     """
 
     return (
@@ -247,5 +258,6 @@ async def asyncio(
             limit=limit,
             entity_type=entity_type,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

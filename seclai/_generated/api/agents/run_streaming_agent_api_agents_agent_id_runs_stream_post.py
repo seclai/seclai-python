@@ -18,10 +18,14 @@ def _get_kwargs(
     *,
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -78,6 +82,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | InsufficientCreditsResponse]:
     """Run an agent (stream events)
 
@@ -110,6 +115,7 @@ def sync_detailed(
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -124,6 +130,7 @@ def sync_detailed(
         agent_id=agent_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -139,6 +146,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | InsufficientCreditsResponse | None:
     """Run an agent (stream events)
 
@@ -171,6 +179,7 @@ def sync(
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -186,6 +195,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -195,6 +205,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[Any | HTTPValidationError | InsufficientCreditsResponse]:
     """Run an agent (stream events)
 
@@ -227,6 +238,7 @@ async def asyncio_detailed(
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -241,6 +253,7 @@ async def asyncio_detailed(
         agent_id=agent_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -254,6 +267,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Any | HTTPValidationError | InsufficientCreditsResponse | None:
     """Run an agent (stream events)
 
@@ -286,6 +300,7 @@ async def asyncio(
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AgentRunStreamRequest):
 
     Raises:
@@ -302,5 +317,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

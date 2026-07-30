@@ -21,7 +21,7 @@ class AgentImportPreviewRequest:
 
     Attributes:
         agent_definition (AgentImportPreviewRequestAgentDefinition): Payload in the same shape as GET
-            /api/agents/{agent_id}/export.
+            /agents/{agent_id}/export.
     """
 
     agent_definition: AgentImportPreviewRequestAgentDefinition

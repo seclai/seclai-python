@@ -22,10 +22,14 @@ def _get_kwargs(
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -94,6 +98,7 @@ def sync_detailed(
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
     """List agent runs
 
@@ -116,6 +121,7 @@ def sync_detailed(
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -131,6 +137,7 @@ def sync_detailed(
         limit=limit,
         status=status,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -148,6 +155,7 @@ def sync(
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentRunListResponse | HTTPValidationError | None:
     """List agent runs
 
@@ -170,6 +178,7 @@ def sync(
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -186,6 +195,7 @@ def sync(
         limit=limit,
         status=status,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -197,6 +207,7 @@ async def asyncio_detailed(
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentRunListResponse | HTTPValidationError]:
     """List agent runs
 
@@ -219,6 +230,7 @@ async def asyncio_detailed(
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -234,6 +246,7 @@ async def asyncio_detailed(
         limit=limit,
         status=status,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -249,6 +262,7 @@ async def asyncio(
     limit: int | Unset = 50,
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentRunListResponse | HTTPValidationError | None:
     """List agent runs
 
@@ -271,6 +285,7 @@ async def asyncio(
         limit (int | Unset): Items per page Default: 50.
         status (None | PendingProcessingCompletedFailedStatus | Unset): Filter runs by status
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -288,5 +303,6 @@ async def asyncio(
             limit=limit,
             status=status,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

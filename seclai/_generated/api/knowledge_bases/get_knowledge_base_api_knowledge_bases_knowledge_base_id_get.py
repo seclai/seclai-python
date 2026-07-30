@@ -16,10 +16,14 @@ def _get_kwargs(
     knowledge_base_id: str,
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -67,6 +71,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | KnowledgeBase]:
     """Get Knowledge Base
 
@@ -79,6 +84,7 @@ def sync_detailed(
     Args:
         knowledge_base_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -91,6 +97,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         knowledge_base_id=knowledge_base_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -105,6 +112,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | KnowledgeBase | None:
     """Get Knowledge Base
 
@@ -117,6 +125,7 @@ def sync(
     Args:
         knowledge_base_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -130,6 +139,7 @@ def sync(
         knowledge_base_id=knowledge_base_id,
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -138,6 +148,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | KnowledgeBase]:
     """Get Knowledge Base
 
@@ -150,6 +161,7 @@ async def asyncio_detailed(
     Args:
         knowledge_base_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -162,6 +174,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         knowledge_base_id=knowledge_base_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -174,6 +187,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | KnowledgeBase | None:
     """Get Knowledge Base
 
@@ -186,6 +200,7 @@ async def asyncio(
     Args:
         knowledge_base_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -200,5 +215,6 @@ async def asyncio(
             knowledge_base_id=knowledge_base_id,
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

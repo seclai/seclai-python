@@ -7,9 +7,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.compact_memory_bank_api_memory_banks_memory_bank_id_compact_post_response_compact_memory_bank_api_memory_banks_memory_bank_id_compact_post import (
-    CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost,
-)
+from ...models.compaction_scheduled_response import CompactionScheduledResponse
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
@@ -18,10 +16,14 @@ def _get_kwargs(
     memory_bank_id: str,
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -36,15 +38,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
-    | HTTPValidationError
-    | None
-):
+) -> CompactionScheduledResponse | HTTPValidationError | None:
     if response.status_code == 202:
-        response_202 = CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost.from_dict(
-            response.json()
-        )
+        response_202 = CompactionScheduledResponse.from_dict(response.json())
 
         return response_202
 
@@ -61,10 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
-    | HTTPValidationError
-]:
+) -> Response[CompactionScheduledResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,10 +71,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[CompactionScheduledResponse | HTTPValidationError]:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
@@ -92,18 +83,20 @@ def sync_detailed(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost | HTTPValidationError]
+        Response[CompactionScheduledResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         memory_bank_id=memory_bank_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -118,11 +111,8 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> CompactionScheduledResponse | HTTPValidationError | None:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
@@ -133,19 +123,21 @@ def sync(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost | HTTPValidationError
+        CompactionScheduledResponse | HTTPValidationError
     """
 
     return sync_detailed(
         memory_bank_id=memory_bank_id,
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -154,10 +146,8 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[CompactionScheduledResponse | HTTPValidationError]:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
@@ -168,18 +158,20 @@ async def asyncio_detailed(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost | HTTPValidationError]
+        Response[CompactionScheduledResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         memory_bank_id=memory_bank_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -192,11 +184,8 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> CompactionScheduledResponse | HTTPValidationError | None:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
@@ -207,13 +196,14 @@ async def asyncio(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CompactMemoryBankApiMemoryBanksMemoryBankIdCompactPostResponseCompactMemoryBankApiMemoryBanksMemoryBankIdCompactPost | HTTPValidationError
+        CompactionScheduledResponse | HTTPValidationError
     """
 
     return (
@@ -221,5 +211,6 @@ async def asyncio(
             memory_bank_id=memory_bank_id,
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

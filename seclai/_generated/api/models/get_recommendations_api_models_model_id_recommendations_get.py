@@ -7,10 +7,8 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_recommendations_api_models_model_id_recommendations_get_response_get_recommendations_api_models_model_id_recommendations_get import (
-    GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet,
-)
 from ...models.http_validation_error import HTTPValidationError
+from ...models.model_recommendations_response import ModelRecommendationsResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -23,10 +21,14 @@ def _get_kwargs(
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -81,15 +83,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
-    | HTTPValidationError
-    | None
-):
+) -> HTTPValidationError | ModelRecommendationsResponse | None:
     if response.status_code == 200:
-        response_200 = GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet.from_dict(
-            response.json()
-        )
+        response_200 = ModelRecommendationsResponse.from_dict(response.json())
 
         return response_200
 
@@ -106,10 +102,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
-    | HTTPValidationError
-]:
+) -> Response[HTTPValidationError | ModelRecommendationsResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -128,10 +121,8 @@ def sync_detailed(
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | ModelRecommendationsResponse]:
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -152,13 +143,14 @@ def sync_detailed(
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet | HTTPValidationError]
+        Response[HTTPValidationError | ModelRecommendationsResponse]
     """
 
     kwargs = _get_kwargs(
@@ -169,6 +161,7 @@ def sync_detailed(
         min_context_tokens=min_context_tokens,
         min_output_tokens=min_output_tokens,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -188,11 +181,8 @@ def sync(
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | ModelRecommendationsResponse | None:
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -213,13 +203,14 @@ def sync(
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet | HTTPValidationError
+        HTTPValidationError | ModelRecommendationsResponse
     """
 
     return sync_detailed(
@@ -231,6 +222,7 @@ def sync(
         min_context_tokens=min_context_tokens,
         min_output_tokens=min_output_tokens,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -244,10 +236,8 @@ async def asyncio_detailed(
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | ModelRecommendationsResponse]:
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -268,13 +258,14 @@ async def asyncio_detailed(
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet | HTTPValidationError]
+        Response[HTTPValidationError | ModelRecommendationsResponse]
     """
 
     kwargs = _get_kwargs(
@@ -285,6 +276,7 @@ async def asyncio_detailed(
         min_context_tokens=min_context_tokens,
         min_output_tokens=min_output_tokens,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -302,11 +294,8 @@ async def asyncio(
     min_context_tokens: int | None | Unset = UNSET,
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | ModelRecommendationsResponse | None:
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -327,13 +316,14 @@ async def asyncio(
         min_context_tokens (int | None | Unset): Minimum context window size in tokens.
         min_output_tokens (int | None | Unset): Minimum output token limit.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetRecommendationsApiModelsModelIdRecommendationsGetResponseGetRecommendationsApiModelsModelIdRecommendationsGet | HTTPValidationError
+        HTTPValidationError | ModelRecommendationsResponse
     """
 
     return (
@@ -346,5 +336,6 @@ async def asyncio(
             min_context_tokens=min_context_tokens,
             min_output_tokens=min_output_tokens,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

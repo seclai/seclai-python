@@ -7,10 +7,8 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.alert_detail_response import AlertDetailResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...models.subscribe_to_alert_api_alerts_alert_id_subscribe_post_response_subscribe_to_alert_api_alerts_alert_id_subscribe_post import (
-    SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost,
-)
 from ...types import UNSET, Response, Unset
 
 
@@ -18,10 +16,14 @@ def _get_kwargs(
     alert_id: str,
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -36,15 +38,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    HTTPValidationError
-    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
-    | None
-):
+) -> AlertDetailResponse | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost.from_dict(
-            response.json()
-        )
+        response_200 = AlertDetailResponse.from_dict(response.json())
 
         return response_200
 
@@ -61,10 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    HTTPValidationError
-    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
-]:
+) -> Response[AlertDetailResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,10 +71,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertDetailResponse | HTTPValidationError]:
     """Subscribe to alert
 
      Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
@@ -93,18 +84,20 @@ def sync_detailed(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost]
+        Response[AlertDetailResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         alert_id=alert_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -119,11 +112,8 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertDetailResponse | HTTPValidationError | None:
     """Subscribe to alert
 
      Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
@@ -135,19 +125,21 @@ def sync(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+        AlertDetailResponse | HTTPValidationError
     """
 
     return sync_detailed(
         alert_id=alert_id,
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -156,10 +148,8 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertDetailResponse | HTTPValidationError]:
     """Subscribe to alert
 
      Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
@@ -171,18 +161,20 @@ async def asyncio_detailed(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost]
+        Response[AlertDetailResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         alert_id=alert_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -195,11 +187,8 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertDetailResponse | HTTPValidationError | None:
     """Subscribe to alert
 
      Subscribe the current user to an alert. Subscribed users receive email notifications when the alert
@@ -211,13 +200,14 @@ async def asyncio(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | SubscribeToAlertApiAlertsAlertIdSubscribePostResponseSubscribeToAlertApiAlertsAlertIdSubscribePost
+        AlertDetailResponse | HTTPValidationError
     """
 
     return (
@@ -225,5 +215,6 @@ async def asyncio(
             alert_id=alert_id,
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

@@ -18,10 +18,14 @@ def _get_kwargs(
     days: int | Unset = 30,
     top_sources: int | Unset = 10,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -80,6 +84,7 @@ def sync_detailed(
     days: int | Unset = 30,
     top_sources: int | Unset = 10,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[DmarcSummaryResponse | HTTPValidationError]:
     """DMARC aggregate-report summary for a domain
 
@@ -96,6 +101,7 @@ def sync_detailed(
         days (int | Unset):  Default: 30.
         top_sources (int | Unset):  Default: 10.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -110,6 +116,7 @@ def sync_detailed(
         days=days,
         top_sources=top_sources,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -126,6 +133,7 @@ def sync(
     days: int | Unset = 30,
     top_sources: int | Unset = 10,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> DmarcSummaryResponse | HTTPValidationError | None:
     """DMARC aggregate-report summary for a domain
 
@@ -142,6 +150,7 @@ def sync(
         days (int | Unset):  Default: 30.
         top_sources (int | Unset):  Default: 10.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -157,6 +166,7 @@ def sync(
         days=days,
         top_sources=top_sources,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -167,6 +177,7 @@ async def asyncio_detailed(
     days: int | Unset = 30,
     top_sources: int | Unset = 10,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[DmarcSummaryResponse | HTTPValidationError]:
     """DMARC aggregate-report summary for a domain
 
@@ -183,6 +194,7 @@ async def asyncio_detailed(
         days (int | Unset):  Default: 30.
         top_sources (int | Unset):  Default: 10.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -197,6 +209,7 @@ async def asyncio_detailed(
         days=days,
         top_sources=top_sources,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -211,6 +224,7 @@ async def asyncio(
     days: int | Unset = 30,
     top_sources: int | Unset = 10,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> DmarcSummaryResponse | HTTPValidationError | None:
     """DMARC aggregate-report summary for a domain
 
@@ -227,6 +241,7 @@ async def asyncio(
         days (int | Unset):  Default: 30.
         top_sources (int | Unset):  Default: 10.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -243,5 +258,6 @@ async def asyncio(
             days=days,
             top_sources=top_sources,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

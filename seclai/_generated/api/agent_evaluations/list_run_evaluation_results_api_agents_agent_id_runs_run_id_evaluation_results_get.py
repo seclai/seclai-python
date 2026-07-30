@@ -18,11 +18,25 @@ def _get_kwargs(
     agent_id: str,
     run_id: str,
     *,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
+
+    params: dict[str, Any] = {}
+
+    params["page"] = page
+
+    params["limit"] = limit
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -30,6 +44,7 @@ def _get_kwargs(
             agent_id=quote(str(agent_id), safe=""),
             run_id=quote(str(run_id), safe=""),
         ),
+        "params": params,
     }
 
     _kwargs["headers"] = headers
@@ -78,19 +93,33 @@ def sync_detailed(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[EvaluationResultWithCriteriaResponse]]:
     """List Run Evaluation Results
 
-     List all evaluation results recorded for a specific agent run.
+     List evaluation results recorded for a specific agent run.
 
-    Returns results across all evaluation criteria for the given run,
-    useful for getting a complete quality snapshot of a single execution.
+    Response shape is version-gated by the ``Seclai-Version`` header:
+
+    - **Default / legacy** (no header, or a date before ``2026-07-27``): a bare
+      JSON array of results (unpaginated — every result for the run).
+    - **``Seclai-Version: 2026-07-27`` or later**: the canonical paginated
+      envelope ``{data, pagination: {page, limit, total, pages, has_next,
+      has_prev}}``.
+
+    Results span all evaluation criteria for the given run, useful for getting a
+    complete quality snapshot of a single execution.
 
     Args:
         agent_id (str):
         run_id (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -103,7 +132,10 @@ def sync_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         run_id=run_id,
+        page=page,
+        limit=limit,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -118,19 +150,33 @@ def sync(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | list[EvaluationResultWithCriteriaResponse] | None:
     """List Run Evaluation Results
 
-     List all evaluation results recorded for a specific agent run.
+     List evaluation results recorded for a specific agent run.
 
-    Returns results across all evaluation criteria for the given run,
-    useful for getting a complete quality snapshot of a single execution.
+    Response shape is version-gated by the ``Seclai-Version`` header:
+
+    - **Default / legacy** (no header, or a date before ``2026-07-27``): a bare
+      JSON array of results (unpaginated — every result for the run).
+    - **``Seclai-Version: 2026-07-27`` or later**: the canonical paginated
+      envelope ``{data, pagination: {page, limit, total, pages, has_next,
+      has_prev}}``.
+
+    Results span all evaluation criteria for the given run, useful for getting a
+    complete quality snapshot of a single execution.
 
     Args:
         agent_id (str):
         run_id (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -144,7 +190,10 @@ def sync(
         agent_id=agent_id,
         run_id=run_id,
         client=client,
+        page=page,
+        limit=limit,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -153,19 +202,33 @@ async def asyncio_detailed(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | list[EvaluationResultWithCriteriaResponse]]:
     """List Run Evaluation Results
 
-     List all evaluation results recorded for a specific agent run.
+     List evaluation results recorded for a specific agent run.
 
-    Returns results across all evaluation criteria for the given run,
-    useful for getting a complete quality snapshot of a single execution.
+    Response shape is version-gated by the ``Seclai-Version`` header:
+
+    - **Default / legacy** (no header, or a date before ``2026-07-27``): a bare
+      JSON array of results (unpaginated — every result for the run).
+    - **``Seclai-Version: 2026-07-27`` or later**: the canonical paginated
+      envelope ``{data, pagination: {page, limit, total, pages, has_next,
+      has_prev}}``.
+
+    Results span all evaluation criteria for the given run, useful for getting a
+    complete quality snapshot of a single execution.
 
     Args:
         agent_id (str):
         run_id (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -178,7 +241,10 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         run_id=run_id,
+        page=page,
+        limit=limit,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -191,19 +257,33 @@ async def asyncio(
     run_id: str,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | list[EvaluationResultWithCriteriaResponse] | None:
     """List Run Evaluation Results
 
-     List all evaluation results recorded for a specific agent run.
+     List evaluation results recorded for a specific agent run.
 
-    Returns results across all evaluation criteria for the given run,
-    useful for getting a complete quality snapshot of a single execution.
+    Response shape is version-gated by the ``Seclai-Version`` header:
+
+    - **Default / legacy** (no header, or a date before ``2026-07-27``): a bare
+      JSON array of results (unpaginated — every result for the run).
+    - **``Seclai-Version: 2026-07-27`` or later**: the canonical paginated
+      envelope ``{data, pagination: {page, limit, total, pages, has_next,
+      has_prev}}``.
+
+    Results span all evaluation criteria for the given run, useful for getting a
+    complete quality snapshot of a single execution.
 
     Args:
         agent_id (str):
         run_id (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -218,6 +298,9 @@ async def asyncio(
             agent_id=agent_id,
             run_id=run_id,
             client=client,
+            page=page,
+            limit=limit,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

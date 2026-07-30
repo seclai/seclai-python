@@ -16,10 +16,14 @@ def _get_kwargs(
     model_id: str,
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -67,6 +71,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | PromptModelResponse]:
     """Get Model
 
@@ -83,6 +88,7 @@ def sync_detailed(
     Args:
         model_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -95,6 +101,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         model_id=model_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -109,6 +116,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | PromptModelResponse | None:
     """Get Model
 
@@ -125,6 +133,7 @@ def sync(
     Args:
         model_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -138,6 +147,7 @@ def sync(
         model_id=model_id,
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -146,6 +156,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | PromptModelResponse]:
     """Get Model
 
@@ -162,6 +173,7 @@ async def asyncio_detailed(
     Args:
         model_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -174,6 +186,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         model_id=model_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -186,6 +199,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | PromptModelResponse | None:
     """Get Model
 
@@ -202,6 +216,7 @@ async def asyncio(
     Args:
         model_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -216,5 +231,6 @@ async def asyncio(
             model_id=model_id,
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

@@ -16,10 +16,14 @@ def _get_kwargs(
     *,
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -77,6 +81,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]:
     """Generate a governance plan
 
@@ -87,6 +92,7 @@ def sync_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:
@@ -100,6 +106,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -114,6 +121,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Any | GovernanceAiAssistantResponse | HTTPValidationError | None:
     """Generate a governance plan
 
@@ -124,6 +132,7 @@ def sync(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:
@@ -138,6 +147,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -146,6 +156,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]:
     """Generate a governance plan
 
@@ -156,6 +167,7 @@ async def asyncio_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:
@@ -169,6 +181,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -181,6 +194,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Any | GovernanceAiAssistantResponse | HTTPValidationError | None:
     """Generate a governance plan
 
@@ -191,6 +205,7 @@ async def asyncio(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (GovernanceAiAssistantRequest): Request body for the governance AI assistant.
 
     Raises:
@@ -206,5 +221,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

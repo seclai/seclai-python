@@ -18,10 +18,14 @@ def _get_kwargs(
     start: int | Unset = 0,
     end: int | Unset = 5000,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -82,6 +86,7 @@ def sync_detailed(
     start: int | Unset = 0,
     end: int | Unset = 5000,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[ContentDetailResponse | HTTPValidationError]:
     """Get content details
 
@@ -104,6 +109,7 @@ def sync_detailed(
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -118,6 +124,7 @@ def sync_detailed(
         start=start,
         end=end,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -134,6 +141,7 @@ def sync(
     start: int | Unset = 0,
     end: int | Unset = 5000,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> ContentDetailResponse | HTTPValidationError | None:
     """Get content details
 
@@ -156,6 +164,7 @@ def sync(
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -171,6 +180,7 @@ def sync(
         start=start,
         end=end,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -181,6 +191,7 @@ async def asyncio_detailed(
     start: int | Unset = 0,
     end: int | Unset = 5000,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[ContentDetailResponse | HTTPValidationError]:
     """Get content details
 
@@ -203,6 +214,7 @@ async def asyncio_detailed(
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -217,6 +229,7 @@ async def asyncio_detailed(
         start=start,
         end=end,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -231,6 +244,7 @@ async def asyncio(
     start: int | Unset = 0,
     end: int | Unset = 5000,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> ContentDetailResponse | HTTPValidationError | None:
     """Get content details
 
@@ -253,6 +267,7 @@ async def asyncio(
         start (int | Unset):  Default: 0.
         end (int | Unset):  Default: 5000.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -269,5 +284,6 @@ async def asyncio(
             start=start,
             end=end,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

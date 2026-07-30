@@ -6,19 +6,21 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_alert_unread_count_api_models_alerts_unread_count_get_response_get_alert_unread_count_api_models_alerts_unread_count_get import (
-    GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet,
-)
+from ...models.unread_count_response import UnreadCountResponse
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -31,14 +33,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
-    | None
-):
+) -> UnreadCountResponse | None:
     if response.status_code == 200:
-        response_200 = GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet.from_dict(
-            response.json()
-        )
+        response_200 = UnreadCountResponse.from_dict(response.json())
 
         return response_200
 
@@ -50,9 +47,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
-]:
+) -> Response[UnreadCountResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -65,9 +60,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[UnreadCountResponse]:
     """Get Alert Unread Count
 
      Get the count of unread model lifecycle alerts.
@@ -79,17 +73,19 @@ def sync_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet]
+        Response[UnreadCountResponse]
     """
 
     kwargs = _get_kwargs(
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -103,10 +99,8 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> UnreadCountResponse | None:
     """Get Alert Unread Count
 
      Get the count of unread model lifecycle alerts.
@@ -118,18 +112,20 @@ def sync(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
+        UnreadCountResponse
     """
 
     return sync_detailed(
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -137,9 +133,8 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[UnreadCountResponse]:
     """Get Alert Unread Count
 
      Get the count of unread model lifecycle alerts.
@@ -151,17 +146,19 @@ async def asyncio_detailed(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet]
+        Response[UnreadCountResponse]
     """
 
     kwargs = _get_kwargs(
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -173,10 +170,8 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> UnreadCountResponse | None:
     """Get Alert Unread Count
 
      Get the count of unread model lifecycle alerts.
@@ -188,18 +183,20 @@ async def asyncio(
 
     Args:
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetAlertUnreadCountApiModelsAlertsUnreadCountGetResponseGetAlertUnreadCountApiModelsAlertsUnreadCountGet
+        UnreadCountResponse
     """
 
     return (
         await asyncio_detailed(
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

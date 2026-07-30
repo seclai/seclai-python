@@ -7,9 +7,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
-from ...models.list_alerts_api_models_alerts_get_response_list_alerts_api_models_alerts_get import (
-    ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet,
-)
+from ...models.model_alert_list_response import ModelAlertListResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -20,10 +18,14 @@ def _get_kwargs(
     limit: int | Unset = 50,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -54,17 +56,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    HTTPValidationError
-    | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
-    | None
-):
+) -> HTTPValidationError | ModelAlertListResponse | None:
     if response.status_code == 200:
-        response_200 = (
-            ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet.from_dict(
-                response.json()
-            )
-        )
+        response_200 = ModelAlertListResponse.from_dict(response.json())
 
         return response_200
 
@@ -81,10 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    HTTPValidationError
-    | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
-]:
+) -> Response[HTTPValidationError | ModelAlertListResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -101,10 +92,8 @@ def sync_detailed(
     limit: int | Unset = 50,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | ModelAlertListResponse]:
     """List Alerts
 
      List model lifecycle alerts for the account.
@@ -121,13 +110,14 @@ def sync_detailed(
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet]
+        Response[HTTPValidationError | ModelAlertListResponse]
     """
 
     kwargs = _get_kwargs(
@@ -136,6 +126,7 @@ def sync_detailed(
         limit=limit,
         offset=offset,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -153,11 +144,8 @@ def sync(
     limit: int | Unset = 50,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | ModelAlertListResponse | None:
     """List Alerts
 
      List model lifecycle alerts for the account.
@@ -174,13 +162,14 @@ def sync(
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
+        HTTPValidationError | ModelAlertListResponse
     """
 
     return sync_detailed(
@@ -190,6 +179,7 @@ def sync(
         limit=limit,
         offset=offset,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -201,10 +191,8 @@ async def asyncio_detailed(
     limit: int | Unset = 50,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | ModelAlertListResponse]:
     """List Alerts
 
      List model lifecycle alerts for the account.
@@ -221,13 +209,14 @@ async def asyncio_detailed(
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet]
+        Response[HTTPValidationError | ModelAlertListResponse]
     """
 
     kwargs = _get_kwargs(
@@ -236,6 +225,7 @@ async def asyncio_detailed(
         limit=limit,
         offset=offset,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -251,11 +241,8 @@ async def asyncio(
     limit: int | Unset = 50,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | ModelAlertListResponse | None:
     """List Alerts
 
      List model lifecycle alerts for the account.
@@ -272,13 +259,14 @@ async def asyncio(
         limit (int | Unset): Maximum number of alerts to return (1-100). Default: 50.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ListAlertsApiModelsAlertsGetResponseListAlertsApiModelsAlertsGet
+        HTTPValidationError | ModelAlertListResponse
     """
 
     return (
@@ -289,5 +277,6 @@ async def asyncio(
             limit=limit,
             offset=offset,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

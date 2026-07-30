@@ -7,9 +7,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.change_alert_status_api_alerts_alert_id_status_post_response_change_alert_status_api_alerts_alert_id_status_post import (
-    ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost,
-)
+from ...models.alert_detail_response import AlertDetailResponse
 from ...models.change_status_request import ChangeStatusRequest
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
@@ -20,10 +18,14 @@ def _get_kwargs(
     *,
     body: ChangeStatusRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -42,15 +44,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost
-    | HTTPValidationError
-    | None
-):
+) -> AlertDetailResponse | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost.from_dict(
-            response.json()
-        )
+        response_200 = AlertDetailResponse.from_dict(response.json())
 
         return response_200
 
@@ -67,10 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost
-    | HTTPValidationError
-]:
+) -> Response[AlertDetailResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -85,10 +78,8 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: ChangeStatusRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertDetailResponse | HTTPValidationError]:
     """Change alert status
 
      Change the status of an alert. Valid statuses: triggered, acknowledged, resolved, dismissed.
@@ -99,6 +90,7 @@ def sync_detailed(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (ChangeStatusRequest):
 
     Raises:
@@ -106,13 +98,14 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost | HTTPValidationError]
+        Response[AlertDetailResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         alert_id=alert_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -128,11 +121,8 @@ def sync(
     client: AuthenticatedClient | Client,
     body: ChangeStatusRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertDetailResponse | HTTPValidationError | None:
     """Change alert status
 
      Change the status of an alert. Valid statuses: triggered, acknowledged, resolved, dismissed.
@@ -143,6 +133,7 @@ def sync(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (ChangeStatusRequest):
 
     Raises:
@@ -150,7 +141,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost | HTTPValidationError
+        AlertDetailResponse | HTTPValidationError
     """
 
     return sync_detailed(
@@ -158,6 +149,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -167,10 +159,8 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: ChangeStatusRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[AlertDetailResponse | HTTPValidationError]:
     """Change alert status
 
      Change the status of an alert. Valid statuses: triggered, acknowledged, resolved, dismissed.
@@ -181,6 +171,7 @@ async def asyncio_detailed(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (ChangeStatusRequest):
 
     Raises:
@@ -188,13 +179,14 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost | HTTPValidationError]
+        Response[AlertDetailResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         alert_id=alert_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -208,11 +200,8 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: ChangeStatusRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> AlertDetailResponse | HTTPValidationError | None:
     """Change alert status
 
      Change the status of an alert. Valid statuses: triggered, acknowledged, resolved, dismissed.
@@ -223,6 +212,7 @@ async def asyncio(
     Args:
         alert_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (ChangeStatusRequest):
 
     Raises:
@@ -230,7 +220,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ChangeAlertStatusApiAlertsAlertIdStatusPostResponseChangeAlertStatusApiAlertsAlertIdStatusPost | HTTPValidationError
+        AlertDetailResponse | HTTPValidationError
     """
 
     return (
@@ -239,5 +229,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

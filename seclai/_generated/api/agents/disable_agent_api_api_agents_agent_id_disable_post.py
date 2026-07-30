@@ -16,10 +16,14 @@ def _get_kwargs(
     agent_id: str,
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -67,6 +71,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentSummaryResponse | HTTPValidationError]:
     """Pause (disable) an agent
 
@@ -76,12 +81,13 @@ def sync_detailed(
     Returns **409** with the blocking callers when other live agents still call this one via a
     `call_agent` step — disable those first.
 
-    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user; the agent must
-    belong to the key's account.
+    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user (the acting user
+    is recorded); the agent must belong to the key's account.
 
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -94,6 +100,7 @@ def sync_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -108,6 +115,7 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentSummaryResponse | HTTPValidationError | None:
     """Pause (disable) an agent
 
@@ -117,12 +125,13 @@ def sync(
     Returns **409** with the blocking callers when other live agents still call this one via a
     `call_agent` step — disable those first.
 
-    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user; the agent must
-    belong to the key's account.
+    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user (the acting user
+    is recorded); the agent must belong to the key's account.
 
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -136,6 +145,7 @@ def sync(
         agent_id=agent_id,
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -144,6 +154,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AgentSummaryResponse | HTTPValidationError]:
     """Pause (disable) an agent
 
@@ -153,12 +164,13 @@ async def asyncio_detailed(
     Returns **409** with the blocking callers when other live agents still call this one via a
     `call_agent` step — disable those first.
 
-    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user; the agent must
-    belong to the key's account.
+    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user (the acting user
+    is recorded); the agent must belong to the key's account.
 
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -171,6 +183,7 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         agent_id=agent_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -183,6 +196,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AgentSummaryResponse | HTTPValidationError | None:
     """Pause (disable) an agent
 
@@ -192,12 +206,13 @@ async def asyncio(
     Returns **409** with the blocking callers when other live agents still call this one via a
     `call_agent` step — disable those first.
 
-    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user; the agent must
-    belong to the key's account.
+    Auth & scoping: requires `X-API-Key` header or OAuth Bearer token bound to a user (the acting user
+    is recorded); the agent must belong to the key's account.
 
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -212,5 +227,6 @@ async def asyncio(
             agent_id=agent_id,
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

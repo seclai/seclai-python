@@ -68,6 +68,7 @@ from seclai.auth import (
     resolve_auth_headers_sync,
     resolve_credential_chain,
 )
+from seclai.versions import validate_api_version
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,19 @@ class AgentRunStreamRequest(TypedDict):
 
 #: Default API base URL. Override via the ``SECLAI_API_URL`` environment variable.
 SECLAI_API_URL = os.getenv("SECLAI_API_URL", "https://seclai.com")
+
+
+def _unwrap_data(payload: Any) -> list[dict[str, Any]]:
+    """Return the items of a list endpoint, whichever wire shape it used.
+
+    Several endpoints are moving from a bare JSON array to a paginated
+    ``{"data": [...], "total", "page", "limit"}`` envelope. Both shapes are live
+    realities during the rollout, so a client that decodes only one breaks on
+    the day the other ships.
+    """
+    if isinstance(payload, dict):
+        return cast(list[dict[str, Any]], payload.get("data", []))
+    return cast(list[dict[str, Any]], payload)
 
 
 def _strip_none(params: dict[str, Any]) -> dict[str, Any]:
@@ -208,18 +222,21 @@ class ClientOptions:
         timeout: Request timeout in seconds.
         api_key_header: HTTP header name used to transmit the API key.
         default_headers: Extra headers included on every request.
+        api_version: Dated API version sent as ``Seclai-Version``, or ``None``.
     """
 
     auth_state: AuthState
     timeout: float
     api_key_header: str
     default_headers: Mapping[str, str]
+    api_version: str | None = None
 
 
 def _build_default_headers(
     *,
     auth_state: AuthState,
     default_headers: Mapping[str, str] | None,
+    api_version: str | None = None,
 ) -> dict[str, str]:
     """Build default request headers including auth and user-agent."""
     headers: dict[str, str] = {
@@ -239,6 +256,11 @@ def _build_default_headers(
         "sso",
     ):
         headers["x-account-id"] = auth_state.account_id
+    # Omitted unless the caller opts in: with no header the account's pinned
+    # baseline applies and responses keep the shapes this release was built
+    # against, so upgrading the SDK alone never changes the wire contract.
+    if api_version:
+        headers["seclai-version"] = api_version
     if default_headers:
         headers.update(default_headers)
     return headers
@@ -253,6 +275,7 @@ def _merge_request_headers(
     merged = _build_default_headers(
         auth_state=options.auth_state,
         default_headers=options.default_headers,
+        api_version=options.api_version,
     )
     # For dynamic auth modes, resolve per-request headers
     if options.auth_state.mode in ("bearer_provider", "sso"):
@@ -277,6 +300,7 @@ async def _merge_request_headers_async(
     merged = _build_default_headers(
         auth_state=options.auth_state,
         default_headers=options.default_headers,
+        api_version=options.api_version,
     )
     # For dynamic auth modes, resolve per-request headers asynchronously
     if options.auth_state.mode in ("bearer_provider", "sso"):
@@ -328,6 +352,8 @@ class _SeclaiBase:
         config_dir: str | None,
         auto_refresh: bool,
         account_id: str | None,
+        api_version: str | None = None,
+        allow_unknown_api_version: bool = False,
     ) -> None:
         """Initialize shared client state.
 
@@ -342,6 +368,10 @@ class _SeclaiBase:
             config_dir: Override the config directory path.
             auto_refresh: Whether to auto-refresh expired SSO tokens. Defaults to ``True``.
             account_id: Target organization account ID (``X-Account-Id`` header).
+            api_version: Dated API version (``YYYY-MM-DD``) sent as the
+                ``Seclai-Version`` header, opting into backward-incompatible
+                changes released on or before that date. Omitted by default,
+                so upgrading the SDK alone never changes response shapes.
 
         Raises:
             SeclaiConfigurationError: If no credentials are found or if both ``api_key``
@@ -374,11 +404,19 @@ class _SeclaiBase:
         except RuntimeError as e:
             raise SeclaiConfigurationError(str(e)) from e
 
+        try:
+            api_version = validate_api_version(
+                api_version, allow_unknown=allow_unknown_api_version
+            )
+        except ValueError as e:
+            raise SeclaiConfigurationError(str(e)) from e
+
         self._options = ClientOptions(
             auth_state=auth_state,
             timeout=timeout,
             api_key_header=api_key_header,
             default_headers=default_headers or {},
+            api_version=api_version,
         )
 
         self._generated_client_instance: GeneratedClient | None = None
@@ -398,6 +436,7 @@ class _SeclaiBase:
         return _build_default_headers(
             auth_state=self._options.auth_state,
             default_headers=self._options.default_headers,
+            api_version=self._options.api_version,
         )
 
     def _generated_client(self) -> GeneratedClient:
@@ -555,6 +594,8 @@ class Seclai(_SeclaiBase):
         config_dir: str | None = None,
         auto_refresh: bool = True,
         account_id: str | None = None,
+        api_version: str | None = None,
+        allow_unknown_api_version: bool = False,
     ) -> None:
         """Create a synchronous Seclai client.
 
@@ -577,6 +618,10 @@ class Seclai(_SeclaiBase):
             config_dir: Override the config directory path.
             auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
             account_id: Target organization account ID (``X-Account-Id`` header).
+            api_version: Dated API version (``YYYY-MM-DD``) sent as the
+                ``Seclai-Version`` header, opting into backward-incompatible
+                changes released on or before that date. Omitted by default,
+                so upgrading the SDK alone never changes response shapes.
 
         Raises:
             SeclaiConfigurationError: If no credentials are found.
@@ -591,6 +636,8 @@ class Seclai(_SeclaiBase):
             config_dir=config_dir,
             auto_refresh=auto_refresh,
             account_id=account_id,
+            api_version=api_version,
+            allow_unknown_api_version=allow_unknown_api_version,
         )
         self._client = http_client or httpx.Client(
             base_url=SECLAI_API_URL,
@@ -1211,7 +1258,7 @@ class Seclai(_SeclaiBase):
             sync_detailed,
         )
 
-        path = "/sources/"
+        path = "/sources"
         response = sync_detailed(
             client=self._sync_generated_client(),
             page=page,
@@ -1552,6 +1599,39 @@ class Seclai(_SeclaiBase):
         """
         return cast(dict[str, Any], self.request("GET", "/me"))
 
+    # ── API Version ───────────────────────────────────────────────────────────
+
+    def get_api_version(self) -> dict[str, Any]:
+        """Get the API version this request resolved to, and the versions available.
+
+        Returns:
+            ``pinned_version`` (the account's sticky pin, or ``None``),
+            ``effective_version`` for THIS request, plus ``default_version``,
+            ``latest_version`` and ``known_versions``. Resolution order is the
+            ``Seclai-Version`` header, then the account pin, then the default, so
+            ``effective_version`` reflects the client's ``api_version`` when set.
+        """
+        return cast(dict[str, Any], self.request("GET", "/version"))
+
+    def update_api_version(self, version: str | None) -> dict[str, Any]:
+        """Pin the account to a dated API version, or clear the pin.
+
+        Owner/admin only.
+
+        Args:
+            version: A ``YYYY-MM-DD`` date to pin to, or ``None`` to clear the pin
+                and revert to the default baseline.
+
+        Returns:
+            The updated version state. ``effective_version`` describes this
+            request, not the pin just written — a ``Seclai-Version`` header still
+            overrides the pin.
+        """
+        return cast(
+            dict[str, Any],
+            self.request("PUT", "/version", json={"version": version}),
+        )
+
     # ── Agents ────────────────────────────────────────────────────────────────
 
     def list_agents(self, *, page: int = 1, limit: int = 50) -> dict[str, Any]:
@@ -1759,15 +1839,17 @@ class Seclai(_SeclaiBase):
     def cancel_agent_run(self, run_id: str) -> dict[str, Any]:
         """Cancel an in-progress agent run.
 
+        Cancellation is ``DELETE`` on the run resource — the API exposes no
+        ``POST .../cancel`` route, and no operation that deletes a run.
+        Rejected when the run has already reached a terminal state.
+
         Args:
             run_id: Run identifier.
 
         Returns:
             The updated agent run.
         """
-        return cast(
-            dict[str, Any], self.request("POST", f"/agents/runs/{run_id}/cancel")
-        )
+        return cast(dict[str, Any], self.request("DELETE", f"/agents/runs/{run_id}"))
 
     # ── Agent Input Uploads ───────────────────────────────────────────────────
 
@@ -1935,11 +2017,25 @@ class Seclai(_SeclaiBase):
             ),
         )
 
-    def get_agent_ai_conversation_history(self, agent_id: str) -> dict[str, Any]:
+    def get_agent_ai_conversation_history(
+        self,
+        agent_id: str,
+        *,
+        step_type: str | None = None,
+        step_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
         """Get the AI assistant conversation history for an agent.
 
         Args:
             agent_id: Agent identifier.
+            step_type: Step type to look up. **Required by the API** — the
+                endpoint answers 422 without it. Optional here only so the
+                existing signature keeps compiling; every call needs it.
+            step_id: Filter to a single step.
+            limit: Max turns to return (1-50, default 10).
+            offset: Number of recent turns to skip.
 
         Returns:
             Conversation history with the AI assistant.
@@ -1949,6 +2045,14 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 f"/agents/{agent_id}/ai-assistant/conversations",
+                params=_strip_none(
+                    {
+                        "step_type": step_type,
+                        "step_id": step_id,
+                        "limit": limit,
+                        "offset": offset,
+                    }
+                ),
             ),
         )
 
@@ -1977,20 +2081,50 @@ class Seclai(_SeclaiBase):
 
         Args:
             agent_id: Agent identifier.
+            page: Page number (1-indexed). **Ignored** unless the client opts in
+                with ``api_version="2026-07-27"`` or later — the legacy response
+                is unpaginated and always contains every criterion, so a
+                paginate-until-empty loop over it never terminates.
+            limit: Items per page. Ignored on the legacy shape, as above.
+
+        Returns:
+            The evaluation criteria. Either wire shape is accepted: a bare array
+            by default, the canonical ``{data, pagination}`` envelope once opted
+            in. Use :meth:`list_evaluation_criteria_page` for the metadata.
+        """
+        page_result = self.list_evaluation_criteria_page(
+            agent_id, page=page, limit=limit
+        )
+        return _unwrap_data(page_result)
+
+    def list_evaluation_criteria_page(
+        self, agent_id: str, *, page: int = 1, limit: int = 50
+    ) -> dict[str, Any]:
+        """List evaluation criteria for an agent with pagination metadata.
+
+        Args:
+            agent_id: Agent identifier.
             page: Page number (1-indexed).
             limit: Items per page.
 
         Returns:
-            List of evaluation criteria.
+            ``{"data": [...], "pagination": {"page", "limit", "total", "pages",
+            "has_next", "has_prev"}}`` when the client opts in with
+            ``api_version="2026-07-27"`` or later.
+
+            Without that opt-in the endpoint answers with a bare, **unpaginated**
+            array of every criterion, which is returned as ``{"data": [...]}``
+            with no ``pagination`` key — so read it with ``.get("pagination")``
+            rather than indexing.
         """
-        return cast(
-            list[dict[str, Any]],
-            self.request(
-                "GET",
-                f"/agents/{agent_id}/evaluation-criteria",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        result = self.request(
+            "GET",
+            f"/agents/{agent_id}/evaluation-criteria",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        if isinstance(result, dict):
+            return cast(dict[str, Any], result)
+        return {"data": result}
 
     def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -2186,7 +2320,7 @@ class Seclai(_SeclaiBase):
 
     def list_run_evaluation_results(
         self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         """List evaluation results for a specific agent run.
 
         Args:
@@ -2196,16 +2330,41 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation results with criteria.
+            The evaluation results. Either wire shape is accepted: a bare array
+            by default, the canonical ``{data, pagination}`` envelope once the
+            client opts in with ``api_version="2026-07-27"`` or later. Use
+            :meth:`list_run_evaluation_results_page` for the metadata.
         """
-        return cast(
-            dict[str, Any],
-            self.request(
-                "GET",
-                f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        page_result = self.list_run_evaluation_results_page(
+            agent_id, run_id, page=page, limit=limit
         )
+        return _unwrap_data(page_result)
+
+    def list_run_evaluation_results_page(
+        self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
+    ) -> dict[str, Any]:
+        """List evaluation results for a run, with pagination metadata.
+
+        Args:
+            agent_id: Agent identifier.
+            run_id: Run identifier.
+            page: Page number (1-indexed). Ignored unless the client opts in with
+                ``api_version="2026-07-27"`` or later; the legacy response is
+                unpaginated and always contains every result for the run.
+            limit: Items per page. Ignored on the legacy shape, as above.
+
+        Returns:
+            ``{"data": [...], "pagination": {...}}`` when opted in, otherwise
+            ``{"data": [...]}`` with no ``pagination`` key.
+        """
+        result = self.request(
+            "GET",
+            f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
+            params=_strip_none({"page": page, "limit": limit}),
+        )
+        if isinstance(result, dict):
+            return cast(dict[str, Any], result)
+        return {"data": result}
 
     def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -3484,7 +3643,10 @@ class Seclai(_SeclaiBase):
             page: Page number (1-indexed).
             limit: Items per page.
             status: Filter by alert status.
-            severity: Filter by severity.
+            severity: Deprecated and ignored. The API declares no severity filter
+                on this endpoint, so it never filtered anything, and sending it
+                is a 422 once ``api_version`` is ``2026-07-27`` or later. It is
+                accepted and dropped so existing call sites keep working.
 
         Returns:
             Paginated list of alerts.
@@ -3492,9 +3654,7 @@ class Seclai(_SeclaiBase):
         return self.request(
             "GET",
             "/alerts",
-            params=_strip_none(
-                {"page": page, "limit": limit, "status": status, "severity": severity}
-            ),
+            params=_strip_none({"page": page, "limit": limit, "status": status}),
         )
 
     def get_alert(self, alert_id: str) -> JSONValue:
@@ -3564,7 +3724,11 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated list of alert configurations.
+            The configurations, under ``configs`` alongside ``total`` by default.
+            Once the client opts in with ``api_version="2026-07-27"`` or later
+            the endpoint returns the canonical ``{data, pagination}`` envelope
+            instead, so the top-level key changes — read it with
+            ``result.get("data", result.get("configs", []))``.
         """
         return self.request(
             "GET",
@@ -3655,16 +3819,22 @@ class Seclai(_SeclaiBase):
         """List model alerts.
 
         Args:
-            page: Page number (1-indexed).
+            page: Page number (1-indexed). Translated to the ``offset`` the
+                endpoint actually declares; it does not accept ``page``, so
+                every page but the first previously returned page 1.
             limit: Items per page.
 
         Returns:
-            Paginated list of model alerts.
+            The alerts, under ``alerts`` alongside ``total`` by default. Once the
+            client opts in with ``api_version="2026-07-27"`` or later the endpoint
+            returns the canonical ``{data, pagination}`` envelope instead, so the
+            top-level key changes — read it with
+            ``result.get("data", result.get("alerts", []))``.
         """
         return self.request(
             "GET",
             "/models/alerts",
-            params=_strip_none({"page": page, "limit": limit}),
+            params=_strip_none({"offset": (page - 1) * limit, "limit": limit}),
         )
 
     def mark_all_model_alerts_read(self) -> None:
@@ -3855,7 +4025,7 @@ class Seclai(_SeclaiBase):
             "GET",
             "/search",
             params=_strip_none(
-                {"query": query, "limit": limit, "entity_type": entity_type}
+                {"q": query, "limit": limit, "entity_type": entity_type}
             ),
         )
 
@@ -4379,6 +4549,8 @@ class AsyncSeclai(_SeclaiBase):
         config_dir: str | None = None,
         auto_refresh: bool = True,
         account_id: str | None = None,
+        api_version: str | None = None,
+        allow_unknown_api_version: bool = False,
     ) -> None:
         """Create an asynchronous Seclai client.
 
@@ -4401,6 +4573,10 @@ class AsyncSeclai(_SeclaiBase):
             config_dir: Override the config directory path.
             auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
             account_id: Target organization account ID (``X-Account-Id`` header).
+            api_version: Dated API version (``YYYY-MM-DD``) sent as the
+                ``Seclai-Version`` header, opting into backward-incompatible
+                changes released on or before that date. Omitted by default,
+                so upgrading the SDK alone never changes response shapes.
 
         Raises:
             SeclaiConfigurationError: If no credentials are found.
@@ -4415,6 +4591,8 @@ class AsyncSeclai(_SeclaiBase):
             config_dir=config_dir,
             auto_refresh=auto_refresh,
             account_id=account_id,
+            api_version=api_version,
+            allow_unknown_api_version=allow_unknown_api_version,
         )
         self._client = http_client or httpx.AsyncClient(
             base_url=SECLAI_API_URL,
@@ -5025,7 +5203,7 @@ class AsyncSeclai(_SeclaiBase):
             asyncio_detailed,
         )
 
-        path = "/sources/"
+        path = "/sources"
         response = await asyncio_detailed(
             client=(await self._async_generated_client()),
             page=page,
@@ -5363,6 +5541,39 @@ class AsyncSeclai(_SeclaiBase):
         """
         return cast(dict[str, Any], await self.request("GET", "/me"))
 
+    # ── API Version ───────────────────────────────────────────────────────────
+
+    async def get_api_version(self) -> dict[str, Any]:
+        """Get the API version this request resolved to, and the versions available.
+
+        Returns:
+            ``pinned_version`` (the account's sticky pin, or ``None``),
+            ``effective_version`` for THIS request, plus ``default_version``,
+            ``latest_version`` and ``known_versions``. Resolution order is the
+            ``Seclai-Version`` header, then the account pin, then the default, so
+            ``effective_version`` reflects the client's ``api_version`` when set.
+        """
+        return cast(dict[str, Any], await self.request("GET", "/version"))
+
+    async def update_api_version(self, version: str | None) -> dict[str, Any]:
+        """Pin the account to a dated API version, or clear the pin.
+
+        Owner/admin only.
+
+        Args:
+            version: A ``YYYY-MM-DD`` date to pin to, or ``None`` to clear the pin
+                and revert to the default baseline.
+
+        Returns:
+            The updated version state. ``effective_version`` describes this
+            request, not the pin just written — a ``Seclai-Version`` header still
+            overrides the pin.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("PUT", "/version", json={"version": version}),
+        )
+
     # ── Agents ────────────────────────────────────────────────────────────────
 
     async def list_agents(self, *, page: int = 1, limit: int = 50) -> dict[str, Any]:
@@ -5578,6 +5789,10 @@ class AsyncSeclai(_SeclaiBase):
     async def cancel_agent_run(self, run_id: str) -> dict[str, Any]:
         """Cancel an in-progress agent run.
 
+        Cancellation is ``DELETE`` on the run resource — the API exposes no
+        ``POST .../cancel`` route, and no operation that deletes a run.
+        Rejected when the run has already reached a terminal state.
+
         Args:
             run_id: Run identifier.
 
@@ -5585,7 +5800,7 @@ class AsyncSeclai(_SeclaiBase):
             The updated agent run.
         """
         return cast(
-            dict[str, Any], await self.request("POST", f"/agents/runs/{run_id}/cancel")
+            dict[str, Any], await self.request("DELETE", f"/agents/runs/{run_id}")
         )
 
     # ── Agent Input Uploads ───────────────────────────────────────────────────
@@ -5762,11 +5977,25 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
-    async def get_agent_ai_conversation_history(self, agent_id: str) -> dict[str, Any]:
+    async def get_agent_ai_conversation_history(
+        self,
+        agent_id: str,
+        *,
+        step_type: str | None = None,
+        step_id: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
         """Get the AI assistant conversation history for an agent.
 
         Args:
             agent_id: Agent identifier.
+            step_type: Step type to look up. **Required by the API** — the
+                endpoint answers 422 without it. Optional here only so the
+                existing signature keeps compiling; every call needs it.
+            step_id: Filter to a single step.
+            limit: Max turns to return (1-50, default 10).
+            offset: Number of recent turns to skip.
 
         Returns:
             Conversation history with the AI assistant.
@@ -5776,6 +6005,14 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 f"/agents/{agent_id}/ai-assistant/conversations",
+                params=_strip_none(
+                    {
+                        "step_type": step_type,
+                        "step_id": step_id,
+                        "limit": limit,
+                        "offset": offset,
+                    }
+                ),
             ),
         )
 
@@ -5804,20 +6041,50 @@ class AsyncSeclai(_SeclaiBase):
 
         Args:
             agent_id: Agent identifier.
+            page: Page number (1-indexed). **Ignored** unless the client opts in
+                with ``api_version="2026-07-27"`` or later — the legacy response
+                is unpaginated and always contains every criterion, so a
+                paginate-until-empty loop over it never terminates.
+            limit: Items per page. Ignored on the legacy shape, as above.
+
+        Returns:
+            The evaluation criteria. Either wire shape is accepted: a bare array
+            by default, the canonical ``{data, pagination}`` envelope once opted
+            in. Use :meth:`list_evaluation_criteria_page` for the metadata.
+        """
+        page_result = await self.list_evaluation_criteria_page(
+            agent_id, page=page, limit=limit
+        )
+        return _unwrap_data(page_result)
+
+    async def list_evaluation_criteria_page(
+        self, agent_id: str, *, page: int = 1, limit: int = 50
+    ) -> dict[str, Any]:
+        """List evaluation criteria for an agent with pagination metadata.
+
+        Args:
+            agent_id: Agent identifier.
             page: Page number (1-indexed).
             limit: Items per page.
 
         Returns:
-            List of evaluation criteria.
+            ``{"data": [...], "pagination": {"page", "limit", "total", "pages",
+            "has_next", "has_prev"}}`` when the client opts in with
+            ``api_version="2026-07-27"`` or later.
+
+            Without that opt-in the endpoint answers with a bare, **unpaginated**
+            array of every criterion, which is returned as ``{"data": [...]}``
+            with no ``pagination`` key — so read it with ``.get("pagination")``
+            rather than indexing.
         """
-        return cast(
-            list[dict[str, Any]],
-            await self.request(
-                "GET",
-                f"/agents/{agent_id}/evaluation-criteria",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        result = await self.request(
+            "GET",
+            f"/agents/{agent_id}/evaluation-criteria",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        if isinstance(result, dict):
+            return cast(dict[str, Any], result)
+        return {"data": result}
 
     async def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -6013,7 +6280,7 @@ class AsyncSeclai(_SeclaiBase):
 
     async def list_run_evaluation_results(
         self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         """List evaluation results for a specific agent run.
 
         Args:
@@ -6023,16 +6290,41 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation results with criteria.
+            The evaluation results. Either wire shape is accepted: a bare array
+            by default, the canonical ``{data, pagination}`` envelope once the
+            client opts in with ``api_version="2026-07-27"`` or later. Use
+            :meth:`list_run_evaluation_results_page` for the metadata.
         """
-        return cast(
-            dict[str, Any],
-            await self.request(
-                "GET",
-                f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        page_result = await self.list_run_evaluation_results_page(
+            agent_id, run_id, page=page, limit=limit
         )
+        return _unwrap_data(page_result)
+
+    async def list_run_evaluation_results_page(
+        self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
+    ) -> dict[str, Any]:
+        """List evaluation results for a run, with pagination metadata.
+
+        Args:
+            agent_id: Agent identifier.
+            run_id: Run identifier.
+            page: Page number (1-indexed). Ignored unless the client opts in with
+                ``api_version="2026-07-27"`` or later; the legacy response is
+                unpaginated and always contains every result for the run.
+            limit: Items per page. Ignored on the legacy shape, as above.
+
+        Returns:
+            ``{"data": [...], "pagination": {...}}`` when opted in, otherwise
+            ``{"data": [...]}`` with no ``pagination`` key.
+        """
+        result = await self.request(
+            "GET",
+            f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
+            params=_strip_none({"page": page, "limit": limit}),
+        )
+        if isinstance(result, dict):
+            return cast(dict[str, Any], result)
+        return {"data": result}
 
     async def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -7337,7 +7629,10 @@ class AsyncSeclai(_SeclaiBase):
             page: Page number (1-indexed).
             limit: Items per page.
             status: Filter by alert status.
-            severity: Filter by severity.
+            severity: Deprecated and ignored. The API declares no severity filter
+                on this endpoint, so it never filtered anything, and sending it
+                is a 422 once ``api_version`` is ``2026-07-27`` or later. It is
+                accepted and dropped so existing call sites keep working.
 
         Returns:
             Paginated list of alerts.
@@ -7345,9 +7640,7 @@ class AsyncSeclai(_SeclaiBase):
         return await self.request(
             "GET",
             "/alerts",
-            params=_strip_none(
-                {"page": page, "limit": limit, "status": status, "severity": severity}
-            ),
+            params=_strip_none({"page": page, "limit": limit, "status": status}),
         )
 
     async def get_alert(self, alert_id: str) -> JSONValue:
@@ -7419,7 +7712,11 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated list of alert configurations.
+            The configurations, under ``configs`` alongside ``total`` by default.
+            Once the client opts in with ``api_version="2026-07-27"`` or later
+            the endpoint returns the canonical ``{data, pagination}`` envelope
+            instead, so the top-level key changes — read it with
+            ``result.get("data", result.get("configs", []))``.
         """
         return await self.request(
             "GET",
@@ -7512,16 +7809,22 @@ class AsyncSeclai(_SeclaiBase):
         """List model alerts.
 
         Args:
-            page: Page number (1-indexed).
+            page: Page number (1-indexed). Translated to the ``offset`` the
+                endpoint actually declares; it does not accept ``page``, so
+                every page but the first previously returned page 1.
             limit: Items per page.
 
         Returns:
-            Paginated list of model alerts.
+            The alerts, under ``alerts`` alongside ``total`` by default. Once the
+            client opts in with ``api_version="2026-07-27"`` or later the endpoint
+            returns the canonical ``{data, pagination}`` envelope instead, so the
+            top-level key changes — read it with
+            ``result.get("data", result.get("alerts", []))``.
         """
         return await self.request(
             "GET",
             "/models/alerts",
-            params=_strip_none({"page": page, "limit": limit}),
+            params=_strip_none({"offset": (page - 1) * limit, "limit": limit}),
         )
 
     async def mark_all_model_alerts_read(self) -> None:
@@ -7717,7 +8020,7 @@ class AsyncSeclai(_SeclaiBase):
             "GET",
             "/search",
             params=_strip_none(
-                {"query": query, "limit": limit, "entity_type": entity_type}
+                {"q": query, "limit": limit, "entity_type": entity_type}
             ),
         )
 

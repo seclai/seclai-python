@@ -11,7 +11,7 @@ T = TypeVar("T", bound="AgentImportPreviewRequestAgentDefinition")
 
 @_attrs_define
 class AgentImportPreviewRequestAgentDefinition:
-    """Payload in the same shape as GET /api/agents/{agent_id}/export."""
+    """Payload in the same shape as GET /agents/{agent_id}/export."""
 
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 

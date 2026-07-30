@@ -7,9 +7,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.cancel_experiment_endpoint_api_models_playground_experiments_experiment_id_cancel_post_response_cancel_experiment_endpoint_api_models_playground_experiments_experiment_id_cancel_post import (
-    CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost,
-)
+from ...models.cancel_experiment_response import CancelExperimentResponse
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
@@ -18,10 +16,14 @@ def _get_kwargs(
     experiment_id: UUID,
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -36,15 +38,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost
-    | HTTPValidationError
-    | None
-):
+) -> CancelExperimentResponse | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost.from_dict(
-            response.json()
-        )
+        response_200 = CancelExperimentResponse.from_dict(response.json())
 
         return response_200
 
@@ -61,10 +57,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost
-    | HTTPValidationError
-]:
+) -> Response[CancelExperimentResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,10 +71,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[CancelExperimentResponse | HTTPValidationError]:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -95,18 +86,20 @@ def sync_detailed(
     Args:
         experiment_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost | HTTPValidationError]
+        Response[CancelExperimentResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         experiment_id=experiment_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -121,11 +114,8 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> CancelExperimentResponse | HTTPValidationError | None:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -139,19 +129,21 @@ def sync(
     Args:
         experiment_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost | HTTPValidationError
+        CancelExperimentResponse | HTTPValidationError
     """
 
     return sync_detailed(
         experiment_id=experiment_id,
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -160,10 +152,8 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost
-    | HTTPValidationError
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[CancelExperimentResponse | HTTPValidationError]:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -177,18 +167,20 @@ async def asyncio_detailed(
     Args:
         experiment_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost | HTTPValidationError]
+        Response[CancelExperimentResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         experiment_id=experiment_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -201,11 +193,8 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost
-    | HTTPValidationError
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> CancelExperimentResponse | HTTPValidationError | None:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -219,13 +208,14 @@ async def asyncio(
     Args:
         experiment_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPostResponseCancelExperimentEndpointApiModelsPlaygroundExperimentsExperimentIdCancelPost | HTTPValidationError
+        CancelExperimentResponse | HTTPValidationError
     """
 
     return (
@@ -233,5 +223,6 @@ async def asyncio(
             experiment_id=experiment_id,
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

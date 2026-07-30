@@ -8,10 +8,8 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
-from ...models.mark_ai_suggestion_api_agents_agent_id_ai_assistant_conversation_id_patch_response_mark_ai_suggestion_api_agents_agent_id_ai_assistant_conversation_id_patch import (
-    MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch,
-)
 from ...models.mark_ai_suggestion_request import MarkAiSuggestionRequest
+from ...models.ok_response import OkResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -21,10 +19,14 @@ def _get_kwargs(
     *,
     body: MarkAiSuggestionRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "patch",
@@ -44,15 +46,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    HTTPValidationError
-    | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
-    | None
-):
+) -> HTTPValidationError | OkResponse | None:
     if response.status_code == 200:
-        response_200 = MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch.from_dict(
-            response.json()
-        )
+        response_200 = OkResponse.from_dict(response.json())
 
         return response_200
 
@@ -69,10 +65,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    HTTPValidationError
-    | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
-]:
+) -> Response[HTTPValidationError | OkResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,10 +81,8 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | OkResponse]:
     """Accept or decline suggestion
 
      Accept or decline a proposed AI assistant configuration for a conversation turn.
@@ -107,6 +98,7 @@ def sync_detailed(
         agent_id (str):
         conversation_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:
@@ -114,7 +106,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch]
+        Response[HTTPValidationError | OkResponse]
     """
 
     kwargs = _get_kwargs(
@@ -122,6 +114,7 @@ def sync_detailed(
         conversation_id=conversation_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -138,11 +131,8 @@ def sync(
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | OkResponse | None:
     """Accept or decline suggestion
 
      Accept or decline a proposed AI assistant configuration for a conversation turn.
@@ -158,6 +148,7 @@ def sync(
         agent_id (str):
         conversation_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:
@@ -165,7 +156,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
+        HTTPValidationError | OkResponse
     """
 
     return sync_detailed(
@@ -174,6 +165,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -184,10 +176,8 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[HTTPValidationError | OkResponse]:
     """Accept or decline suggestion
 
      Accept or decline a proposed AI assistant configuration for a conversation turn.
@@ -203,6 +193,7 @@ async def asyncio_detailed(
         agent_id (str):
         conversation_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:
@@ -210,7 +201,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch]
+        Response[HTTPValidationError | OkResponse]
     """
 
     kwargs = _get_kwargs(
@@ -218,6 +209,7 @@ async def asyncio_detailed(
         conversation_id=conversation_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -232,11 +224,8 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: MarkAiSuggestionRequest,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | OkResponse | None:
     """Accept or decline suggestion
 
      Accept or decline a proposed AI assistant configuration for a conversation turn.
@@ -252,6 +241,7 @@ async def asyncio(
         agent_id (str):
         conversation_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (MarkAiSuggestionRequest):
 
     Raises:
@@ -259,7 +249,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | MarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatchResponseMarkAiSuggestionApiAgentsAgentIdAiAssistantConversationIdPatch
+        HTTPValidationError | OkResponse
     """
 
     return (
@@ -269,5 +259,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

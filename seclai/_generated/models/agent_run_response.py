@@ -46,7 +46,7 @@ class AgentRunResponse:
         output_content_type (None | str | Unset): MIME type of `output` — mirrors the terminal step's
             `output_content_type`.  Consumers interpret `output` differently depending on this value:
             `application/vnd.seclai.manifest+json` is a multi-asset manifest with shape `{text, attachments: [{storage_key,
-            mime, name, bytes}]}` — fetch each attachment via `GET /api/v2/agent-runs/{run_id}/attachments/{attachment_id}`,
+            mime, name, bytes}]}` — fetch each attachment via `GET /v2/agent-runs/{run_id}/attachments/{attachment_id}`,
             where `attachment_id` is the URL-safe base64 of the attachment's `storage_key` (accepts an API key or OAuth
             token).  `text/plain` / `text/*` are free-form text.  `application/json` is a JSON document.  Null on runs that
             produced no terminal output or that pre-date this column.

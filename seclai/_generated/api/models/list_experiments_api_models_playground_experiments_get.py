@@ -7,10 +7,8 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.experiment_list_response import ExperimentListResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...models.list_experiments_api_models_playground_experiments_get_response_list_experiments_api_models_playground_experiments_get import (
-    ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet,
-)
 from ...types import UNSET, Response, Unset
 
 
@@ -22,10 +20,14 @@ def _get_kwargs(
     limit: int | Unset = 20,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -67,15 +69,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    HTTPValidationError
-    | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
-    | None
-):
+) -> ExperimentListResponse | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet.from_dict(
-            response.json()
-        )
+        response_200 = ExperimentListResponse.from_dict(response.json())
 
         return response_200
 
@@ -92,10 +88,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    HTTPValidationError
-    | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
-]:
+) -> Response[ExperimentListResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -113,10 +106,8 @@ def sync_detailed(
     limit: int | Unset = 20,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[ExperimentListResponse | HTTPValidationError]:
     """List Experiments
 
      List model playground experiments for the account.
@@ -133,13 +124,14 @@ def sync_detailed(
         limit (int | Unset): Page size. Default: 20.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet]
+        Response[ExperimentListResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -149,6 +141,7 @@ def sync_detailed(
         limit=limit,
         offset=offset,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -167,11 +160,8 @@ def sync(
     limit: int | Unset = 20,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> ExperimentListResponse | HTTPValidationError | None:
     """List Experiments
 
      List model playground experiments for the account.
@@ -188,13 +178,14 @@ def sync(
         limit (int | Unset): Page size. Default: 20.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
+        ExperimentListResponse | HTTPValidationError
     """
 
     return sync_detailed(
@@ -205,6 +196,7 @@ def sync(
         limit=limit,
         offset=offset,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -217,10 +209,8 @@ async def asyncio_detailed(
     limit: int | Unset = 20,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[ExperimentListResponse | HTTPValidationError]:
     """List Experiments
 
      List model playground experiments for the account.
@@ -237,13 +227,14 @@ async def asyncio_detailed(
         limit (int | Unset): Page size. Default: 20.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet]
+        Response[ExperimentListResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -253,6 +244,7 @@ async def asyncio_detailed(
         limit=limit,
         offset=offset,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -269,11 +261,8 @@ async def asyncio(
     limit: int | Unset = 20,
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> ExperimentListResponse | HTTPValidationError | None:
     """List Experiments
 
      List model playground experiments for the account.
@@ -290,13 +279,14 @@ async def asyncio(
         limit (int | Unset): Page size. Default: 20.
         offset (int | Unset): Pagination offset. Default: 0.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ListExperimentsApiModelsPlaygroundExperimentsGetResponseListExperimentsApiModelsPlaygroundExperimentsGet
+        ExperimentListResponse | HTTPValidationError
     """
 
     return (
@@ -308,5 +298,6 @@ async def asyncio(
             limit=limit,
             offset=offset,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

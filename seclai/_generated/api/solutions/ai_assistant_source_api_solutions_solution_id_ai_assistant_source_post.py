@@ -18,10 +18,14 @@ def _get_kwargs(
     *,
     body: AiAssistantGenerateRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -74,6 +78,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AiAssistantGenerateResponse | HTTPValidationError]:
     """Generate source plan
 
@@ -86,6 +91,7 @@ def sync_detailed(
     Args:
         solution_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:
@@ -100,6 +106,7 @@ def sync_detailed(
         solution_id=solution_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -115,6 +122,7 @@ def sync(
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AiAssistantGenerateResponse | HTTPValidationError | None:
     """Generate source plan
 
@@ -127,6 +135,7 @@ def sync(
     Args:
         solution_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:
@@ -142,6 +151,7 @@ def sync(
         client=client,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -151,6 +161,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[AiAssistantGenerateResponse | HTTPValidationError]:
     """Generate source plan
 
@@ -163,6 +174,7 @@ async def asyncio_detailed(
     Args:
         solution_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:
@@ -177,6 +189,7 @@ async def asyncio_detailed(
         solution_id=solution_id,
         body=body,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -190,6 +203,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     body: AiAssistantGenerateRequest,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> AiAssistantGenerateResponse | HTTPValidationError | None:
     """Generate source plan
 
@@ -202,6 +216,7 @@ async def asyncio(
     Args:
         solution_id (UUID):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
         body (AiAssistantGenerateRequest): Request body for AI assistant generate endpoints.
 
     Raises:
@@ -218,5 +233,6 @@ async def asyncio(
             client=client,
             body=body,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

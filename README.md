@@ -149,6 +149,57 @@ Online API documentation (latest):
 
 https://seclai.github.io/seclai-python/latest/
 
+## API versioning
+
+The API dates its backward-incompatible changes. Nothing changes for you until
+you opt in, either per client or by pinning the account:
+
+```python
+from seclai import ApiVersion
+
+client = Seclai(api_key="...", api_version=ApiVersion.V2026_07_27)  # Seclai-Version header
+
+state = client.get_api_version()          # what this request resolved to
+client.update_api_version(ApiVersion.V2026_07_27)  # pin the whole account
+```
+
+Leave `api_version` unset and the header is omitted, so the account's pinned
+baseline applies and responses keep their current shapes. Upgrading this package
+alone never changes the wire contract.
+
+Known versions are on the `ApiVersion` string enum, alongside
+`DEFAULT_API_VERSION` and `LATEST_API_VERSION`. A version this release was
+**not** built against raises `SeclaiConfigurationError`: a newer version can
+reshape responses, and this client would decode them incorrectly rather than
+reject them. Upgrade the package to adopt a new version, or pass
+`allow_unknown_api_version=True` if you have to move first and accept that risk.
+
+The guard only covers the header. An account pinned server-side can still be
+newer than this release — `get_api_version()` reports the `effective_version` the
+request resolved to, and comparing it against `LATEST_API_VERSION` is how you
+detect the gap.
+
+**What `2026-07-27` changes.** Undeclared query parameters become a 422 instead
+of being ignored, and list endpoints move to the canonical
+`{"data": [...], "pagination": {...}}` envelope. The affected methods read both
+shapes, so they keep working either way — but the metadata moves:
+
+| Method | Before | From 2026-07-27 |
+| --- | --- | --- |
+| `list_evaluation_criteria_page()` | bare list | `data` + `pagination` |
+| `list_run_evaluation_results_page()` | bare list | `data` + `pagination` |
+| `list_alert_configs()` | `configs` + `total` | `data` + `pagination` |
+| `list_model_alerts()` | `alerts` + `total` | `data` + `pagination` |
+
+Read the last two with `result.get("data", result.get("configs", []))` and
+`result.get("data", result.get("alerts", []))`, and prefer `pagination` over the
+flat keys. The legacy keys will be deprecated and then removed once the canonical
+envelope is the default.
+
+Note that `page` and `limit` have no effect on the legacy shape — it is
+unpaginated and always returns everything — so a paginate-until-empty loop only
+terminates once you have opted in.
+
 ## Resources
 
 ### Identity
@@ -311,7 +362,10 @@ client.mark_agent_ai_suggestion("agent_id", "conversation_id", {"accepted": True
 
 ```python
 # CRUD
-criteria_list = client.list_evaluation_criteria("agent_id")
+criteria_list = client.list_evaluation_criteria("agent_id", page=1, limit=50)
+# page/limit only take effect with api_version="2026-07-27" or later; the legacy
+# response is unpaginated. list_evaluation_criteria_page() returns the same items
+# plus a "pagination" key when opted in.
 criteria = client.create_evaluation_criteria("agent_id", {"name": "accuracy"})
 detail = client.get_evaluation_criteria("criteria_id")
 client.update_evaluation_criteria("criteria_id", {"name": "updated"})

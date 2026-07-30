@@ -7,9 +7,6 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_agents_using_bank_api_memory_banks_memory_bank_id_agents_get_response_200_item import (
-    GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item,
-)
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
@@ -18,10 +15,14 @@ def _get_kwargs(
     memory_bank_id: str,
     *,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -36,21 +37,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    HTTPValidationError
-    | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
-    | None
-):
+) -> Any | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = []
-        _response_200 = response.json()
-        for response_200_item_data in _response_200:
-            response_200_item = GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item.from_dict(
-                response_200_item_data
-            )
-
-            response_200.append(response_200_item)
-
+        response_200 = response.json()
         return response_200
 
     if response.status_code == 422:
@@ -66,10 +55,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    HTTPValidationError
-    | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
-]:
+) -> Response[Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -83,10 +69,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[Any | HTTPValidationError]:
     """Get Agents Using Bank
 
      List agents whose current definition references this memory bank.
@@ -96,18 +80,20 @@ def sync_detailed(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         memory_bank_id=memory_bank_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -122,11 +108,8 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> Any | HTTPValidationError | None:
     """Get Agents Using Bank
 
      List agents whose current definition references this memory bank.
@@ -136,19 +119,21 @@ def sync(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
+        Any | HTTPValidationError
     """
 
     return sync_detailed(
         memory_bank_id=memory_bank_id,
         client=client,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -157,10 +142,8 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> Response[
-    HTTPValidationError
-    | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
-]:
+    seclai_version: str | Unset = UNSET,
+) -> Response[Any | HTTPValidationError]:
     """Get Agents Using Bank
 
      List agents whose current definition references this memory bank.
@@ -170,18 +153,20 @@ async def asyncio_detailed(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
         memory_bank_id=memory_bank_id,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -194,11 +179,8 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
-) -> (
-    HTTPValidationError
-    | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
-    | None
-):
+    seclai_version: str | Unset = UNSET,
+) -> Any | HTTPValidationError | None:
     """Get Agents Using Bank
 
      List agents whose current definition references this memory bank.
@@ -208,13 +190,14 @@ async def asyncio(
     Args:
         memory_bank_id (str):
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[GetAgentsUsingBankApiMemoryBanksMemoryBankIdAgentsGetResponse200Item]
+        Any | HTTPValidationError
     """
 
     return (
@@ -222,5 +205,6 @@ async def asyncio(
             memory_bank_id=memory_bank_id,
             client=client,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

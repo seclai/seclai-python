@@ -18,10 +18,14 @@ def _get_kwargs(
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
 
     params: dict[str, Any] = {}
 
@@ -86,6 +90,7 @@ def sync_detailed(
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | OrganizationAlertPreferenceListResponse]:
     """List organization alert delivery preferences
 
@@ -103,6 +108,7 @@ def sync_detailed(
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -116,6 +122,7 @@ def sync_detailed(
         organization_id=organization_id,
         include_defaults=include_defaults,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = client.get_httpx_client().request(
@@ -131,6 +138,7 @@ def sync(
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | OrganizationAlertPreferenceListResponse | None:
     """List organization alert delivery preferences
 
@@ -148,6 +156,7 @@ def sync(
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -162,6 +171,7 @@ def sync(
         organization_id=organization_id,
         include_defaults=include_defaults,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     ).parsed
 
 
@@ -171,6 +181,7 @@ async def asyncio_detailed(
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> Response[HTTPValidationError | OrganizationAlertPreferenceListResponse]:
     """List organization alert delivery preferences
 
@@ -188,6 +199,7 @@ async def asyncio_detailed(
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -201,6 +213,7 @@ async def asyncio_detailed(
         organization_id=organization_id,
         include_defaults=include_defaults,
         x_account_id=x_account_id,
+        seclai_version=seclai_version,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -214,6 +227,7 @@ async def asyncio(
     organization_id: None | Unset | UUID = UNSET,
     include_defaults: bool | Unset = False,
     x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
 ) -> HTTPValidationError | OrganizationAlertPreferenceListResponse | None:
     """List organization alert delivery preferences
 
@@ -231,6 +245,7 @@ async def asyncio(
         include_defaults (bool | Unset): Include default subscribed entries for all alert types
             Default: False.
         x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -246,5 +261,6 @@ async def asyncio(
             organization_id=organization_id,
             include_defaults=include_defaults,
             x_account_id=x_account_id,
+            seclai_version=seclai_version,
         )
     ).parsed

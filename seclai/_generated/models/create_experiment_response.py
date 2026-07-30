@@ -6,35 +6,51 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar(
-    "T",
-    bound="UnsubscribeFromAlertApiAlertsAlertIdUnsubscribePostResponseUnsubscribeFromAlertApiAlertsAlertIdUnsubscribePost",
-)
+T = TypeVar("T", bound="CreateExperimentResponse")
 
 
 @_attrs_define
-class UnsubscribeFromAlertApiAlertsAlertIdUnsubscribePostResponseUnsubscribeFromAlertApiAlertsAlertIdUnsubscribePost:
-    """ """
+class CreateExperimentResponse:
+    """
+    Attributes:
+        experiment_id (str):
+        status (str):
+    """
 
+    experiment_id: str
+    status: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        experiment_id = self.experiment_id
+
+        status = self.status
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
+        field_dict.update(
+            {
+                "experiment_id": experiment_id,
+                "status": status,
+            }
+        )
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        unsubscribe_from_alert_api_alerts_alert_id_unsubscribe_post_response_unsubscribe_from_alert_api_alerts_alert_id_unsubscribe_post = (
-            cls()
+        experiment_id = d.pop("experiment_id")
+
+        status = d.pop("status")
+
+        create_experiment_response = cls(
+            experiment_id=experiment_id,
+            status=status,
         )
 
-        unsubscribe_from_alert_api_alerts_alert_id_unsubscribe_post_response_unsubscribe_from_alert_api_alerts_alert_id_unsubscribe_post.additional_properties = (
-            d
-        )
-        return unsubscribe_from_alert_api_alerts_alert_id_unsubscribe_post_response_unsubscribe_from_alert_api_alerts_alert_id_unsubscribe_post
+        create_experiment_response.additional_properties = d
+        return create_experiment_response
 
     @property
     def additional_keys(self) -> list[str]:

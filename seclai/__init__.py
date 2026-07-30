@@ -40,6 +40,7 @@ from .seclai import (
     SeclaiError,
     SeclaiStreamingError,
 )
+from .versions import DEFAULT_API_VERSION, LATEST_API_VERSION, ApiVersion
 
 __all__ = [
     "AgentRunStreamRequest",
@@ -56,4 +57,7 @@ __all__ = [
     "SeclaiStreamingError",
     "SsoProfile",
     "SsoCacheEntry",
+    "ApiVersion",
+    "DEFAULT_API_VERSION",
+    "LATEST_API_VERSION",
 ]
