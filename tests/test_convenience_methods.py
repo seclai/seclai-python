@@ -25,7 +25,7 @@ def _extract_multipart_field(
     return None
 
 
-def test_convenience_delete_content_uses_generated_client_transport() -> None:
+def test_convenience_delete_content_uses_supplied_http_client() -> None:
     seen: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -35,17 +35,18 @@ def test_convenience_delete_content_uses_generated_client_transport() -> None:
 
     transport = httpx.MockTransport(handler)
 
-    client = Seclai(api_key="test")
-    gen = client._generated_client()
-    gen.set_httpx_client(
-        httpx.Client(base_url="https://api.seclai.com", transport=transport)
+    client = Seclai(
+        api_key="test",
+        http_client=httpx.Client(
+            base_url="https://api.seclai.com", transport=transport
+        ),
     )
 
     client.delete_content("sc_cv_123")
     assert seen == {"method": "DELETE", "path": "/contents/sc_cv_123"}
 
 
-def test_convenience_upload_file_to_source_sends_metadata_and_uses_generated_client_transport() -> (
+def test_convenience_upload_file_to_source_sends_metadata_and_uses_supplied_http_client() -> (
     None
 ):
     seen: dict[str, object] = {}
@@ -73,10 +74,11 @@ def test_convenience_upload_file_to_source_sends_metadata_and_uses_generated_cli
 
     transport = httpx.MockTransport(handler)
 
-    client = Seclai(api_key="test")
-    gen = client._generated_client()
-    gen.set_httpx_client(
-        httpx.Client(base_url="https://api.seclai.com", transport=transport)
+    client = Seclai(
+        api_key="test",
+        http_client=httpx.Client(
+            base_url="https://api.seclai.com", transport=transport
+        ),
     )
 
     resp = client.upload_file_to_source(
@@ -94,7 +96,7 @@ def test_convenience_upload_file_to_source_sends_metadata_and_uses_generated_cli
     }
 
 
-def test_convenience_upload_file_to_content_sends_metadata_and_uses_generated_client_transport() -> (
+def test_convenience_upload_file_to_content_sends_metadata_and_uses_supplied_http_client() -> (
     None
 ):
     seen: dict[str, object] = {}
@@ -122,10 +124,11 @@ def test_convenience_upload_file_to_content_sends_metadata_and_uses_generated_cl
 
     transport = httpx.MockTransport(handler)
 
-    client = Seclai(api_key="test")
-    gen = client._generated_client()
-    gen.set_httpx_client(
-        httpx.Client(base_url="https://api.seclai.com", transport=transport)
+    client = Seclai(
+        api_key="test",
+        http_client=httpx.Client(
+            base_url="https://api.seclai.com", transport=transport
+        ),
     )
 
     resp = client.upload_file_to_content(
@@ -144,9 +147,7 @@ def test_convenience_upload_file_to_content_sends_metadata_and_uses_generated_cl
 
 
 @pytest.mark.asyncio
-async def test_async_convenience_delete_content_uses_generated_client_transport() -> (
-    None
-):
+async def test_async_convenience_delete_content_uses_supplied_http_client() -> None:
     seen: dict[str, str] = {}
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -156,10 +157,11 @@ async def test_async_convenience_delete_content_uses_generated_client_transport(
 
     transport = httpx.MockTransport(handler)
 
-    client = AsyncSeclai(api_key="test")
-    gen = client._generated_client()
-    gen.set_async_httpx_client(
-        httpx.AsyncClient(base_url="https://api.seclai.com", transport=transport)
+    client = AsyncSeclai(
+        api_key="test",
+        http_client=httpx.AsyncClient(
+            base_url="https://api.seclai.com", transport=transport
+        ),
     )
 
     await client.delete_content("sc_cv_123")
@@ -167,7 +169,7 @@ async def test_async_convenience_delete_content_uses_generated_client_transport(
 
 
 @pytest.mark.asyncio
-async def test_async_convenience_upload_file_to_source_sends_metadata_and_uses_generated_client_transport() -> (
+async def test_async_convenience_upload_file_to_source_sends_metadata_and_uses_supplied_http_client() -> (
     None
 ):
     seen: dict[str, object] = {}
@@ -195,10 +197,11 @@ async def test_async_convenience_upload_file_to_source_sends_metadata_and_uses_g
 
     transport = httpx.MockTransport(handler)
 
-    client = AsyncSeclai(api_key="test")
-    gen = client._generated_client()
-    gen.set_async_httpx_client(
-        httpx.AsyncClient(base_url="https://api.seclai.com", transport=transport)
+    client = AsyncSeclai(
+        api_key="test",
+        http_client=httpx.AsyncClient(
+            base_url="https://api.seclai.com", transport=transport
+        ),
     )
 
     resp = await client.upload_file_to_source(
@@ -217,7 +220,7 @@ async def test_async_convenience_upload_file_to_source_sends_metadata_and_uses_g
 
 
 @pytest.mark.asyncio
-async def test_async_convenience_upload_file_to_content_sends_metadata_and_uses_generated_client_transport() -> (
+async def test_async_convenience_upload_file_to_content_sends_metadata_and_uses_supplied_http_client() -> (
     None
 ):
     seen: dict[str, object] = {}
@@ -245,10 +248,11 @@ async def test_async_convenience_upload_file_to_content_sends_metadata_and_uses_
 
     transport = httpx.MockTransport(handler)
 
-    client = AsyncSeclai(api_key="test")
-    gen = client._generated_client()
-    gen.set_async_httpx_client(
-        httpx.AsyncClient(base_url="https://api.seclai.com", transport=transport)
+    client = AsyncSeclai(
+        api_key="test",
+        http_client=httpx.AsyncClient(
+            base_url="https://api.seclai.com", transport=transport
+        ),
     )
 
     resp = await client.upload_file_to_content(

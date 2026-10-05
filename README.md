@@ -79,6 +79,13 @@ asyncio.run(main())
 | `default_headers` | — | `None` |
 | `http_client` | — | `None` (auto-created `httpx.Client`) |
 
+Ten methods wait without limit unless you pass `timeout` yourself: `run_agent()`,
+`list_agent_runs()`, `get_agent_run()`, `delete_agent_run()`, `list_sources()`,
+`get_content_detail()`, `delete_content()`, `list_content_embeddings()`,
+`upload_file_to_source()` and `upload_file_to_content()`. The 30-second default
+does not apply to them, and neither does the timeout of an `http_client` you
+supply. Requests from every other method use a supplied client's own timeout.
+
 Set `SECLAI_API_URL` to point at a different API host (e.g., staging):
 
 ```bash
@@ -178,12 +185,7 @@ The guard covers the header however it reaches the wire: `api_version`,
 `default_headers`, a per-request `headers` argument, or the default headers of
 an `http_client` you supply, which are checked at construction and again on
 each request, exactly as a value in `default_headers` is. It covers nothing
-else. The typed methods that go through the generated client — `run_agent()`,
-`list_agent_runs()`, `get_agent_run()`, `delete_agent_run()`, `list_sources()`,
-`get_content_detail()`, `delete_content()`, `list_content_embeddings()`,
-`upload_file_to_source()` and `upload_file_to_content()` — do not use a supplied
-`http_client` at all, so nothing it carries reaches them. An account pinned
-server-side can still be
+else. An account pinned server-side can still be
 newer than this release — `get_api_version()` reports the `effective_version` the
 request resolved to, and comparing it against `LATEST_API_VERSION` is how you
 detect the gap.

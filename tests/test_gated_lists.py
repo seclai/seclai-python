@@ -658,47 +658,40 @@ def dynamic_modes(
 
 
 @pytest.mark.parametrize("mode", ["bearer_provider", "sso"])
-class TestGeneratedClientCredentials:
+class TestTypedMethodCredentials:
     """One credential per name on the typed-method path, from the first call."""
 
     EXPECTED = [("authorization", "Bearer TOKEN"), ("x-account-id", "ACCT")]
 
+    def _transport(self, seen: list[list[tuple[str, str]]]) -> httpx.MockTransport:
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(_credentials(request))
+            return httpx.Response(200, json={"data": [], "pagination": PAGED})
+
+        return httpx.MockTransport(handler)
+
     def test_sync(self, mode: str, dynamic_modes: dict[str, dict[str, Any]]) -> None:
+        seen: list[list[tuple[str, str]]] = []
         client = Seclai(default_headers=SPELLED, **dynamic_modes[mode])
         assert client._options.auth_state.mode == mode
-        for _call in ("first", "second"):
-            http = client._sync_generated_client().get_httpx_client()
-            assert _credentials(http.build_request("GET", "/x")) == self.EXPECTED
+        # Swap only the transport: the headers are the ones the SDK built.
+        client._client._transport = self._transport(seen)
+        client.list_sources()
+        client.list_sources()
+        assert seen == [self.EXPECTED, self.EXPECTED]
         client.close()
 
     async def test_async(
         self, mode: str, dynamic_modes: dict[str, dict[str, Any]]
     ) -> None:
+        seen: list[list[tuple[str, str]]] = []
         client = AsyncSeclai(default_headers=SPELLED, **dynamic_modes[mode])
         assert client._options.auth_state.mode == mode
-        for _call in ("first", "second"):
-            generated = await client._async_generated_client()
-            http = generated.get_async_httpx_client()
-            assert _credentials(http.build_request("GET", "/x")) == self.EXPECTED
-        await client.aclose()
-
-    def test_typed_method_sends_one_of_each(
-        self, mode: str, dynamic_modes: dict[str, dict[str, Any]]
-    ) -> None:
-        seen: list[list[tuple[str, str]]] = []
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            seen.append(_credentials(request))
-            return httpx.Response(200, json={"data": [], "pagination": PAGED})
-
-        client = Seclai(default_headers=SPELLED, **dynamic_modes[mode])
-        generated = client._sync_generated_client()
-        # Swap only the transport: the headers are the ones the SDK built.
-        generated.get_httpx_client()._transport = httpx.MockTransport(handler)
-        client.list_sources()
-        client.list_sources()
+        client._client._transport = self._transport(seen)
+        await client.list_sources()
+        await client.list_sources()
         assert seen == [self.EXPECTED, self.EXPECTED]
-        client.close()
+        await client.aclose()
 
 
 UNKNOWN = "2099-01-01"

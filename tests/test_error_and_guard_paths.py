@@ -17,12 +17,7 @@ _FIELD_DETAIL = {"detail": [{"loc": ["query", "page"], "msg": "bad", "type": "x"
 
 
 def _typed_client(handler: Any) -> Seclai:
-    """A client whose typed (generated-client) methods answer from ``handler``."""
-    client = Seclai(api_key="k")
-    client._generated_client().set_httpx_client(
-        httpx.Client(transport=httpx.MockTransport(handler), base_url=_BASE_URL)
-    )
-    return client
+    return _request_client(handler)
 
 
 def _request_client(handler: Any, **options: Any) -> Seclai:
@@ -93,14 +88,14 @@ class TestTypedMethodErrorBodies:
 
     @pytest.mark.asyncio
     async def test_async_503_html_is_a_status_error(self) -> None:
-        client = AsyncSeclai(api_key="k")
-        client._generated_client().set_async_httpx_client(
-            httpx.AsyncClient(
+        client = AsyncSeclai(
+            api_key="k",
+            http_client=httpx.AsyncClient(
                 transport=httpx.MockTransport(
                     lambda req: httpx.Response(503, text="<html>down</html>")
                 ),
                 base_url=_BASE_URL,
-            )
+            ),
         )
         with pytest.raises(seclai.SeclaiAPIStatusError) as exc:
             await client.list_sources()
