@@ -37,6 +37,7 @@ Async:
         run = await client.run_agent("agent_123", body=...)
 """
 
+import json
 import logging
 import mimetypes
 import os
@@ -140,16 +141,119 @@ def unwrap_items(payload: Any, *legacy_keys: str) -> list[dict[str, Any]]:
     )
 
 
-def _as_page(result: Any) -> dict[str, Any]:
-    """Normalise a version-gated list response to the ``{data, ...}`` envelope.
+#: The flat counters of a list that documents ``total``, ``page`` and ``limit``.
+_PAGE_COUNTERS = ("total", "page", "limit")
 
-    The canonical envelope is passed through untouched, including its
-    ``pagination`` key; the legacy bare array is wrapped so callers can read
-    ``["data"]`` either way and use ``.get("pagination")`` to tell them apart.
+
+def _keyed_list(payload: Any, key: str, flat: tuple[str, ...] = ()) -> dict[str, Any]:
+    """Return a version-gated list as the object its method documents.
+
+    The items sit under ``key`` on either shape and a ``flat`` counter the body
+    lacks is filled from ``pagination``; ``data`` and ``pagination`` stay when
+    the API sent them. Raises `SeclaiError` for a body that is not a list.
     """
-    if isinstance(result, dict):
-        return cast(dict[str, Any], result)
-    return {"data": result}
+    if isinstance(payload, list):
+        return {key: payload}
+    if not isinstance(payload, dict):
+        raise SeclaiError(
+            f"Unrecognised list response: expected a list or object, "
+            f"got {type(payload).__name__}."
+        )
+    if isinstance(payload.get("data"), list):
+        items = payload["data"]
+    elif isinstance(payload.get(key), list):
+        items = payload[key]
+    elif "data" in payload and payload["data"] is None:
+        items = []
+    else:
+        expected = ", ".join(repr(k) for k in dict.fromkeys(("data", key)))
+        raise SeclaiError(
+            f"Unrecognised list response: expected a bare array or an object "
+            f"with a list under one of {expected}, got keys {sorted(payload)}."
+        )
+    body: dict[str, Any] = {**payload, key: items}
+    pagination = body.get("pagination")
+    if isinstance(pagination, dict):
+        for counter in flat:
+            if counter not in body and counter in pagination:
+                body[counter] = pagination[counter]
+    return body
+
+
+class _PageWalk:
+    """The stopping rule of ``paginate()``, fed one response at a time."""
+
+    def __init__(self, *, limit: int, param_style: str) -> None:
+        if param_style not in ("page", "offset"):
+            raise ValueError(
+                f"param_style must be 'page' or 'offset', not {param_style!r}"
+            )
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+            raise ValueError(f"limit must be a positive integer, not {limit!r}")
+        self.finished = False
+        self._limit = limit
+        self._param_style = param_style
+        self._page = 1
+        self._yielded = 0
+        self._previous: str | None = None
+
+    def _next_params(self) -> dict[str, int]:
+        """The query parameters that ask for the next page."""
+        if self._param_style == "offset":
+            # Items consumed, not pages × limit: they differ when the endpoint
+            # returns more than `limit` per page.
+            return {"offset": self._yielded, "limit": self._limit}
+        return {"page": self._page, "limit": self._limit}
+
+    def _accept(self, result: Any, items_key: str) -> list[dict[str, Any]] | None:
+        """Return the page's items to yield, or ``None`` for a repeated page.
+
+        Raises `SeclaiError` when a repeated page says more items exist.
+        """
+        items = unwrap_items(result, items_key)
+        # Serialised before the caller sees the items, so mutating them later
+        # cannot change what the next page is compared with.
+        snapshot = json.dumps(items, sort_keys=True, default=repr)
+        pagination = result.get("pagination") if isinstance(result, dict) else None
+        if not isinstance(pagination, dict):
+            pagination = {}
+        has_next = pagination.get("has_next")
+        flat_total = result.get("total") if isinstance(result, dict) else None
+        total = next(
+            (
+                value
+                for value in (pagination.get("total"), flat_total)
+                # `bool` is an `int`; a `True` total would read as 1.
+                if isinstance(value, int) and not isinstance(value, bool)
+            ),
+            None,
+        )
+        if snapshot == self._previous:
+            if has_next is True or (total is not None and total > self._yielded):
+                other = "offset" if self._param_style == "page" else "page"
+                raise SeclaiError(
+                    f"The endpoint returned the same page for a different "
+                    f"{self._param_style!r} value while reporting more items. It "
+                    f"probably pages by {other!r}: pass param_style={other!r}."
+                )
+            return None
+        end = (self._page - 1) * self._limit + len(items)
+        self._yielded += len(items)
+        more_reported = has_next is True or (
+            total is not None and total > self._yielded
+        )
+        self.finished = (
+            isinstance(result, list)
+            or len(items) < self._limit
+            # Longer than asked: the endpoint ignored `limit`. That is the whole
+            # collection unless the body itself says more exist.
+            or (len(items) > self._limit and not more_reported)
+            or has_next is False
+            or (total is not None and end >= total)
+        )
+        self._previous = snapshot
+        self._page += 1
+        return items
 
 
 def _empty_page(*, page: int, limit: int) -> dict[str, Any]:
@@ -383,6 +487,7 @@ def _merge_request_headers(
     *,
     options: ClientOptions,
     request_headers: Mapping[str, str] | None,
+    client_headers: httpx.Headers | None = None,
 ) -> dict[str, str]:
     """Merge client default headers with per-request overrides including dynamic auth."""
     merged = _build_default_headers(
@@ -401,6 +506,7 @@ def _merge_request_headers(
         _merge_headers(merged, auth_headers)
     _validate_request_version(options, request_headers)
     _merge_headers(merged, request_headers)
+    _validate_client_version(options, merged, client_headers)
     return merged
 
 
@@ -408,6 +514,7 @@ async def _merge_request_headers_async(
     *,
     options: ClientOptions,
     request_headers: Mapping[str, str] | None,
+    client_headers: httpx.Headers | None = None,
 ) -> dict[str, str]:
     """Merge client default headers with per-request overrides including dynamic auth (async)."""
     merged = _build_default_headers(
@@ -426,6 +533,7 @@ async def _merge_request_headers_async(
         _merge_headers(merged, auth_headers)
     _validate_request_version(options, request_headers)
     _merge_headers(merged, request_headers)
+    _validate_client_version(options, merged, client_headers)
     return merged
 
 
@@ -504,6 +612,42 @@ def _validate_request_version(
         )
     except ValueError as e:
         raise SeclaiConfigurationError(f"{e} (via headers['Seclai-Version'])") from e
+
+
+def _validate_client_version(
+    options: ClientOptions,
+    headers: Mapping[str, str],
+    client_headers: httpx.Headers | None,
+) -> None:
+    """Apply the unknown-version guard to a ``Seclai-Version`` the httpx client carries.
+
+    httpx sends its client's default only when ``headers`` does not set one.
+    """
+    if client_headers is None or "seclai-version" not in client_headers:
+        return
+    if any(key.lower() == "seclai-version" for key in headers):
+        return
+    try:
+        validate_api_version(
+            client_headers["seclai-version"],
+            allow_unknown=options.allow_unknown_api_version,
+        )
+    except ValueError as e:
+        raise SeclaiConfigurationError(
+            f"{e} (via http_client.headers['Seclai-Version'])"
+        ) from e
+
+
+def _with_auth_headers(
+    client: GeneratedClient, auth_headers: Mapping[str, str]
+) -> GeneratedClient:
+    """Add headers as ``with_headers`` does, replacing one whatever its spelling."""
+    evolved = client.with_headers(dict(auth_headers))
+    replaced = {name.lower() for name in auth_headers}
+    for name in [k for k in evolved._headers if k not in auth_headers]:
+        if name.lower() in replaced:
+            del evolved._headers[name]
+    return evolved
 
 
 class _SeclaiBase:
@@ -675,7 +819,7 @@ class _SeclaiBase:
             # original instance (preserving any user-set httpx client) but
             # store the evolved copy so get_httpx_client() will use the
             # refreshed headers when it lazily creates an httpx.Client.
-            evolved = gc.with_headers(auth_headers)
+            evolved = _with_auth_headers(gc, auth_headers)
             self._generated_client_instance = evolved
             # Re-attach the existing httpx client to the evolved instance
             # so pre-configured transports (e.g. in tests) aren't lost.
@@ -705,7 +849,7 @@ class _SeclaiBase:
                 raise SeclaiConfigurationError(
                     f"Auth resolution failed: {exc}"
                 ) from exc
-            evolved = gc.with_headers(auth_headers)
+            evolved = _with_auth_headers(gc, auth_headers)
             self._generated_client_instance = evolved
             if gc._async_client is not None:
                 evolved.set_async_httpx_client(gc._async_client)
@@ -820,7 +964,11 @@ class Seclai(_SeclaiBase):
             timeout: Request timeout (seconds).
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
-            http_client: Optional pre-configured ``httpx.Client`` to use.
+            http_client: Optional pre-configured ``httpx.Client`` to use. A
+                ``Seclai-Version`` among its default headers is checked as one
+                in ``default_headers`` is, at construction and on each request.
+                The typed methods that go through the generated client do not
+                use this client.
             profile: SSO profile name from ``~/.seclai/config``.
             config_dir: Override the config directory path.
             auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
@@ -852,6 +1000,10 @@ class Seclai(_SeclaiBase):
             headers=self._default_headers(),
         )
         self._owns_client = http_client is None
+        if http_client is not None:
+            _validate_client_version(
+                self._options, self._default_headers(), http_client.headers
+            )
 
     def close(self) -> None:
         """Close underlying HTTP resources owned by this client.
@@ -911,7 +1063,9 @@ class Seclai(_SeclaiBase):
             params=params,
             json=json,
             headers=_merge_request_headers(
-                options=self._options, request_headers=headers
+                options=self._options,
+                client_headers=self._client.headers,
+                request_headers=headers,
             ),
         )
         _raise_for_status(response)
@@ -1009,7 +1163,9 @@ class Seclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs/stream"
 
         merged_headers = _merge_request_headers(
-            options=self._options, request_headers=headers
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=headers,
         )
         _setdefault_header(merged_headers, "accept", "text/event-stream")
 
@@ -1944,13 +2100,10 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
 
         Returns:
-            The calling agents; each must be disabled before this agent can be paused.
-
+            The calling agents, as a list on every API version; each must be
+            disabled before this agent can be paused.
         """
-        return cast(
-            list[dict[str, Any]],
-            self.request("GET", f"/agents/{agent_id}/callers"),
-        )
+        return unwrap_items(self.request("GET", f"/agents/{agent_id}/callers"))
 
     # ── Agent Export ────────────────────────────────────────────────────────────
 
@@ -2103,7 +2256,9 @@ class Seclai(_SeclaiBase):
                 f"/agents/{agent_id}/upload-input",
                 files={"file": payload},
                 headers=_merge_request_headers(
-                    options=self._options, request_headers=None
+                    options=self._options,
+                    client_headers=self._client.headers,
+                    request_headers=None,
                 ),
             )
             _raise_for_status(response)
@@ -2186,7 +2341,11 @@ class Seclai(_SeclaiBase):
             "GET",
             f"/v2/agent-runs/{run_id}/attachments/{attachment_id}",
             params=_strip_none({"download_name": download_name}),
-            headers=_merge_request_headers(options=self._options, request_headers=None),
+            headers=_merge_request_headers(
+                options=self._options,
+                client_headers=self._client.headers,
+                request_headers=None,
+            ),
         )
         response = self._client.send(request, stream=True)
         if response.is_error:
@@ -2357,7 +2516,7 @@ class Seclai(_SeclaiBase):
             f"/agents/{agent_id}/evaluation-criteria",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        return _as_page(result)
+        return _keyed_list(result, "data")
 
     def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -2454,15 +2613,19 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation results.
+            The page of results under ``data`` with ``total``, ``page`` and
+            ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/results",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     def create_evaluation_result(
@@ -2497,15 +2660,19 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated list of compatible runs.
+            The page of compatible runs under ``data`` with ``total``, ``page`` and
+            ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     def test_draft_evaluation(
@@ -2540,15 +2707,19 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation results with criteria.
+            The page of results with their criteria under ``data`` with ``total``,
+            ``page`` and ``limit``, on every API version. Once the client opts in
+            with ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-results",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     def list_run_evaluation_results(
@@ -2595,7 +2766,7 @@ class Seclai(_SeclaiBase):
             f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        return _as_page(result)
+        return _keyed_list(result, "data")
 
     def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -2608,15 +2779,19 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation run summaries.
+            The page of run summaries under ``data`` with ``total``, ``page`` and
+            ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-runs",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
@@ -2661,11 +2836,11 @@ class Seclai(_SeclaiBase):
             offset: Rows to skip.
 
         Returns:
-            The page of opt-outs plus the total count.
-
+            The page of opt-outs under ``items`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 "/agents/agent-email-optouts",
@@ -2673,6 +2848,8 @@ class Seclai(_SeclaiBase):
                     {"agent_id": agent_id, "limit": limit, "offset": offset}
                 ),
             ),
+            "items",
+            ("total",),
         )
 
     def remove_agent_email_optout(self, optout_id: str) -> None:
@@ -2697,16 +2874,19 @@ class Seclai(_SeclaiBase):
             offset: Rows to skip.
 
         Returns:
-            The page of blocked senders plus ``auto_block_mode``.
-
+            The page of blocked senders under ``items`` with ``total`` and
+            ``auto_block_mode``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 "/agents/blocked-email-senders",
                 params=_strip_none({"limit": limit, "offset": offset}),
             ),
+            "items",
+            ("total",),
         )
 
     def block_email_sender(self, body: dict[str, Any]) -> dict[str, Any]:
@@ -2741,12 +2921,16 @@ class Seclai(_SeclaiBase):
             body: ``mode``: ``disabled``, ``input``, or ``input_and_output``.
 
         Returns:
-            The updated blocked-sender list.
-
+            The first 50 blocked senders under ``items`` with ``auto_block_mode``,
+            on every API version. ``total`` is the account's count by default, and
+            the number of rows returned once the client opts in with
+            ``api_version="2026-07-27"`` or later, where the response also carries
+            ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request("PUT", "/agents/blocked-email-senders/mode", json=body),
+            "items",
+            ("total",),
         )
 
     def list_inbound_email_rejections(
@@ -2762,16 +2946,14 @@ class Seclai(_SeclaiBase):
             limit: Maximum results (1-200, default 50).
 
         Returns:
-            The discarded inbound emails.
-
+            The discarded inbound emails, as a list on every API version.
         """
-        return cast(
-            list[dict[str, Any]],
+        return unwrap_items(
             self.request(
                 "GET",
                 "/agents/inbound-email-rejections",
                 params=_strip_none({"agent_id": agent_id, "limit": limit}),
-            ),
+            )
         )
 
     def get_inbound_email_status(self) -> dict[str, Any]:
@@ -2855,10 +3037,12 @@ class Seclai(_SeclaiBase):
             order: Sort order (``"asc"`` or ``"desc"``).
 
         Returns:
-            Paginated list of knowledge bases.
+            The page of knowledge bases under ``knowledge_bases`` with ``total``,
+            ``page`` and ``limit``, on every API version. Once the client opts in
+            with ``api_version="2026-07-27"`` or later the response also carries
+            ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 "/knowledge_bases",
@@ -2866,6 +3050,8 @@ class Seclai(_SeclaiBase):
                     {"page": page, "limit": limit, "sort": sort, "order": order}
                 ),
             ),
+            "knowledge_bases",
+            _PAGE_COUNTERS,
         )
 
     def create_knowledge_base(self, body: dict[str, Any]) -> dict[str, Any]:
@@ -2944,10 +3130,12 @@ class Seclai(_SeclaiBase):
             order: Sort order (``"asc"`` or ``"desc"``).
 
         Returns:
-            Paginated list of memory banks.
+            The page of memory banks under ``memory_banks`` with ``total``, ``page``
+            and ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 "/memory_banks",
@@ -2955,6 +3143,8 @@ class Seclai(_SeclaiBase):
                     {"page": page, "limit": limit, "sort": sort, "order": order}
                 ),
             ),
+            "memory_banks",
+            _PAGE_COUNTERS,
         )
 
     def create_memory_bank(self, body: dict[str, Any]) -> dict[str, Any]:
@@ -3021,9 +3211,12 @@ class Seclai(_SeclaiBase):
             memory_bank_id: Memory bank identifier.
 
         Returns:
-            List of agents using this memory bank.
+            The agents using this memory bank, as a list on every API version.
         """
-        return self.request("GET", f"/memory_banks/{memory_bank_id}/agents")
+        return cast(
+            JSONValue,
+            unwrap_items(self.request("GET", f"/memory_banks/{memory_bank_id}/agents")),
+        )
 
     def get_memory_bank_stats(self, memory_bank_id: str) -> JSONValue:
         """Get statistics for a memory bank.
@@ -3095,9 +3288,11 @@ class Seclai(_SeclaiBase):
         """List available memory bank templates.
 
         Returns:
-            Available templates.
+            The available templates, as a list on every API version.
         """
-        return self.request("GET", "/memory_banks/templates")
+        return cast(
+            JSONValue, unwrap_items(self.request("GET", "/memory_banks/templates"))
+        )
 
     def generate_memory_bank_config(self, body: dict[str, Any]) -> dict[str, Any]:
         """Use the AI assistant to generate memory bank configuration.
@@ -3402,7 +3597,11 @@ class Seclai(_SeclaiBase):
         request = self._client.build_request(
             "GET",
             f"/sources/{source_id}/exports/{export_id}/download",
-            headers=_merge_request_headers(options=self._options, request_headers=None),
+            headers=_merge_request_headers(
+                options=self._options,
+                client_headers=self._client.headers,
+                request_headers=None,
+            ),
         )
         response = self._client.send(request, stream=True)
         if response.is_error:
@@ -3729,14 +3928,13 @@ class Seclai(_SeclaiBase):
             solution_id: Solution identifier.
 
         Returns:
-            List of conversations.
+            The conversation turns, as a list on every API version.
         """
-        return cast(
-            list[dict[str, Any]],
+        return unwrap_items(
             self.request(
                 "GET",
                 f"/solutions/{solution_id}/conversations",
-            ),
+            )
         )
 
     def add_solution_conversation_turn(
@@ -3897,14 +4095,13 @@ class Seclai(_SeclaiBase):
         """List governance AI assistant conversations.
 
         Returns:
-            List of governance conversations.
+            The governance conversations, as a list on every API version.
         """
-        return cast(
-            list[dict[str, Any]],
+        return unwrap_items(
             self.request(
                 "GET",
                 "/governance/ai-assistant/conversations",
-            ),
+            )
         )
 
     def accept_governance_ai_plan(self, conversation_id: str) -> dict[str, Any]:
@@ -4028,21 +4225,25 @@ class Seclai(_SeclaiBase):
         """List alert configurations.
 
         Args:
-            page: Page number (1-indexed).
-            limit: Items per page.
+            page: Page number (1-indexed). **Ignored** unless the client opts in
+                with ``api_version="2026-07-27"`` or later — by default the
+                response is unpaginated and always contains every configuration.
+            limit: Items per page. Ignored by default, as above.
 
         Returns:
-            The configurations, under ``configs`` alongside ``total`` by default,
-            and under ``data`` with ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(client.list_alert_configs(), "configs")
+            The configurations under ``configs`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``. It is then
+            one page rather than every configuration.
         """
-        return self.request(
-            "GET",
-            "/alerts/configs",
-            params=_strip_none({"page": page, "limit": limit}),
+        return _keyed_list(
+            self.request(
+                "GET",
+                "/alerts/configs",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+            "configs",
+            ("total",),
         )
 
     def create_alert_config(self, body: dict[str, Any]) -> JSONValue:
@@ -4093,14 +4294,17 @@ class Seclai(_SeclaiBase):
         """List organization alert preferences.
 
         Returns:
-            Alert preferences for the organization.
+            The preferences under ``preferences`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 "/alerts/organization-preferences/list",
             ),
+            "preferences",
+            ("total",),
         )
 
     def update_organization_alert_preference(
@@ -4134,20 +4338,21 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            The alerts, under ``alerts`` alongside ``total`` by default, and under
-            ``data`` with ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(client.list_model_alerts(), "alerts")
+            The alerts under ``alerts`` with ``total``, on every API version. Once
+            the client opts in with ``api_version="2026-07-27"`` or later the
+            response also carries ``data`` and ``pagination``.
         """
         # `offset` is declared `minimum: 0`, so a defensive caller passing page=0
         # would turn a previously-ignored parameter into a hard 422.
         offset = max(page - 1, 0) * limit
-        return self.request(
-            "GET",
-            "/models/alerts",
-            params=_strip_none({"offset": offset, "limit": limit}),
+        return _keyed_list(
+            self.request(
+                "GET",
+                "/models/alerts",
+                params=_strip_none({"offset": offset, "limit": limit}),
+            ),
+            "alerts",
+            ("total",),
         )
 
     def mark_all_model_alerts_read(self) -> None:
@@ -4198,17 +4403,22 @@ class Seclai(_SeclaiBase):
             supports_thinking: Filter to models that support extended thinking.
 
         Returns:
-            List of provider groups with their models.
+            The provider groups with their models, as a list on every API version.
         """
-        return self.request(
-            "GET",
-            "/models",
-            params=_strip_none(
-                {
-                    "provider": provider,
-                    "supports_tool_use": supports_tool_use,
-                    "supports_thinking": supports_thinking,
-                }
+        return cast(
+            JSONValue,
+            unwrap_items(
+                self.request(
+                    "GET",
+                    "/models",
+                    params=_strip_none(
+                        {
+                            "provider": provider,
+                            "supports_tool_use": supports_tool_use,
+                            "supports_thinking": supports_thinking,
+                        }
+                    ),
+                )
             ),
         )
 
@@ -4228,14 +4438,11 @@ class Seclai(_SeclaiBase):
 
         Returns:
             Each ``(modality, tier)`` mapped to its generator, credits, and price
-            label — under ``tiers`` by default, and under ``data`` with
-            ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(client.get_generation_tiers(), "tiers")
+            label, under ``tiers`` on every API version. Once the client opts in
+            with ``api_version="2026-07-27"`` or later the response also carries
+            ``data`` and ``pagination``.
         """
-        return cast(dict[str, Any], self.request("GET", "/models/generation-tiers"))
+        return _keyed_list(self.request("GET", "/models/generation-tiers"), "tiers")
 
     def list_embedding_models(
         self, *, supports_input_media: str | None = None
@@ -4247,36 +4454,30 @@ class Seclai(_SeclaiBase):
                 modality.
 
         Returns:
-            The embedders under ``models`` by default, and under ``data`` with
-            ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later; the defaults and pricing sit
-            beside them on either shape. Read the list with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(client.list_embedding_models(), "models")
+            The embedders under ``models`` on every API version, with the defaults
+            and pricing beside them. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             self.request(
                 "GET",
                 "/models/embedders",
                 params=_strip_none({"supports_input_media": supports_input_media}),
             ),
+            "models",
         )
 
     def list_reranker_models(self) -> dict[str, Any]:
         """List the reranker models a knowledge base can use, and their pricing.
 
         Returns:
-            The rerankers under ``models`` by default, and under ``data`` with
-            ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later; the default and pricing sit
-            beside them on either shape. Read the list with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(client.list_reranker_models(), "models")
+            The rerankers under ``models`` on every API version, with the default
+            and pricing beside them. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(dict[str, Any], self.request("GET", "/models/rerankers"))
+        return _keyed_list(self.request("GET", "/models/rerankers"), "models")
 
     # ── Model Playground Experiments ──────────────────────────────────────────
 
@@ -4299,25 +4500,26 @@ class Seclai(_SeclaiBase):
             offset: Pagination offset.
 
         Returns:
-            The experiments, under ``experiments`` alongside ``total`` by default,
-            and under ``data`` with ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(client.list_experiments(), "experiments")
+            The experiments under ``experiments`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``.
         """
-        return self.request(
-            "GET",
-            "/models/playground/experiments",
-            params=_strip_none(
-                {
-                    "days": days,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "limit": limit,
-                    "offset": offset,
-                }
+        return _keyed_list(
+            self.request(
+                "GET",
+                "/models/playground/experiments",
+                params=_strip_none(
+                    {
+                        "days": days,
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "limit": limit,
+                        "offset": offset,
+                    }
+                ),
             ),
+            "experiments",
+            ("total",),
         )
 
     def create_experiment(self, body: dict[str, Any]) -> JSONValue:
@@ -4505,10 +4707,12 @@ class Seclai(_SeclaiBase):
         """List the account's agent-email domains and plan capabilities.
 
         Returns:
-            Domains with verification status and required DNS records.
-
+            The domains under ``domains`` with verification status and required DNS
+            records, and the plan capabilities beside them, on every API version.
+            Once the client opts in with ``api_version="2026-07-27"`` or later the
+            response also carries ``data`` and ``pagination``.
         """
-        return cast(dict[str, Any], self.request("GET", "/email-domains"))
+        return _keyed_list(self.request("GET", "/email-domains"), "domains")
 
     def add_email_domain(self, body: dict[str, Any]) -> dict[str, Any]:
         """Add and provision a vanity or custom agent-email domain.
@@ -4804,55 +5008,55 @@ class Seclai(_SeclaiBase):
         """Auto-paginate a list endpoint.
 
         Yields individual items from each page.
-        Stops when a page returns fewer items than ``limit`` or the items list is empty.
+
+        The walk ends after a page that is a bare array, that is short or
+        empty, that reports ``pagination.has_next`` false, or that reaches the
+        ``total`` the body reports. A page holding more than ``limit`` items
+        also ends it — the endpoint ignored ``limit`` and returned everything —
+        unless the body itself says more exist.
+
+        A page identical to the one before it is never yielded: the endpoint
+        did not advance for the cursor it was sent. If that page reports more
+        items (``has_next`` true, or a ``total`` above the number yielded) the
+        walk raises `SeclaiError` rather than return a short result; if it
+        reports no paging information the walk ends quietly. Two consecutive
+        pages that are legitimately identical cannot be told apart from that,
+        and are treated the same way.
 
         Args:
             method: HTTP method (typically ``"GET"``).
             path: API path.
             params: Extra query parameters (the cursor and ``limit`` are managed
                 automatically).
-            limit: Items per page.
+            limit: Items per page, a positive integer.
             items_key: Per-resource key the items sit under when the response
                 is not the ``data`` envelope, which is always read first.
             param_style: ``"page"`` (default) sends a 1-indexed ``page``;
                 ``"offset"`` sends a 0-based ``offset``. A few endpoints —
-                ``/models/alerts`` among them — declare only ``offset`` and
-                reject or ignore ``page``, which makes every request after the
-                first return page 1.
+                ``/models/alerts`` among them — declare only ``offset``. They
+                ignore ``page`` by default, which the walk reports as an error
+                on the second page, and reject it with a 422 once the client
+                opts in with ``api_version="2026-07-27"`` or later.
 
         Yields:
             Individual item dicts from each page.
 
         Raises:
-            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``.
+            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``,
+                or ``limit`` is not a positive integer.
             SeclaiError: If a page is neither a list nor an object carrying
-                ``data`` or ``items_key``.
+                ``data`` or ``items_key``, or if the endpoint returns the same
+                page twice while reporting more items.
         """
-        if param_style not in ("page", "offset"):
-            raise ValueError(
-                f"param_style must be 'page' or 'offset', not {param_style!r}"
-            )
-        page = 1
+        walk = _PageWalk(limit=limit, param_style=param_style)
         base_params = dict(params) if params else {}
-        while True:
-            if param_style == "offset":
-                base_params["offset"] = (page - 1) * limit
-            else:
-                base_params["page"] = page
-            base_params["limit"] = limit
+        while not walk.finished:
+            base_params.update(walk._next_params())
             result = self.request(method, path, params=base_params)
-            # A bare array is an unpaginated response: it is everything, so
-            # asking for a second page would return the same items again.
-            if isinstance(result, list):
-                for item in result:
-                    yield cast(dict[str, Any], item)
+            items = walk._accept(result, items_key)
+            if items is None:
                 return
-            items = unwrap_items(result, items_key)
-            for item in items:
-                yield item
-            if len(items) < limit:
-                return
-            page += 1
+            yield from items
 
     # ── High-level Abstractions ───────────────────────────────────────────────
 
@@ -4921,7 +5125,9 @@ class Seclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs/stream"
         merged_headers = _merge_request_headers(
-            options=self._options, request_headers=headers
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=headers,
         )
         _setdefault_header(merged_headers, "accept", "text/event-stream")
         timeout_seconds = self._options.timeout if timeout is None else timeout
@@ -5064,7 +5270,11 @@ class AsyncSeclai(_SeclaiBase):
             timeout: Request timeout (seconds).
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
-            http_client: Optional pre-configured ``httpx.AsyncClient`` to use.
+            http_client: Optional pre-configured ``httpx.AsyncClient`` to use. A
+                ``Seclai-Version`` among its default headers is checked as one
+                in ``default_headers`` is, at construction and on each request.
+                The typed methods that go through the generated client do not
+                use this client.
             profile: SSO profile name from ``~/.seclai/config``.
             config_dir: Override the config directory path.
             auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
@@ -5096,6 +5306,10 @@ class AsyncSeclai(_SeclaiBase):
             headers=self._default_headers(),
         )
         self._owns_client = http_client is None
+        if http_client is not None:
+            _validate_client_version(
+                self._options, self._default_headers(), http_client.headers
+            )
 
     async def aclose(self) -> None:
         """Close underlying HTTP resources owned by this client.
@@ -5155,7 +5369,9 @@ class AsyncSeclai(_SeclaiBase):
             params=params,
             json=json,
             headers=await _merge_request_headers_async(
-                options=self._options, request_headers=headers
+                options=self._options,
+                client_headers=self._client.headers,
+                request_headers=headers,
             ),
         )
         _raise_for_status(response)
@@ -5238,7 +5454,9 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs/stream"
 
         merged_headers = await _merge_request_headers_async(
-            options=self._options, request_headers=headers
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=headers,
         )
         _setdefault_header(merged_headers, "accept", "text/event-stream")
 
@@ -6181,13 +6399,10 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
 
         Returns:
-            The calling agents; each must be disabled before this agent can be paused.
-
+            The calling agents, as a list on every API version; each must be
+            disabled before this agent can be paused.
         """
-        return cast(
-            list[dict[str, Any]],
-            await self.request("GET", f"/agents/{agent_id}/callers"),
-        )
+        return unwrap_items(await self.request("GET", f"/agents/{agent_id}/callers"))
 
     # ── Agent Export ──────────────────────────────────────────────────────────
 
@@ -6349,7 +6564,9 @@ class AsyncSeclai(_SeclaiBase):
                 f"/agents/{agent_id}/upload-input",
                 files={"file": payload},
                 headers=await _merge_request_headers_async(
-                    options=self._options, request_headers=None
+                    options=self._options,
+                    client_headers=self._client.headers,
+                    request_headers=None,
                 ),
             )
             _raise_for_status(response)
@@ -6429,7 +6646,9 @@ class AsyncSeclai(_SeclaiBase):
             A streaming ``httpx.Response``. Must be closed by the caller.
         """
         headers = await _merge_request_headers_async(
-            options=self._options, request_headers=None
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=None,
         )
         request = self._client.build_request(
             "GET",
@@ -6606,7 +6825,7 @@ class AsyncSeclai(_SeclaiBase):
             f"/agents/{agent_id}/evaluation-criteria",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        return _as_page(result)
+        return _keyed_list(result, "data")
 
     async def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -6703,15 +6922,19 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation results.
+            The page of results under ``data`` with ``total``, ``page`` and
+            ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/results",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     async def create_evaluation_result(
@@ -6746,15 +6969,19 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated list of compatible runs.
+            The page of compatible runs under ``data`` with ``total``, ``page`` and
+            ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     async def test_draft_evaluation(
@@ -6789,15 +7016,19 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation results with criteria.
+            The page of results with their criteria under ``data`` with ``total``,
+            ``page`` and ``limit``, on every API version. Once the client opts in
+            with ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-results",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     async def list_run_evaluation_results(
@@ -6844,7 +7075,7 @@ class AsyncSeclai(_SeclaiBase):
             f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        return _as_page(result)
+        return _keyed_list(result, "data")
 
     async def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -6857,15 +7088,19 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            Paginated evaluation run summaries.
+            The page of run summaries under ``data`` with ``total``, ``page`` and
+            ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries
+            ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-runs",
                 params=_strip_none({"page": page, "limit": limit}),
             ),
+            "data",
+            _PAGE_COUNTERS,
         )
 
     async def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
@@ -6910,11 +7145,11 @@ class AsyncSeclai(_SeclaiBase):
             offset: Rows to skip.
 
         Returns:
-            The page of opt-outs plus the total count.
-
+            The page of opt-outs under ``items`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 "/agents/agent-email-optouts",
@@ -6922,6 +7157,8 @@ class AsyncSeclai(_SeclaiBase):
                     {"agent_id": agent_id, "limit": limit, "offset": offset}
                 ),
             ),
+            "items",
+            ("total",),
         )
 
     async def remove_agent_email_optout(self, optout_id: str) -> None:
@@ -6946,16 +7183,19 @@ class AsyncSeclai(_SeclaiBase):
             offset: Rows to skip.
 
         Returns:
-            The page of blocked senders plus ``auto_block_mode``.
-
+            The page of blocked senders under ``items`` with ``total`` and
+            ``auto_block_mode``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 "/agents/blocked-email-senders",
                 params=_strip_none({"limit": limit, "offset": offset}),
             ),
+            "items",
+            ("total",),
         )
 
     async def block_email_sender(self, body: dict[str, Any]) -> dict[str, Any]:
@@ -6990,12 +7230,16 @@ class AsyncSeclai(_SeclaiBase):
             body: ``mode``: ``disabled``, ``input``, or ``input_and_output``.
 
         Returns:
-            The updated blocked-sender list.
-
+            The first 50 blocked senders under ``items`` with ``auto_block_mode``,
+            on every API version. ``total`` is the account's count by default, and
+            the number of rows returned once the client opts in with
+            ``api_version="2026-07-27"`` or later, where the response also carries
+            ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request("PUT", "/agents/blocked-email-senders/mode", json=body),
+            "items",
+            ("total",),
         )
 
     async def list_inbound_email_rejections(
@@ -7011,16 +7255,14 @@ class AsyncSeclai(_SeclaiBase):
             limit: Maximum results (1-200, default 50).
 
         Returns:
-            The discarded inbound emails.
-
+            The discarded inbound emails, as a list on every API version.
         """
-        return cast(
-            list[dict[str, Any]],
+        return unwrap_items(
             await self.request(
                 "GET",
                 "/agents/inbound-email-rejections",
                 params=_strip_none({"agent_id": agent_id, "limit": limit}),
-            ),
+            )
         )
 
     async def get_inbound_email_status(self) -> dict[str, Any]:
@@ -7107,10 +7349,12 @@ class AsyncSeclai(_SeclaiBase):
             order: Sort order (``"asc"`` or ``"desc"``).
 
         Returns:
-            Paginated list of knowledge bases.
+            The page of knowledge bases under ``knowledge_bases`` with ``total``,
+            ``page`` and ``limit``, on every API version. Once the client opts in
+            with ``api_version="2026-07-27"`` or later the response also carries
+            ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 "/knowledge_bases",
@@ -7118,6 +7362,8 @@ class AsyncSeclai(_SeclaiBase):
                     {"page": page, "limit": limit, "sort": sort, "order": order}
                 ),
             ),
+            "knowledge_bases",
+            _PAGE_COUNTERS,
         )
 
     async def create_knowledge_base(self, body: dict[str, Any]) -> dict[str, Any]:
@@ -7198,10 +7444,12 @@ class AsyncSeclai(_SeclaiBase):
             order: Sort order (``"asc"`` or ``"desc"``).
 
         Returns:
-            Paginated list of memory banks.
+            The page of memory banks under ``memory_banks`` with ``total``, ``page``
+            and ``limit``, on every API version. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 "/memory_banks",
@@ -7209,6 +7457,8 @@ class AsyncSeclai(_SeclaiBase):
                     {"page": page, "limit": limit, "sort": sort, "order": order}
                 ),
             ),
+            "memory_banks",
+            _PAGE_COUNTERS,
         )
 
     async def create_memory_bank(self, body: dict[str, Any]) -> dict[str, Any]:
@@ -7277,9 +7527,14 @@ class AsyncSeclai(_SeclaiBase):
             memory_bank_id: Memory bank identifier.
 
         Returns:
-            List of agents using this memory bank.
+            The agents using this memory bank, as a list on every API version.
         """
-        return await self.request("GET", f"/memory_banks/{memory_bank_id}/agents")
+        return cast(
+            JSONValue,
+            unwrap_items(
+                await self.request("GET", f"/memory_banks/{memory_bank_id}/agents")
+            ),
+        )
 
     async def get_memory_bank_stats(self, memory_bank_id: str) -> JSONValue:
         """Get statistics for a memory bank.
@@ -7353,9 +7608,12 @@ class AsyncSeclai(_SeclaiBase):
         """List available memory bank templates.
 
         Returns:
-            Available templates.
+            The available templates, as a list on every API version.
         """
-        return await self.request("GET", "/memory_banks/templates")
+        return cast(
+            JSONValue,
+            unwrap_items(await self.request("GET", "/memory_banks/templates")),
+        )
 
     async def generate_memory_bank_config(self, body: dict[str, Any]) -> dict[str, Any]:
         """Use the AI assistant to generate memory bank configuration.
@@ -7666,7 +7924,9 @@ class AsyncSeclai(_SeclaiBase):
             A streaming ``httpx.Response``. Must be closed by the caller.
         """
         headers = await _merge_request_headers_async(
-            options=self._options, request_headers=None
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=None,
         )
         request = self._client.build_request(
             "GET",
@@ -8004,14 +8264,13 @@ class AsyncSeclai(_SeclaiBase):
             solution_id: Solution identifier.
 
         Returns:
-            List of conversations.
+            The conversation turns, as a list on every API version.
         """
-        return cast(
-            list[dict[str, Any]],
+        return unwrap_items(
             await self.request(
                 "GET",
                 f"/solutions/{solution_id}/conversations",
-            ),
+            )
         )
 
     async def add_solution_conversation_turn(
@@ -8174,14 +8433,13 @@ class AsyncSeclai(_SeclaiBase):
         """List governance AI assistant conversations.
 
         Returns:
-            List of governance conversations.
+            The governance conversations, as a list on every API version.
         """
-        return cast(
-            list[dict[str, Any]],
+        return unwrap_items(
             await self.request(
                 "GET",
                 "/governance/ai-assistant/conversations",
-            ),
+            )
         )
 
     async def accept_governance_ai_plan(self, conversation_id: str) -> dict[str, Any]:
@@ -8307,21 +8565,25 @@ class AsyncSeclai(_SeclaiBase):
         """List alert configurations.
 
         Args:
-            page: Page number (1-indexed).
-            limit: Items per page.
+            page: Page number (1-indexed). **Ignored** unless the client opts in
+                with ``api_version="2026-07-27"`` or later — by default the
+                response is unpaginated and always contains every configuration.
+            limit: Items per page. Ignored by default, as above.
 
         Returns:
-            The configurations, under ``configs`` alongside ``total`` by default,
-            and under ``data`` with ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(await client.list_alert_configs(), "configs")
+            The configurations under ``configs`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``. It is then
+            one page rather than every configuration.
         """
-        return await self.request(
-            "GET",
-            "/alerts/configs",
-            params=_strip_none({"page": page, "limit": limit}),
+        return _keyed_list(
+            await self.request(
+                "GET",
+                "/alerts/configs",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+            "configs",
+            ("total",),
         )
 
     async def create_alert_config(self, body: dict[str, Any]) -> JSONValue:
@@ -8374,14 +8636,17 @@ class AsyncSeclai(_SeclaiBase):
         """List organization alert preferences.
 
         Returns:
-            Alert preferences for the organization.
+            The preferences under ``preferences`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 "/alerts/organization-preferences/list",
             ),
+            "preferences",
+            ("total",),
         )
 
     async def update_organization_alert_preference(
@@ -8415,20 +8680,21 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
 
         Returns:
-            The alerts, under ``alerts`` alongside ``total`` by default, and under
-            ``data`` with ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(await client.list_model_alerts(), "alerts")
+            The alerts under ``alerts`` with ``total``, on every API version. Once
+            the client opts in with ``api_version="2026-07-27"`` or later the
+            response also carries ``data`` and ``pagination``.
         """
         # `offset` is declared `minimum: 0`, so a defensive caller passing page=0
         # would turn a previously-ignored parameter into a hard 422.
         offset = max(page - 1, 0) * limit
-        return await self.request(
-            "GET",
-            "/models/alerts",
-            params=_strip_none({"offset": offset, "limit": limit}),
+        return _keyed_list(
+            await self.request(
+                "GET",
+                "/models/alerts",
+                params=_strip_none({"offset": offset, "limit": limit}),
+            ),
+            "alerts",
+            ("total",),
         )
 
     async def mark_all_model_alerts_read(self) -> None:
@@ -8479,17 +8745,22 @@ class AsyncSeclai(_SeclaiBase):
             supports_thinking: Filter to models that support extended thinking.
 
         Returns:
-            List of provider groups with their models.
+            The provider groups with their models, as a list on every API version.
         """
-        return await self.request(
-            "GET",
-            "/models",
-            params=_strip_none(
-                {
-                    "provider": provider,
-                    "supports_tool_use": supports_tool_use,
-                    "supports_thinking": supports_thinking,
-                }
+        return cast(
+            JSONValue,
+            unwrap_items(
+                await self.request(
+                    "GET",
+                    "/models",
+                    params=_strip_none(
+                        {
+                            "provider": provider,
+                            "supports_tool_use": supports_tool_use,
+                            "supports_thinking": supports_thinking,
+                        }
+                    ),
+                )
             ),
         )
 
@@ -8509,16 +8780,12 @@ class AsyncSeclai(_SeclaiBase):
 
         Returns:
             Each ``(modality, tier)`` mapped to its generator, credits, and price
-            label — under ``tiers`` by default, and under ``data`` with
-            ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(await client.get_generation_tiers(), "tiers")
+            label, under ``tiers`` on every API version. Once the client opts in
+            with ``api_version="2026-07-27"`` or later the response also carries
+            ``data`` and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
-            await self.request("GET", "/models/generation-tiers"),
+        return _keyed_list(
+            await self.request("GET", "/models/generation-tiers"), "tiers"
         )
 
     async def list_embedding_models(
@@ -8531,36 +8798,30 @@ class AsyncSeclai(_SeclaiBase):
                 modality.
 
         Returns:
-            The embedders under ``models`` by default, and under ``data`` with
-            ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later; the defaults and pricing sit
-            beside them on either shape. Read the list with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(await client.list_embedding_models(), "models")
+            The embedders under ``models`` on every API version, with the defaults
+            and pricing beside them. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(
-            dict[str, Any],
+        return _keyed_list(
             await self.request(
                 "GET",
                 "/models/embedders",
                 params=_strip_none({"supports_input_media": supports_input_media}),
             ),
+            "models",
         )
 
     async def list_reranker_models(self) -> dict[str, Any]:
         """List the reranker models a knowledge base can use, and their pricing.
 
         Returns:
-            The rerankers under ``models`` by default, and under ``data`` with
-            ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later; the default and pricing sit
-            beside them on either shape. Read the list with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(await client.list_reranker_models(), "models")
+            The rerankers under ``models`` on every API version, with the default
+            and pricing beside them. Once the client opts in with
+            ``api_version="2026-07-27"`` or later the response also carries ``data``
+            and ``pagination``.
         """
-        return cast(dict[str, Any], await self.request("GET", "/models/rerankers"))
+        return _keyed_list(await self.request("GET", "/models/rerankers"), "models")
 
     # ── Model Playground Experiments ──────────────────────────────────────────
 
@@ -8583,25 +8844,26 @@ class AsyncSeclai(_SeclaiBase):
             offset: Pagination offset.
 
         Returns:
-            The experiments, under ``experiments`` alongside ``total`` by default,
-            and under ``data`` with ``pagination`` once the client opts in with
-            ``api_version="2026-07-27"`` or later. Read either with
-            :func:`unwrap_items`::
-
-                items = unwrap_items(await client.list_experiments(), "experiments")
+            The experiments under ``experiments`` with ``total``, on every API
+            version. Once the client opts in with ``api_version="2026-07-27"`` or
+            later the response also carries ``data`` and ``pagination``.
         """
-        return await self.request(
-            "GET",
-            "/models/playground/experiments",
-            params=_strip_none(
-                {
-                    "days": days,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "limit": limit,
-                    "offset": offset,
-                }
+        return _keyed_list(
+            await self.request(
+                "GET",
+                "/models/playground/experiments",
+                params=_strip_none(
+                    {
+                        "days": days,
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "limit": limit,
+                        "offset": offset,
+                    }
+                ),
             ),
+            "experiments",
+            ("total",),
         )
 
     async def create_experiment(self, body: dict[str, Any]) -> JSONValue:
@@ -8794,10 +9056,12 @@ class AsyncSeclai(_SeclaiBase):
         """List the account's agent-email domains and plan capabilities.
 
         Returns:
-            Domains with verification status and required DNS records.
-
+            The domains under ``domains`` with verification status and required DNS
+            records, and the plan capabilities beside them, on every API version.
+            Once the client opts in with ``api_version="2026-07-27"`` or later the
+            response also carries ``data`` and ``pagination``.
         """
-        return cast(dict[str, Any], await self.request("GET", "/email-domains"))
+        return _keyed_list(await self.request("GET", "/email-domains"), "domains")
 
     async def add_email_domain(self, body: dict[str, Any]) -> dict[str, Any]:
         """Add and provision a vanity or custom agent-email domain.
@@ -9096,57 +9360,58 @@ class AsyncSeclai(_SeclaiBase):
     ) -> AsyncGenerator[dict[str, Any]]:
         """Auto-paginate a list endpoint, yielding items lazily.
 
-        Fetches pages sequentially until a page returns fewer items than ``limit``
-        or the items list is empty.  Use ``async for item in client.paginate(...):``
+        Fetches pages sequentially; use ``async for item in client.paginate(...):``
         to iterate.
+
+        The walk ends after a page that is a bare array, that is short or
+        empty, that reports ``pagination.has_next`` false, or that reaches the
+        ``total`` the body reports. A page holding more than ``limit`` items
+        also ends it — the endpoint ignored ``limit`` and returned everything —
+        unless the body itself says more exist.
+
+        A page identical to the one before it is never yielded: the endpoint
+        did not advance for the cursor it was sent. If that page reports more
+        items (``has_next`` true, or a ``total`` above the number yielded) the
+        walk raises `SeclaiError` rather than return a short result; if it
+        reports no paging information the walk ends quietly. Two consecutive
+        pages that are legitimately identical cannot be told apart from that,
+        and are treated the same way.
 
         Args:
             method: HTTP method (typically ``"GET"``).
             path: API path.
             params: Extra query parameters (the cursor and ``limit`` are managed
                 automatically).
-            limit: Items per page.
+            limit: Items per page, a positive integer.
             items_key: Per-resource key the items sit under when the response
                 is not the ``data`` envelope, which is always read first.
             param_style: ``"page"`` (default) sends a 1-indexed ``page``;
                 ``"offset"`` sends a 0-based ``offset``. A few endpoints —
-                ``/models/alerts`` among them — declare only ``offset`` and
-                reject or ignore ``page``, which makes every request after the
-                first return page 1.
+                ``/models/alerts`` among them — declare only ``offset``. They
+                ignore ``page`` by default, which the walk reports as an error
+                on the second page, and reject it with a 422 once the client
+                opts in with ``api_version="2026-07-27"`` or later.
 
         Yields:
             Individual items from each page.
 
         Raises:
-            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``.
+            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``,
+                or ``limit`` is not a positive integer.
             SeclaiError: If a page is neither a list nor an object carrying
-                ``data`` or ``items_key``.
+                ``data`` or ``items_key``, or if the endpoint returns the same
+                page twice while reporting more items.
         """
-        if param_style not in ("page", "offset"):
-            raise ValueError(
-                f"param_style must be 'page' or 'offset', not {param_style!r}"
-            )
-        page = 1
+        walk = _PageWalk(limit=limit, param_style=param_style)
         base_params = dict(params) if params else {}
-        while True:
-            if param_style == "offset":
-                base_params["offset"] = (page - 1) * limit
-            else:
-                base_params["page"] = page
-            base_params["limit"] = limit
+        while not walk.finished:
+            base_params.update(walk._next_params())
             result = await self.request(method, path, params=base_params)
-            # A bare array is an unpaginated response: it is everything, so
-            # asking for a second page would return the same items again.
-            if isinstance(result, list):
-                for item in result:
-                    yield cast(dict[str, Any], item)
+            items = walk._accept(result, items_key)
+            if items is None:
                 break
-            items = unwrap_items(result, items_key)
             for item in items:
                 yield item
-            if len(items) < limit:
-                break
-            page += 1
 
     # ── High-level Abstractions ───────────────────────────────────────────────
 
@@ -9217,7 +9482,9 @@ class AsyncSeclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs/stream"
         merged_headers = await _merge_request_headers_async(
-            options=self._options, request_headers=headers
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=headers,
         )
         _setdefault_header(merged_headers, "accept", "text/event-stream")
         timeout_seconds = self._options.timeout if timeout is None else timeout
