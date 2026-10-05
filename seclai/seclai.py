@@ -62,6 +62,7 @@ from seclai._generated.models.content_embeddings_list_response import (
 from seclai._generated.models.file_upload_response import FileUploadResponse
 from seclai._generated.models.http_validation_error import HTTPValidationError
 from seclai._generated.models.source_list_response import SourceListResponse
+from seclai._generated.types import UNSET, Unset
 from seclai._generated.types import Response as OpenAPIResponse
 from seclai.auth import (
     AuthState,
@@ -415,6 +416,8 @@ class ClientOptions:
     default_headers: Mapping[str, str]
     api_version: str | None = None
     allow_unknown_api_version: bool = False
+    #: The timeout the caller passed, or ``None`` if they left the default.
+    explicit_timeout: float | None = None
 
 
 def _merge_headers(
@@ -580,18 +583,49 @@ def _raise_for_status(response: httpx.Response) -> None:
     )
 
 
-def _raise_on_error_status(response: httpx.Response) -> None:
-    """httpx response hook: raise for an error status before its body is decoded."""
-    if response.status_code >= 400:
-        response.read()
-        _raise_for_status(response)
+def _send_url(client: httpx.Client | httpx.AsyncClient, path: str) -> str:
+    """Return ``path`` for a client with a base URL, else the absolute API URL."""
+    return path if str(client.base_url) else f"{SECLAI_API_URL.rstrip('/')}{path}"
 
 
-async def _raise_on_error_status_async(response: httpx.Response) -> None:
-    """Async twin of :func:`_raise_on_error_status`."""
-    if response.status_code >= 400:
-        await response.aread()
+class _SyncSender:
+    """What the generated client sends through: the client every method uses."""
+
+    def __init__(self, options: ClientOptions, client: httpx.Client) -> None:
+        self._options = options
+        self._client = client
+
+    def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        kwargs["timeout"] = self._options.explicit_timeout
+        kwargs["headers"] = _merge_request_headers(
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=kwargs.get("headers"),
+        )
+        response = self._client.request(method, _send_url(self._client, url), **kwargs)
         _raise_for_status(response)
+        return response
+
+
+class _AsyncSender:
+    """Async twin of :class:`_SyncSender`."""
+
+    def __init__(self, options: ClientOptions, client: httpx.AsyncClient) -> None:
+        self._options = options
+        self._client = client
+
+    async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        kwargs["timeout"] = self._options.explicit_timeout
+        kwargs["headers"] = await _merge_request_headers_async(
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=kwargs.get("headers"),
+        )
+        response = await self._client.request(
+            method, _send_url(self._client, url), **kwargs
+        )
+        _raise_for_status(response)
+        return response
 
 
 def _validate_request_version(
@@ -638,18 +672,6 @@ def _validate_client_version(
         ) from e
 
 
-def _with_auth_headers(
-    client: GeneratedClient, auth_headers: Mapping[str, str]
-) -> GeneratedClient:
-    """Add headers as ``with_headers`` does, replacing one whatever its spelling."""
-    evolved = client.with_headers(dict(auth_headers))
-    replaced = {name.lower() for name in auth_headers}
-    for name in [k for k in evolved._headers if k not in auth_headers]:
-        if name.lower() in replaced:
-            del evolved._headers[name]
-    return evolved
-
-
 class _SeclaiBase:
     """Shared implementation for Seclai sync/async clients.
 
@@ -662,7 +684,7 @@ class _SeclaiBase:
         *,
         api_key: str | None,
         access_token: str | Callable[[], str | Awaitable[str]] | None,
-        timeout: float,
+        timeout: float | Unset,
         api_key_header: str,
         default_headers: Mapping[str, str] | None,
         profile: str | None,
@@ -756,15 +778,13 @@ class _SeclaiBase:
 
         self._options = ClientOptions(
             auth_state=auth_state,
-            timeout=timeout,
+            timeout=30.0 if isinstance(timeout, Unset) else timeout,
+            explicit_timeout=None if isinstance(timeout, Unset) else timeout,
             api_key_header=api_key_header,
             default_headers=frozen_headers,
             api_version=api_version,
             allow_unknown_api_version=allow_unknown_api_version,
         )
-
-        self._generated_client_instance: GeneratedClient | None = None
-        self._owns_generated_client = False
 
     @property
     def api_key(self) -> str | None:
@@ -782,82 +802,6 @@ class _SeclaiBase:
             default_headers=self._options.default_headers,
             api_version=self._options.api_version,
         )
-
-    def _generated_client(self) -> GeneratedClient:
-        """Return a cached generated OpenAPI client configured with this client's auth.
-
-        Used by the wrapper methods in this file. Once one of them has run, the
-        client's httpx client raises `SeclaiAPIStatusError` for a 4xx/5xx rather
-        than returning it to a generated request helper.
-        """
-        if self._generated_client_instance is None:
-            self._generated_client_instance = GeneratedClient(
-                base_url=SECLAI_API_URL,
-                headers=self._default_headers(),
-            )
-            self._owns_generated_client = True
-        return self._generated_client_instance
-
-    def _sync_generated_client(self) -> GeneratedClient:
-        """Return the generated client, ready to send (sync).
-
-        Resolves fresh auth headers for the ``bearer_provider`` and ``sso`` modes,
-        and makes its httpx client raise through :func:`_raise_for_status`.
-        """
-        gc = self._generated_client()
-        if self._options.auth_state.mode in ("bearer_provider", "sso"):
-            try:
-                auth_headers = resolve_auth_headers_sync(self._options.auth_state)
-            except (RuntimeError, TypeError) as exc:
-                raise SeclaiConfigurationError(str(exc)) from exc
-            except Exception as exc:
-                raise SeclaiConfigurationError(
-                    f"Auth resolution failed: {exc}"
-                ) from exc
-            # with_headers() mutates existing httpx clients in-place and
-            # returns an evolved copy with updated _headers.  We keep the
-            # original instance (preserving any user-set httpx client) but
-            # store the evolved copy so get_httpx_client() will use the
-            # refreshed headers when it lazily creates an httpx.Client.
-            evolved = _with_auth_headers(gc, auth_headers)
-            self._generated_client_instance = evolved
-            # Re-attach the existing httpx client to the evolved instance
-            # so pre-configured transports (e.g. in tests) aren't lost.
-            if gc._client is not None:
-                evolved.set_httpx_client(gc._client)
-        client = self._generated_client()
-        hooks = client.get_httpx_client().event_hooks["response"]
-        if _raise_on_error_status not in hooks:
-            hooks.append(_raise_on_error_status)
-        return client
-
-    async def _async_generated_client(self) -> GeneratedClient:
-        """Return the generated client, ready to send (async).
-
-        Resolves fresh auth headers for the ``bearer_provider`` and ``sso`` modes,
-        and makes its httpx client raise through :func:`_raise_for_status`.
-        """
-        gc = self._generated_client()
-        if self._options.auth_state.mode in ("bearer_provider", "sso"):
-            try:
-                auth_headers = await resolve_auth_headers_async(
-                    self._options.auth_state
-                )
-            except (RuntimeError, TypeError) as exc:
-                raise SeclaiConfigurationError(str(exc)) from exc
-            except Exception as exc:
-                raise SeclaiConfigurationError(
-                    f"Auth resolution failed: {exc}"
-                ) from exc
-            evolved = _with_auth_headers(gc, auth_headers)
-            self._generated_client_instance = evolved
-            if gc._async_client is not None:
-                evolved.set_async_httpx_client(gc._async_client)
-        client = self._generated_client()
-        hooks = client.get_async_httpx_client().event_hooks["response"]
-        if _raise_on_error_status_async not in hooks:
-            hooks.append(_raise_on_error_status_async)
-        return client
 
     def _build_url(self, path: str) -> str:
         """Build an absolute URL string from a request path.
@@ -937,7 +881,7 @@ class Seclai(_SeclaiBase):
         *,
         api_key: str | None = None,
         access_token: str | Callable[[], str] | None = None,
-        timeout: float = 30.0,
+        timeout: float | Unset = UNSET,
         api_key_header: str = "x-api-key",
         default_headers: Mapping[str, str] | None = None,
         http_client: httpx.Client | None = None,
@@ -961,14 +905,14 @@ class Seclai(_SeclaiBase):
             api_key: API key used for authentication. If omitted, ``SECLAI_API_KEY`` is used.
             access_token: Static bearer token string or a callable returning one.
                 Mutually exclusive with ``api_key``.
-            timeout: Request timeout (seconds).
+            timeout: Request timeout (seconds), 30 by default; a supplied
+                http_client keeps its own. The typed methods the README lists
+                wait without limit unless you pass one.
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
             http_client: Optional pre-configured ``httpx.Client`` to use. A
                 ``Seclai-Version`` among its default headers is checked as one
                 in ``default_headers`` is, at construction and on each request.
-                The typed methods that go through the generated client do not
-                use this client.
             profile: SSO profile name from ``~/.seclai/config``.
             config_dir: Override the config directory path.
             auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
@@ -999,6 +943,9 @@ class Seclai(_SeclaiBase):
             timeout=self._options.timeout,
             headers=self._default_headers(),
         )
+        self._generated = GeneratedClient(base_url=SECLAI_API_URL).set_httpx_client(
+            cast(httpx.Client, _SyncSender(self._options, self._client))
+        )
         self._owns_client = http_client is None
         if http_client is not None:
             _validate_client_version(
@@ -1013,8 +960,6 @@ class Seclai(_SeclaiBase):
         """
         if self._owns_client:
             self._client.close()
-        if self._owns_generated_client and self._generated_client_instance is not None:
-            self._generated_client_instance.get_httpx_client().close()
 
     def __enter__(self) -> Self:
         """Enter a context manager and return self."""
@@ -1097,9 +1042,7 @@ class Seclai(_SeclaiBase):
         )
 
         path = f"/agents/{agent_id}/runs"
-        response = sync_detailed(
-            agent_id=agent_id, client=self._sync_generated_client(), body=body
-        )
+        response = sync_detailed(agent_id=agent_id, client=self._generated, body=body)
         self._raise_for_openapi_response(
             method="POST",
             path=path,
@@ -1269,7 +1212,7 @@ class Seclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs"
         response = sync_detailed(
             agent_id=agent_id,
-            client=self._sync_generated_client(),
+            client=self._generated,
             page=page,
             limit=limit,
         )
@@ -1344,7 +1287,7 @@ class Seclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = sync_detailed(
             run_id=run_id,
-            client=self._sync_generated_client(),
+            client=self._generated,
             include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
@@ -1408,7 +1351,7 @@ class Seclai(_SeclaiBase):
         )
 
         path = f"/agents/runs/{run_id}"
-        response = sync_detailed(run_id=run_id, client=self._sync_generated_client())
+        response = sync_detailed(run_id=run_id, client=self._generated)
         self._raise_for_openapi_response(
             method="DELETE",
             path=path,
@@ -1465,7 +1408,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._sync_generated_client(),
+            client=self._generated,
             start=start,
             end=end,
         )
@@ -1514,7 +1457,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._sync_generated_client(),
+            client=self._generated,
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -1554,7 +1497,7 @@ class Seclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}/embeddings"
         response = sync_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=self._sync_generated_client(),
+            client=self._generated,
             page=page,
             limit=limit,
         )
@@ -1617,7 +1560,7 @@ class Seclai(_SeclaiBase):
 
         path = "/sources"
         response = sync_detailed(
-            client=self._sync_generated_client(),
+            client=self._generated,
             page=page,
             limit=limit,
             sort=sort,
@@ -1774,7 +1717,7 @@ class Seclai(_SeclaiBase):
             # Note: openapi-python-client currently struggles with Seclai's spec for this endpoint
             # due to duplicate schema names, so we send the multipart request directly and parse
             # into our SDK model types.
-            http = self._sync_generated_client().get_httpx_client()
+            http = self._generated.get_httpx_client()
             raw = http.request(
                 "POST",
                 endpoint_path,
@@ -1913,7 +1856,7 @@ class Seclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = sync_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=self._sync_generated_client(),
+                client=self._generated,
                 body=body,
             )
             self._raise_for_openapi_response(
@@ -2212,10 +2155,8 @@ class Seclai(_SeclaiBase):
         ``POST .../cancel`` route, and no operation that deletes a run.
         Rejected when the run has already reached a terminal state.
 
-        Hits the same endpoint as :meth:`delete_agent_run`, but through
-        :meth:`request` rather than the generated client, so a caller-supplied
-        ``http_client`` applies. Both now surface a 422 as
-        :class:`SeclaiAPIValidationError`.
+        Hits the same endpoint as :meth:`delete_agent_run`. Both surface a 422
+        as :class:`SeclaiAPIValidationError`.
 
         Args:
             run_id: Run identifier.
@@ -5243,7 +5184,7 @@ class AsyncSeclai(_SeclaiBase):
         *,
         api_key: str | None = None,
         access_token: str | Callable[[], str | Awaitable[str]] | None = None,
-        timeout: float = 30.0,
+        timeout: float | Unset = UNSET,
         api_key_header: str = "x-api-key",
         default_headers: Mapping[str, str] | None = None,
         http_client: httpx.AsyncClient | None = None,
@@ -5267,14 +5208,14 @@ class AsyncSeclai(_SeclaiBase):
             api_key: API key used for authentication. If omitted, ``SECLAI_API_KEY`` is used.
             access_token: Static bearer token string or a callable returning one
                 (sync or async). Mutually exclusive with ``api_key``.
-            timeout: Request timeout (seconds).
+            timeout: Request timeout (seconds), 30 by default; a supplied
+                http_client keeps its own. The typed methods the README lists
+                wait without limit unless you pass one.
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
             http_client: Optional pre-configured ``httpx.AsyncClient`` to use. A
                 ``Seclai-Version`` among its default headers is checked as one
                 in ``default_headers`` is, at construction and on each request.
-                The typed methods that go through the generated client do not
-                use this client.
             profile: SSO profile name from ``~/.seclai/config``.
             config_dir: Override the config directory path.
             auto_refresh: Auto-refresh expired SSO tokens. Defaults to ``True``.
@@ -5305,6 +5246,11 @@ class AsyncSeclai(_SeclaiBase):
             timeout=self._options.timeout,
             headers=self._default_headers(),
         )
+        self._generated = GeneratedClient(
+            base_url=SECLAI_API_URL
+        ).set_async_httpx_client(
+            cast(httpx.AsyncClient, _AsyncSender(self._options, self._client))
+        )
         self._owns_client = http_client is None
         if http_client is not None:
             _validate_client_version(
@@ -5319,8 +5265,6 @@ class AsyncSeclai(_SeclaiBase):
         """
         if self._owns_client:
             await self._client.aclose()
-        if self._owns_generated_client and self._generated_client_instance is not None:
-            await self._generated_client_instance.get_async_httpx_client().aclose()
 
     async def __aenter__(self) -> Self:
         """Enter an async context manager and return self."""
@@ -5404,7 +5348,7 @@ class AsyncSeclai(_SeclaiBase):
 
         path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
-            agent_id=agent_id, client=(await self._async_generated_client()), body=body
+            agent_id=agent_id, client=self._generated, body=body
         )
         self._raise_for_openapi_response(
             method="POST",
@@ -5560,7 +5504,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/{agent_id}/runs"
         response = await asyncio_detailed(
             agent_id=agent_id,
-            client=(await self._async_generated_client()),
+            client=self._generated,
             page=page,
             limit=limit,
         )
@@ -5635,7 +5579,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
             run_id=run_id,
-            client=(await self._async_generated_client()),
+            client=self._generated,
             include_step_outputs=include_step_outputs,
         )
         self._raise_for_openapi_response(
@@ -5703,7 +5647,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/agents/runs/{run_id}"
         response = await asyncio_detailed(
             run_id=run_id,
-            client=(await self._async_generated_client()),
+            client=self._generated,
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -5761,7 +5705,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=(await self._async_generated_client()),
+            client=self._generated,
             start=start,
             end=end,
         )
@@ -5810,7 +5754,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=(await self._async_generated_client()),
+            client=self._generated,
         )
         self._raise_for_openapi_response(
             method="DELETE",
@@ -5850,7 +5794,7 @@ class AsyncSeclai(_SeclaiBase):
         path = f"/contents/{source_connection_content_version}/embeddings"
         response = await asyncio_detailed(
             source_connection_content_version=source_connection_content_version,
-            client=(await self._async_generated_client()),
+            client=self._generated,
             page=page,
             limit=limit,
         )
@@ -5913,7 +5857,7 @@ class AsyncSeclai(_SeclaiBase):
 
         path = "/sources"
         response = await asyncio_detailed(
-            client=(await self._async_generated_client()),
+            client=self._generated,
             page=page,
             limit=limit,
             sort=sort,
@@ -6067,7 +6011,7 @@ class AsyncSeclai(_SeclaiBase):
 
             endpoint_path = f"/sources/{source_connection_id}/upload"
 
-            http = (await self._async_generated_client()).get_async_httpx_client()
+            http = self._generated.get_async_httpx_client()
             raw = await http.request(
                 "POST",
                 endpoint_path,
@@ -6206,7 +6150,7 @@ class AsyncSeclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = await asyncio_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=(await self._async_generated_client()),
+                client=self._generated,
                 body=body,
             )
             self._raise_for_openapi_response(
@@ -6513,10 +6457,8 @@ class AsyncSeclai(_SeclaiBase):
         ``POST .../cancel`` route, and no operation that deletes a run.
         Rejected when the run has already reached a terminal state.
 
-        Hits the same endpoint as :meth:`delete_agent_run`, but through
-        :meth:`request` rather than the generated client, so a caller-supplied
-        ``http_client`` applies. Both now surface a 422 as
-        :class:`SeclaiAPIValidationError`.
+        Hits the same endpoint as :meth:`delete_agent_run`. Both surface a 422
+        as :class:`SeclaiAPIValidationError`.
 
         Args:
             run_id: Run identifier.

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.2] - 2026-10-05
+
+### Fixed
+
+- Apply a `timeout` passed to `Seclai(...)` or `AsyncSeclai(...)` to `run_agent()`, `list_agent_runs()`, `get_agent_run()`, `delete_agent_run()`, `list_sources()`, `get_content_detail()`, `delete_content()`, `list_content_embeddings()`, `upload_file_to_source()` and `upload_file_to_content()`. They sent through a second HTTP client that had no timeout, so the value was ignored and a stalled connection never returned. Without a `timeout` argument they still wait without limit: the 30-second default does not apply to them, so an upload that worked before still does
+- Send those ten methods through a supplied `http_client`. They ignored it, so its transport, proxy, certificates, default headers and `base_url` did not apply to them, and they went to `SECLAI_API_URL` whatever its `base_url` said. Its timeout still does not apply to them. A supplied client with no `base_url` still reaches the Seclai API from these methods, as it did before
+- Apply the unknown-version guard on each of those ten calls to a `Seclai-Version` in a supplied `http_client`'s default headers, which they now send. A value set on the client after `Seclai(...)` was built, and that this release was not built against, raises `SeclaiConfigurationError` unless `allow_unknown_api_version=True`
+
 ## [1.7.1] - 2026-10-05
 
 ### Changed
@@ -209,6 +217,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.7.2]: https://github.com/seclai/seclai-python/releases/tag/1.7.2
 [1.7.1]: https://github.com/seclai/seclai-python/releases/tag/1.7.1
 [1.7.0]: https://github.com/seclai/seclai-python/releases/tag/1.7.0
 [1.6.0]: https://github.com/seclai/seclai-python/releases/tag/1.6.0

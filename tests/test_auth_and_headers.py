@@ -160,15 +160,6 @@ def test_bearer_token_on_typed_method_sync(monkeypatch: pytest.MonkeyPatch) -> N
     transport = httpx.MockTransport(handler)
     http_client = httpx.Client(transport=transport, base_url="https://example.invalid")
     client = Seclai(access_token="typed-jwt", http_client=http_client)
-    # Also wire mock transport into the generated client used by typed methods
-    gc = client._generated_client()
-    gc.set_httpx_client(
-        httpx.Client(
-            transport=transport,
-            base_url="https://example.invalid",
-            headers=dict(gc._headers),
-        )
-    )
     result = client.list_sources()
     assert result.data == []
 
@@ -204,15 +195,6 @@ def test_bearer_provider_on_typed_method_sync(monkeypatch: pytest.MonkeyPatch) -
     transport = httpx.MockTransport(handler)
     http_client = httpx.Client(transport=transport, base_url="https://example.invalid")
     client = Seclai(access_token=provider, http_client=http_client)
-    # Also wire mock transport into the generated client used by typed methods
-    gc = client._generated_client()
-    gc.set_httpx_client(
-        httpx.Client(
-            transport=transport,
-            base_url="https://example.invalid",
-            headers=dict(gc._headers),
-        )
-    )
     client.list_sources()
     client.list_sources()
     assert call_count == 2

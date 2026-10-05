@@ -54,5 +54,5 @@ Individual commands:
 
 - Auth modes: `api_key`, `bearer_static`, `bearer_provider`, `sso`.
 - `_build_default_headers()` only sets static auth; dynamic modes (`bearer_provider`, `sso`) are resolved per-request in `_merge_request_headers` / `_merge_request_headers_async`.
-- Typed wrapper methods use `_sync_generated_client()` / `_async_generated_client()` which return a `GeneratedClient` with its own internal `httpx.Client` (separate from the SDK's `self._client`).
-- In tests, to mock typed methods you must wire the mock transport into the generated client via `gc.set_httpx_client(httpx.Client(transport=transport, base_url=..., headers=dict(gc._headers)))`.
+- Typed wrapper methods pass `self._generated`, a `GeneratedClient` that sends through the SDK's `self._client` (`_SyncSender` / `_AsyncSender`), so one httpx client serves every method.
+- In tests, mock any method by passing `http_client=httpx.Client(transport=transport, base_url=...)`.
