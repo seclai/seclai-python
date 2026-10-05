@@ -174,45 +174,57 @@ reshape responses, and this client would decode them incorrectly rather than
 reject them. Upgrade the package to adopt a new version, or pass
 `allow_unknown_api_version=True` if you have to move first and accept that risk.
 
-The guard covers the header however it is supplied — `api_version`,
-`default_headers`, or a per-request `headers` argument — and nothing else. An
-account pinned server-side can still be
+The guard covers the header however it reaches the wire: `api_version`,
+`default_headers`, a per-request `headers` argument, or the default headers of
+an `http_client` you supply, which are checked at construction and again on
+each request, exactly as a value in `default_headers` is. It covers nothing
+else. The typed methods that go through the generated client — `run_agent()`,
+`list_agent_runs()`, `get_agent_run()`, `delete_agent_run()`, `list_sources()`,
+`get_content_detail()`, `delete_content()`, `list_content_embeddings()`,
+`upload_file_to_source()` and `upload_file_to_content()` — do not use a supplied
+`http_client` at all, so nothing it carries reaches them. An account pinned
+server-side can still be
 newer than this release — `get_api_version()` reports the `effective_version` the
 request resolved to, and comparing it against `LATEST_API_VERSION` is how you
 detect the gap.
 
 **What `2026-07-27` changes.** Undeclared query parameters become a 422 instead
-of being ignored, and list endpoints move to the canonical
-`{"data": [...], "pagination": {...}}` envelope. The affected methods read both
-shapes, so they keep working either way — but the metadata moves:
+of being ignored, and every list endpoint that answered with a bare array or
+under a per-resource key moves to the canonical
+`{"data": [...], "pagination": {...}}` envelope. The methods for those endpoints
+return what they document on either shape, so code written against the default
+still reads the result after you opt in:
 
-| Method | Before | From 2026-07-27 | Legacy paging |
-| --- | --- | --- | --- |
-| `list_evaluation_criteria_page()` | bare list | `data` + `pagination` | none — returns everything |
-| `list_run_evaluation_results_page()` | bare list | `data` + `pagination` | none — returns everything |
-| `list_alert_configs()` | `configs` + `total` | `data` + `pagination` | `page` / `limit` |
-| `list_model_alerts()` | `alerts` + `total` | `data` + `pagination` | `page` (sent as `offset`) / `limit` |
-| `list_experiments()` | `experiments` + `total` | `data` + `pagination` | `limit` / `offset` |
-| `get_generation_tiers()` | `tiers` | `data` + `pagination` | none |
+| Declared return | Methods | From 2026-07-27 |
+| --- | --- | --- |
+| A list | `list_evaluation_criteria()`, `list_run_evaluation_results()`, `get_agent_callers()`, `list_inbound_email_rejections()`, `list_governance_ai_conversations()`, `list_solution_conversations()`, `list_models()`, `list_memory_bank_templates()`, `get_agents_using_memory_bank()`, `list_cloud_drive_providers()`, `list_cloud_drives()`, `get_agents_using_cloud_drive()`, `list_cloud_drive_rejections()` | Unchanged |
+| `data`, from a bare array by default | `list_evaluation_criteria_page()`, `list_run_evaluation_results_page()` | `data`, plus `pagination` |
+| `data` with flat `total`/`page`/`limit` | `list_evaluation_results()`, `list_agent_evaluation_results()`, `list_evaluation_runs()`, `list_compatible_runs()` | Unchanged, plus `pagination` |
+| A per-resource key | `list_agent_email_optouts()` and `list_blocked_email_senders()` / `set_auto_block_mode()` (`items`), `list_alert_configs()` (`configs`), `list_organization_alert_preferences()` (`preferences`), `list_email_domains()` (`domains`), `list_knowledge_bases()` (`knowledge_bases`), `list_memory_banks()` (`memory_banks`), `list_model_alerts()` (`alerts`), `list_experiments()` (`experiments`), `get_generation_tiers()` (`tiers`), `list_embedding_models()` and `list_reranker_models()` (`models`) | The same key, plus `data` and `pagination` |
 
-`unwrap_items()` reads either shape, so a call site does not have to branch on
-the version:
+Where a method documents flat `total`, `page` or `limit`, the client fills them
+from `pagination` after you opt in. Fields that sit beside a list, such as
+`auto_block_mode`, the embedding defaults or the email-domain plan capabilities,
+are present on both shapes. `pagination` is present only once you opt in, so
+read it with `.get("pagination")`.
 
-```python
-from seclai import unwrap_items
+A 200 response that is not a list at all — an error-shaped object, text, or an
+empty body — raises `SeclaiError` from every one of these methods.
+`unwrap_items()` still reads either shape of any of these results.
 
-items = unwrap_items(client.list_alert_configs(), "configs")
-items = unwrap_items(client.list_model_alerts(), "alerts")
-```
+Opting in also turns paging on for endpoints that returned everything by
+default, so the same call can return fewer rows:
 
-Prefer `pagination` over the flat keys. The legacy keys will be deprecated and
-then removed once the canonical envelope is the default.
-
-The two evaluation endpoints are **unpaginated** on the legacy shape — they
-ignore `page`/`limit` and return everything — so a paginate-until-empty loop over
-them only terminates once you have opted in. `get_generation_tiers()` takes no
-paging arguments at all and always returns the full set. The remaining three
-paginate on either shape.
+- `list_evaluation_criteria()` and `list_run_evaluation_results()` return every
+  item by default and ignore `page`/`limit`. After you opt in they return one
+  page: 50 items unless you pass `limit`, since this client sends `limit=50`.
+  The list carries no sign of that; use `list_evaluation_criteria_page()` or
+  `list_run_evaluation_results_page()` to see `pagination`.
+- `list_alert_configs()` ignores `page` and `limit` by default and returns every
+  config; after you opt in it returns one page of 50.
+- `set_auto_block_mode()` returns the first 50 blocked senders on either shape.
+  Its `total` is the account's full count by default, and the number of rows it
+  returned after you opt in.
 
 **Later versions.** Each is cumulative, and none changes a response shape this
 client decodes:
@@ -224,11 +236,6 @@ client decodes:
 | `2026-09-28` | Agent-definition writes use the current file-list grammar: an omitted `attachments` keeps the stored list and `[]` means no files |
 | `2026-09-30` | A run's and a step's `output`, and a step's `input`, are the text rather than a JSON manifest; files are in `attachments` on every version |
 | `2026-10-03` | A new LLM step written without `attachments` takes its parent's files, and a new retrieval step's matched media are its files |
-
-The cloud-drive listings and `list_embedding_models()` / `list_reranker_models()`
-follow the `2026-07-27` envelope rule as well. The cloud-drive methods return
-the items on either shape; read the two model listings with
-`unwrap_items(result, "models")`.
 
 ## Resources
 
@@ -702,8 +709,8 @@ print(removed.get("cleanup_note"))  # set when the domain was Seclai-managed
 tiers = client.get_generation_tiers()
 
 # Embedding and reranker models, with their pricing
-embedders = unwrap_items(client.list_embedding_models(), "models")
-rerankers = unwrap_items(client.list_reranker_models(), "models")
+embedders = client.list_embedding_models()["models"]
+rerankers = client.list_reranker_models()["models"]
 
 alerts = client.list_model_alerts()
 client.mark_model_alert_read("alert_id")
@@ -760,7 +767,7 @@ client.submit_ai_feedback({"rating": 5, "comment": "Helpful!"})
 
 ### Pagination
 
-All list methods accept `page` and `limit` parameters. For auto-pagination across all pages, use the `paginate` helper:
+List methods take the paging arguments their endpoint declares: most take `page` and `limit`, some take `limit` and `offset`, some take `limit` alone, and listings that are always returned whole take none. Each method's signature says which. For auto-pagination across all pages, use the `paginate` helper. It stops after a page that is short or empty, and when the response says there is no next page or its `total` has been reached. A page longer than `limit` also ends it, unless the response says more exist. A page identical to the one before it is not yielded: `paginate` raises `SeclaiError` if that page reports more items — usually the endpoint pages by `offset`, so pass `param_style="offset"` — and otherwise stops:
 
 ```python
 # Sync — yields items one by one (generator)

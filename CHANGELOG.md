@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.7.1] - 2026-10-05
+
+### Changed
+
+- Raise `SeclaiError` from every version-gated list method when a 200 response is not a list: an error-shaped object, text, `null` or an empty body. Most of these methods returned such a body unchanged, and `list_evaluation_criteria()` and `list_run_evaluation_results()` returned `[]` for an empty one
+- Read `{"data": null}` as an empty list in every version-gated list method: a list method returns `[]` and a dict method holds `[]` under its documented key. Most of them returned `{"data": None}` unchanged
+- Return `{key: [...]}`, under the method's documented key, from a dict-returning version-gated list method that is answered with a bare array. It returned the array, except from `list_evaluation_criteria_page()` and `list_run_evaluation_results_page()`, which already wrapped it
+- Change when `paginate()` stops. It now also stops after a page that reports `pagination.has_next` as false or that reaches the `total` the body reports, so a walk whose last page is full can make one request fewer, and after a page holding more than `limit` items unless the body says more exist. A page identical to the one before it is not yielded: the walk raises `SeclaiError` if that page reports more items, and ends if it reports no paging information. Two consecutive pages that are legitimately identical are treated the same way
+- Raise `ValueError` from `paginate()` when `limit` is not a positive integer, before any request
+
+### Fixed
+
+- Return the list from `get_agent_callers()`, `list_inbound_email_rejections()`, `list_solution_conversations()`, `list_governance_ai_conversations()`, `list_models()`, `list_memory_bank_templates()` and `get_agents_using_memory_bank()` when `api_version` is `2026-07-27` or later. They returned the `{data, pagination}` object, four of them from a method annotated `list`
+- Keep the items under the documented key when `api_version` is `2026-07-27` or later, in `list_knowledge_bases()`, `list_memory_banks()`, `list_agent_email_optouts()`, `list_blocked_email_senders()`, `set_auto_block_mode()`, `list_organization_alert_preferences()`, `list_email_domains()`, `list_alert_configs()`, `list_model_alerts()`, `list_experiments()`, `get_generation_tiers()`, `list_embedding_models()` and `list_reranker_models()`. The items were only under `data`, so `result["knowledge_bases"]` raised `KeyError`. `data` and `pagination` are still present
+- Fill the flat `total`, `page` and `limit` a method documents from `pagination` when `api_version` is `2026-07-27` or later. They were absent from the four evaluation listings, the knowledge-base and memory-bank listings and every listing with a `total`
+- Declare `attrs` as a runtime dependency. The generated client imports it, so `import seclai` failed with `ModuleNotFoundError` unless another installed package happened to provide `attrs`
+- End `paginate()` on an endpoint that ignores `page` and `limit`. `client.paginate("GET", "/alerts/configs", items_key="configs")` never ended on the default API version once an account had 50 alert configs
+- Raise `SeclaiError` from `paginate()` when an endpoint that pages by `offset` is walked with the default `param_style="page"` on the default API version. Every request returned the first page, so the walk never ended
+- Send one `authorization` and one `x-account-id` on the first typed-method call, such as `list_sources()` or `run_agent()`, when the client uses a bearer-token provider or an SSO profile and `default_headers` spells either header in another case. Both values were sent on that call; later calls sent only the resolved credential, which is now the one sent every time
+- Apply the unknown-version guard to a `Seclai-Version` in the default headers of a supplied `http_client`, at construction and on each request. This is a new rejection: a value this release was not built against was sent unchecked and now raises `SeclaiConfigurationError`, as the same value in `default_headers` does. `allow_unknown_api_version=True` permits any value
+- Correct the documentation of `list_alert_configs()`: on the default API version it ignores `page` and `limit` and returns every configuration. The README said it paged
+
+## [1.7.0] - 2026-10-05
+
+_Documentation-only release: the `content_version_ids` guidance of `list_source_contents()` now says to keep a request to about 100 ids, since they travel in the query string._
+
 ## [1.6.0] - 2026-10-04
 
 ### Changed
@@ -183,6 +209,8 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.7.1]: https://github.com/seclai/seclai-python/releases/tag/1.7.1
+[1.7.0]: https://github.com/seclai/seclai-python/releases/tag/1.7.0
 [1.6.0]: https://github.com/seclai/seclai-python/releases/tag/1.6.0
 [1.5.0]: https://github.com/seclai/seclai-python/releases/tag/1.5.0
 [1.4.0]: https://github.com/seclai/seclai-python/releases/tag/1.4.0

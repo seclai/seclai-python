@@ -518,7 +518,7 @@ class TestAgentEvaluations:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response({"data": [], "total": 0, "page": 1, "limit": 50})
 
         client = _sync_client(handler)
         client.list_evaluation_results("ec1")
@@ -544,7 +544,7 @@ class TestAgentEvaluations:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response({"data": [], "total": 0, "page": 1, "limit": 50})
 
         client = _sync_client(handler)
         client.list_compatible_runs("ec1")
@@ -570,7 +570,7 @@ class TestAgentEvaluations:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response({"data": [], "total": 0, "page": 1, "limit": 50})
 
         client = _sync_client(handler)
         client.list_agent_evaluation_results("a1")
@@ -596,7 +596,7 @@ class TestAgentEvaluations:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response({"data": [], "total": 0, "page": 1, "limit": 50})
 
         client = _sync_client(handler)
         client.list_evaluation_runs("a1")
@@ -628,7 +628,9 @@ class TestKnowledgeBases:
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response(
+                {"knowledge_bases": [], "total": 0, "page": 1, "limit": 50}
+            )
 
         client = _sync_client(handler)
         client.list_knowledge_bases()
@@ -693,7 +695,9 @@ class TestMemoryBanks:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response(
+                {"memory_banks": [], "total": 0, "page": 1, "limit": 50}
+            )
 
         client = _sync_client(handler)
         client.list_memory_banks()
@@ -1374,7 +1378,7 @@ class TestAlertConfigs:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response({"configs": [], "total": 0})
 
         client = _sync_client(handler)
         client.list_alert_configs()
@@ -1474,7 +1478,7 @@ class TestModelAlerts:
 
         def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response({"alerts": [], "total": 0})
 
         client = _sync_client(handler)
         client.list_model_alerts()
@@ -1681,7 +1685,9 @@ class TestAsyncMethods:
 
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["path"] = req.url.path
-            return _json_response({"items": []})
+            return _json_response(
+                {"knowledge_bases": [], "total": 0, "page": 1, "limit": 50}
+            )
 
         client = _async_client(handler)
         await client.list_knowledge_bases()
@@ -3159,13 +3165,15 @@ class TestGenerationTiersAndDocsSearch:
         async def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
             seen["path"] = req.url.path
-            return _json_response({"image": {"fast": {"model": "m1"}}}, status=200)
+            return _json_response(
+                {"tiers": [{"modality": "image", "tier": "fast"}]}, status=200
+            )
 
         client = _async_client(handler)
         result = await client.get_generation_tiers()
         assert seen["method"] == "GET"
         assert seen["path"] == "/models/generation-tiers"
-        assert result == {"image": {"fast": {"model": "m1"}}}
+        assert result == {"tiers": [{"modality": "image", "tier": "fast"}]}
 
     @pytest.mark.asyncio
     async def test_async_search_docs(self) -> None:

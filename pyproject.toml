@@ -108,6 +108,10 @@ httpx = "^0.28.1"
 # `dateutil.parser.isoparse` for datetime fields, so this must be a runtime
 # dependency (types-python-dateutil below only covers typing stubs).
 python-dateutil = "^2.8.1"
+# Required at runtime by the generated client and models, which are attrs
+# classes. The floor is the one openapi-python-client declares; attrs is
+# calendar-versioned, so a caret would cap it at the 22.x releases.
+attrs = ">=22.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8,<9"
