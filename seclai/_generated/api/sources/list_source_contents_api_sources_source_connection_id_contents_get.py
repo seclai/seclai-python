@@ -172,8 +172,10 @@ def sync_detailed(
             not be indexed.
         content_version_id (list[UUID] | None | Unset): Filter to specific content versions,
             repeatable. Pass the `content_version_id` values returned by the upload endpoints to poll
-            exactly the items you uploaded in a single request. At most 500 ids per request — beyond
-            that, page through the unfiltered listing or split the poll.
+            exactly the items you uploaded in a single request. The ids travel in the query string, so
+            keep a request to about 100: a URL longer than 8,192 bytes is rejected before it reaches
+            the API. The API itself accepts at most 500 — beyond either limit, split the poll or page
+            through the unfiltered listing.
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
@@ -259,8 +261,10 @@ def sync(
             not be indexed.
         content_version_id (list[UUID] | None | Unset): Filter to specific content versions,
             repeatable. Pass the `content_version_id` values returned by the upload endpoints to poll
-            exactly the items you uploaded in a single request. At most 500 ids per request — beyond
-            that, page through the unfiltered listing or split the poll.
+            exactly the items you uploaded in a single request. The ids travel in the query string, so
+            keep a request to about 100: a URL longer than 8,192 bytes is rejected before it reaches
+            the API. The API itself accepts at most 500 — beyond either limit, split the poll or page
+            through the unfiltered listing.
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
@@ -338,8 +342,10 @@ async def asyncio_detailed(
             not be indexed.
         content_version_id (list[UUID] | None | Unset): Filter to specific content versions,
             repeatable. Pass the `content_version_id` values returned by the upload endpoints to poll
-            exactly the items you uploaded in a single request. At most 500 ids per request — beyond
-            that, page through the unfiltered listing or split the poll.
+            exactly the items you uploaded in a single request. The ids travel in the query string, so
+            keep a request to about 100: a URL longer than 8,192 bytes is rejected before it reaches
+            the API. The API itself accepts at most 500 — beyond either limit, split the poll or page
+            through the unfiltered listing.
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
@@ -423,8 +429,10 @@ async def asyncio(
             not be indexed.
         content_version_id (list[UUID] | None | Unset): Filter to specific content versions,
             repeatable. Pass the `content_version_id` values returned by the upload endpoints to poll
-            exactly the items you uploaded in a single request. At most 500 ids per request — beyond
-            that, page through the unfiltered listing or split the poll.
+            exactly the items you uploaded in a single request. The ids travel in the query string, so
+            keep a request to about 100: a URL longer than 8,192 bytes is rejected before it reaches
+            the API. The API itself accepts at most 500 — beyond either limit, split the poll or page
+            through the unfiltered listing.
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
