@@ -174,7 +174,9 @@ reshape responses, and this client would decode them incorrectly rather than
 reject them. Upgrade the package to adopt a new version, or pass
 `allow_unknown_api_version=True` if you have to move first and accept that risk.
 
-The guard only covers the header. An account pinned server-side can still be
+The guard covers the header however it is supplied — `api_version`,
+`default_headers`, or a per-request `headers` argument — and nothing else. An
+account pinned server-side can still be
 newer than this release — `get_api_version()` reports the `effective_version` the
 request resolved to, and comparing it against `LATEST_API_VERSION` is how you
 detect the gap.
@@ -765,7 +767,8 @@ All list methods accept `page` and `limit` parameters. For auto-pagination acros
 for agent in client.paginate("GET", "/agents"):
     print(agent["name"])
 
-# With a custom items key, for an endpoint still on a per-resource key
+# With a per-resource items key; `data` is read first, so this works on
+# either response shape
 for config in client.paginate("GET", "/alerts/configs", items_key="configs"):
     print(config["id"])
 

@@ -191,3 +191,28 @@ class TestPerRequestVersionHeader:
         client = _request_client(handler, api_version="2026-07-01")
         client.request("GET", "/agents", headers={"Seclai-Version": "2026-10-03"})
         assert seen["version"] == "2026-10-03"
+
+    def test_the_spelling_that_reaches_the_wire_is_the_one_checked(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["versions"] = req.headers.get_list("seclai-version")
+            return httpx.Response(200, json={"data": []})
+
+        client = _request_client(handler)
+        client.request(
+            "GET",
+            "/agents",
+            headers={"seclai-version": "2099-01-01", "Seclai-Version": "2026-10-03"},
+        )
+        assert seen["versions"] == ["2026-10-03"]
+
+        with pytest.raises(seclai.SeclaiConfigurationError, match="2099-01-01"):
+            client.request(
+                "GET",
+                "/agents",
+                headers={
+                    "Seclai-Version": "2026-10-03",
+                    "seclai-version": "2099-01-01",
+                },
+            )

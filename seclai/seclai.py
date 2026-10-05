@@ -430,13 +430,7 @@ async def _merge_request_headers_async(
 
 
 def _raise_for_status(response: httpx.Response) -> None:
-    """Raise on a non-success status, `SeclaiAPIValidationError` for a 422.
-
-    The generated-client path has always distinguished the two; this one did not,
-    so every method built on :meth:`Seclai.request` — most of the SDK — reported a
-    validation failure as a bare status error and discarded the field-level
-    detail the API returned.
-    """
+    """Raise on a non-success status, `SeclaiAPIValidationError` for a 422."""
     if 200 <= response.status_code < 400:
         return
     try:
@@ -496,15 +490,20 @@ def _validate_request_version(
     options: ClientOptions, request_headers: Mapping[str, str] | None
 ) -> None:
     """Apply the unknown-version guard to a per-request ``Seclai-Version``."""
-    for key, value in (request_headers or {}).items():
-        if key.lower() != "seclai-version":
-            continue
-        try:
-            validate_api_version(value, allow_unknown=options.allow_unknown_api_version)
-        except ValueError as e:
-            raise SeclaiConfigurationError(
-                f"{e} (via headers['Seclai-Version'])"
-            ) from e
+    # The last spelling is the one `_merge_headers` leaves on the wire.
+    versions = [
+        value
+        for key, value in (request_headers or {}).items()
+        if key.lower() == "seclai-version"
+    ]
+    if not versions:
+        return
+    try:
+        validate_api_version(
+            versions[-1], allow_unknown=options.allow_unknown_api_version
+        )
+    except ValueError as e:
+        raise SeclaiConfigurationError(f"{e} (via headers['Seclai-Version'])") from e
 
 
 class _SeclaiBase:
@@ -643,8 +642,9 @@ class _SeclaiBase:
     def _generated_client(self) -> GeneratedClient:
         """Return a cached generated OpenAPI client configured with this client's auth.
 
-        This is primarily used internally by the wrapper methods in this file. Advanced
-        usage may call this to access generated request helpers.
+        Used by the wrapper methods in this file. Once one of them has run, the
+        client's httpx client raises `SeclaiAPIStatusError` for a 4xx/5xx rather
+        than returning it to a generated request helper.
         """
         if self._generated_client_instance is None:
             self._generated_client_instance = GeneratedClient(
@@ -655,11 +655,10 @@ class _SeclaiBase:
         return self._generated_client_instance
 
     def _sync_generated_client(self) -> GeneratedClient:
-        """Return the generated client with dynamic auth headers applied (sync).
+        """Return the generated client, ready to send (sync).
 
-        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
-        and updates the generated client before returning it. For static modes
-        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        Resolves fresh auth headers for the ``bearer_provider`` and ``sso`` modes,
+        and makes its httpx client raise through :func:`_raise_for_status`.
         """
         gc = self._generated_client()
         if self._options.auth_state.mode in ("bearer_provider", "sso"):
@@ -689,11 +688,10 @@ class _SeclaiBase:
         return client
 
     async def _async_generated_client(self) -> GeneratedClient:
-        """Return the generated client with dynamic auth headers applied (async).
+        """Return the generated client, ready to send (async).
 
-        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
-        and updates the generated client before returning it. For static modes
-        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        Resolves fresh auth headers for the ``bearer_provider`` and ``sso`` modes,
+        and makes its httpx client raise through :func:`_raise_for_status`.
         """
         gc = self._generated_client()
         if self._options.auth_state.mode in ("bearer_provider", "sso"):
@@ -4812,7 +4810,8 @@ class Seclai(_SeclaiBase):
             params: Extra query parameters (the cursor and ``limit`` are managed
                 automatically).
             limit: Items per page.
-            items_key: JSON key containing the list of items (default ``"data"``).
+            items_key: Per-resource key the items sit under when the response
+                is not the ``data`` envelope, which is always read first.
             param_style: ``"page"`` (default) sends a 1-indexed ``page``;
                 ``"offset"`` sends a 0-based ``offset``. A few endpoints —
                 ``/models/alerts`` among them — declare only ``offset`` and
@@ -4821,6 +4820,11 @@ class Seclai(_SeclaiBase):
 
         Yields:
             Individual item dicts from each page.
+
+        Raises:
+            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``.
+            SeclaiError: If a page is neither a list nor an object carrying
+                ``data`` or ``items_key``.
         """
         if param_style not in ("page", "offset"):
             raise ValueError(
@@ -4835,10 +4839,8 @@ class Seclai(_SeclaiBase):
                 base_params["page"] = page
             base_params["limit"] = limit
             result = self.request(method, path, params=base_params)
-            # A bare array is the legacy, unpaginated shape of the version-gated
-            # list endpoints (evaluation criteria and run evaluation results).
-            # It carries everything in one response, so yield it and stop rather
-            # than silently reporting no results.
+            # A bare array is an unpaginated response: it is everything, so
+            # asking for a second page would return the same items again.
             if isinstance(result, list):
                 for item in result:
                     yield cast(dict[str, Any], item)
@@ -9100,7 +9102,8 @@ class AsyncSeclai(_SeclaiBase):
             params: Extra query parameters (the cursor and ``limit`` are managed
                 automatically).
             limit: Items per page.
-            items_key: JSON key containing the list of items (default ``"data"``).
+            items_key: Per-resource key the items sit under when the response
+                is not the ``data`` envelope, which is always read first.
             param_style: ``"page"`` (default) sends a 1-indexed ``page``;
                 ``"offset"`` sends a 0-based ``offset``. A few endpoints —
                 ``/models/alerts`` among them — declare only ``offset`` and
@@ -9109,6 +9112,11 @@ class AsyncSeclai(_SeclaiBase):
 
         Yields:
             Individual items from each page.
+
+        Raises:
+            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``.
+            SeclaiError: If a page is neither a list nor an object carrying
+                ``data`` or ``items_key``.
         """
         if param_style not in ("page", "offset"):
             raise ValueError(
@@ -9123,10 +9131,8 @@ class AsyncSeclai(_SeclaiBase):
                 base_params["page"] = page
             base_params["limit"] = limit
             result = await self.request(method, path, params=base_params)
-            # A bare array is the legacy, unpaginated shape of the version-gated
-            # list endpoints (evaluation criteria and run evaluation results).
-            # It carries everything in one response, so yield it and stop rather
-            # than silently reporting no results.
+            # A bare array is an unpaginated response: it is everything, so
+            # asking for a second page would return the same items again.
             if isinstance(result, list):
                 for item in result:
                     yield cast(dict[str, Any], item)
