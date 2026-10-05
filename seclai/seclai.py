@@ -46,7 +46,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, BinaryIO, Self, TypedDict, cast, overload
+from typing import Any, BinaryIO, Literal, Self, TypedDict, TypeVar, cast, overload
 
 import httpx
 
@@ -172,7 +172,10 @@ def _strip_none(params: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in params.items() if v is not None}
 
 
-def _expect_model[ModelT](parsed: object, model: type[ModelT]) -> ModelT:
+_ModelT = TypeVar("_ModelT")
+
+
+def _expect_model(parsed: object, model: type[_ModelT]) -> _ModelT:
     """Narrow a generated-client result to the success model its caller declares.
 
     The generated union also carries each documented error body, which the
@@ -317,11 +320,7 @@ def _merge_headers(
 
     Header names are case-insensitive on the wire but dict keys are not, so a
     plain ``dict.update`` leaves two spellings of one header in the mapping;
-    httpx then emits both and the server picks one arbitrarily. Every merge
-    point in this module goes through here so an override always *replaces*
-    rather than joins — including the per-request ``headers=`` path, where a
-    differently-cased ``Seclai-Version`` or ``X-Api-Key`` would otherwise be
-    appended alongside the client's own.
+    httpx then emits both and the server picks one arbitrarily.
 
     The match is recomputed per key rather than once up front: ``overrides`` may
     itself carry two spellings of one header, and a snapshot taken before the
@@ -400,6 +399,7 @@ def _merge_request_headers(
         except Exception as exc:
             raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
         _merge_headers(merged, auth_headers)
+    _validate_request_version(options, request_headers)
     _merge_headers(merged, request_headers)
     return merged
 
@@ -424,6 +424,7 @@ async def _merge_request_headers_async(
         except Exception as exc:
             raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
         _merge_headers(merged, auth_headers)
+    _validate_request_version(options, request_headers)
     _merge_headers(merged, request_headers)
     return merged
 
@@ -475,6 +476,35 @@ def _raise_for_status(response: httpx.Response) -> None:
         url=str(response.request.url),
         response_text=response_text,
     )
+
+
+def _raise_on_error_status(response: httpx.Response) -> None:
+    """httpx response hook: raise for an error status before its body is decoded."""
+    if response.status_code >= 400:
+        response.read()
+        _raise_for_status(response)
+
+
+async def _raise_on_error_status_async(response: httpx.Response) -> None:
+    """Async twin of :func:`_raise_on_error_status`."""
+    if response.status_code >= 400:
+        await response.aread()
+        _raise_for_status(response)
+
+
+def _validate_request_version(
+    options: ClientOptions, request_headers: Mapping[str, str] | None
+) -> None:
+    """Apply the unknown-version guard to a per-request ``Seclai-Version``."""
+    for key, value in (request_headers or {}).items():
+        if key.lower() != "seclai-version":
+            continue
+        try:
+            validate_api_version(value, allow_unknown=options.allow_unknown_api_version)
+        except ValueError as e:
+            raise SeclaiConfigurationError(
+                f"{e} (via headers['Seclai-Version'])"
+            ) from e
 
 
 class _SeclaiBase:
@@ -652,7 +682,11 @@ class _SeclaiBase:
             # so pre-configured transports (e.g. in tests) aren't lost.
             if gc._client is not None:
                 evolved.set_httpx_client(gc._client)
-        return self._generated_client_instance  # type: ignore[return-value]
+        client = self._generated_client()
+        hooks = client.get_httpx_client().event_hooks["response"]
+        if _raise_on_error_status not in hooks:
+            hooks.append(_raise_on_error_status)
+        return client
 
     async def _async_generated_client(self) -> GeneratedClient:
         """Return the generated client with dynamic auth headers applied (async).
@@ -677,7 +711,11 @@ class _SeclaiBase:
             self._generated_client_instance = evolved
             if gc._async_client is not None:
                 evolved.set_async_httpx_client(gc._async_client)
-        return self._generated_client_instance  # type: ignore[return-value]
+        client = self._generated_client()
+        hooks = client.get_async_httpx_client().event_hooks["response"]
+        if _raise_on_error_status_async not in hooks:
+            hooks.append(_raise_on_error_status_async)
+        return client
 
     def _build_url(self, path: str) -> str:
         """Build an absolute URL string from a request path.
@@ -3209,7 +3247,7 @@ class Seclai(_SeclaiBase):
                 ``failed``.
             content_version_ids: Keep only these items — the
                 ``content_version_id`` values the upload methods return — to
-                poll a batch of uploads in one request.
+                poll a batch of uploads in one request. At most 500.
 
         Returns:
             ``{"data": [...], "pagination": {...}}`` on every API version. An
@@ -4761,7 +4799,7 @@ class Seclai(_SeclaiBase):
         params: dict[str, Any] | None = None,
         limit: int = 50,
         items_key: str = "data",
-        param_style: str = "page",
+        param_style: Literal["page", "offset"] = "page",
     ) -> Generator[dict[str, Any]]:
         """Auto-paginate a list endpoint.
 
@@ -4784,6 +4822,10 @@ class Seclai(_SeclaiBase):
         Yields:
             Individual item dicts from each page.
         """
+        if param_style not in ("page", "offset"):
+            raise ValueError(
+                f"param_style must be 'page' or 'offset', not {param_style!r}"
+            )
         page = 1
         base_params = dict(params) if params else {}
         while True:
@@ -4801,13 +4843,9 @@ class Seclai(_SeclaiBase):
                 for item in result:
                     yield cast(dict[str, Any], item)
                 return
-            if not isinstance(result, dict):
-                return
-            items = result.get(items_key, [])
-            if not isinstance(items, list):
-                return
+            items = unwrap_items(result, items_key)
             for item in items:
-                yield cast(dict[str, Any], item)
+                yield item
             if len(items) < limit:
                 return
             page += 1
@@ -7463,7 +7501,7 @@ class AsyncSeclai(_SeclaiBase):
                 ``failed``.
             content_version_ids: Keep only these items — the
                 ``content_version_id`` values the upload methods return — to
-                poll a batch of uploads in one request.
+                poll a batch of uploads in one request. At most 500.
 
         Returns:
             ``{"data": [...], "pagination": {...}}`` on every API version. An
@@ -9048,7 +9086,7 @@ class AsyncSeclai(_SeclaiBase):
         params: dict[str, Any] | None = None,
         limit: int = 50,
         items_key: str = "data",
-        param_style: str = "page",
+        param_style: Literal["page", "offset"] = "page",
     ) -> AsyncGenerator[dict[str, Any]]:
         """Auto-paginate a list endpoint, yielding items lazily.
 
@@ -9072,6 +9110,10 @@ class AsyncSeclai(_SeclaiBase):
         Yields:
             Individual items from each page.
         """
+        if param_style not in ("page", "offset"):
+            raise ValueError(
+                f"param_style must be 'page' or 'offset', not {param_style!r}"
+            )
         page = 1
         base_params = dict(params) if params else {}
         while True:
@@ -9089,13 +9131,9 @@ class AsyncSeclai(_SeclaiBase):
                 for item in result:
                     yield cast(dict[str, Any], item)
                 break
-            if not isinstance(result, dict):
-                break
-            items = result.get(items_key, [])
-            if not isinstance(items, list):
-                break
+            items = unwrap_items(result, items_key)
             for item in items:
-                yield cast(dict[str, Any], item)
+                yield item
             if len(items) < limit:
                 break
             page += 1

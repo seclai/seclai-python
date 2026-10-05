@@ -136,7 +136,7 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py311"
 line-length = 88
 exclude = [
     # Vendored from seclai/sdk-tools via git subtree — formatting it here would

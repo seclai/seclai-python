@@ -18,9 +18,10 @@
 ### Fixed
 
 - Read the body of an error response in the streaming methods. A 422 from `run_streaming_agent_and_wait()` escaped as `httpx.ResponseNotRead`, a 422 from `run_streaming_agent()` lost its field-level detail, and every streaming error had an empty `response_text`
-- Raise `SeclaiAPIStatusError` on a 422 whose `detail` is a plain string. Decoding it as field-level validation raised `ValueError` from inside the generated models
+- Raise `SeclaiAPIStatusError` on a 422 whose `detail` is a plain string, from every method including the typed ones and the uploads. Decoding it as field-level validation raised `ValueError` from inside the generated models
+- Apply the unknown-version guard to a `Seclai-Version` passed in a per-request `headers` argument, on `request()` and the streaming methods. Any value was sent
 - Replace a header case-insensitively when a per-request `headers` argument or the auth layer supplies one the client already set. Both spellings were sent
-- Yield the items from `paginate()` when the endpoint answers with a bare array. It yielded nothing
+- Yield the items from `paginate()` when the endpoint answers with a bare array, or under `data` while a per-resource `items_key` was given. It yielded nothing in both cases, and now raises `SeclaiError` on a shape it cannot read
 - Copy `default_headers` at construction. Mutating the mapping afterwards put an unvalidated `Seclai-Version` on the wire
 - Reject an empty `Seclai-Version` in `default_headers`. It was read as absent, sent anyway, and suppressed `api_version`
 
