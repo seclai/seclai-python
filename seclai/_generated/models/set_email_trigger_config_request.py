@@ -19,9 +19,10 @@ class SetEmailTriggerConfigRequest:
     ``alias``) clears it.
 
         Attributes:
-            alias (None | str | Unset): Custom alias for the address `<alias>.<accountID>@agent.seclai.com` (alphanumeric
-                plus '+', '.', '-'; 1–32 chars; not starting/ending with '+', '.', '-'; not UUID-shaped). Pass null/empty to
-                clear.
+            alias (None | str | Unset): Custom alias, unique per account, answering as
+                `<alias>.<accountID>@agent.seclai.com` and as `<alias>@<domain>` on each verified account email domain
+                (alphanumeric plus '+', '.', '-'; 1–32 chars; not starting/ending with '+', '.', '-'; not UUID-shaped). Pass
+                null/empty to clear.
             allowed_senders (list[str] | None | Unset): Allowlist of full sender addresses and/or bare domains (a bare
                 domain also matches sub-domains). Empty/null accepts any sender.
             ignore_auto_generated (bool | None | Unset): When true (default for new triggers), machine-generated inbound

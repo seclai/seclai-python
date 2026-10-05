@@ -8,6 +8,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...models.solution_conversation_response import SolutionConversationResponse
 from ...types import UNSET, Response, Unset
 
@@ -38,7 +39,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | list[SolutionConversationResponse] | None:
+) -> (
+    HTTPValidationError
+    | ServiceUnavailableError
+    | list[SolutionConversationResponse]
+    | None
+):
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -56,6 +62,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -64,7 +75,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | list[SolutionConversationResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[SolutionConversationResponse]
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,7 +92,9 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | list[SolutionConversationResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[SolutionConversationResponse]
+]:
     """List conversations
 
      List AI assistant conversation history for a solution.
@@ -97,7 +112,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[SolutionConversationResponse]]
+        Response[HTTPValidationError | ServiceUnavailableError | list[SolutionConversationResponse]]
     """
 
     kwargs = _get_kwargs(
@@ -119,7 +134,12 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | list[SolutionConversationResponse] | None:
+) -> (
+    HTTPValidationError
+    | ServiceUnavailableError
+    | list[SolutionConversationResponse]
+    | None
+):
     """List conversations
 
      List AI assistant conversation history for a solution.
@@ -137,7 +157,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[SolutionConversationResponse]
+        HTTPValidationError | ServiceUnavailableError | list[SolutionConversationResponse]
     """
 
     return sync_detailed(
@@ -154,7 +174,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | list[SolutionConversationResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[SolutionConversationResponse]
+]:
     """List conversations
 
      List AI assistant conversation history for a solution.
@@ -172,7 +194,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[SolutionConversationResponse]]
+        Response[HTTPValidationError | ServiceUnavailableError | list[SolutionConversationResponse]]
     """
 
     kwargs = _get_kwargs(
@@ -192,7 +214,12 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | list[SolutionConversationResponse] | None:
+) -> (
+    HTTPValidationError
+    | ServiceUnavailableError
+    | list[SolutionConversationResponse]
+    | None
+):
     """List conversations
 
      List AI assistant conversation history for a solution.
@@ -210,7 +237,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[SolutionConversationResponse]
+        HTTPValidationError | ServiceUnavailableError | list[SolutionConversationResponse]
     """
 
     return (

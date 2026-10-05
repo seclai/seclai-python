@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.content_embeddings_list_response import ContentEmbeddingsListResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -51,7 +52,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> ContentEmbeddingsListResponse | HTTPValidationError | None:
+) -> (
+    ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError | None
+):
     if response.status_code == 200:
         response_200 = ContentEmbeddingsListResponse.from_dict(response.json())
 
@@ -62,6 +65,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -70,7 +78,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[ContentEmbeddingsListResponse | HTTPValidationError]:
+) -> Response[
+    ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -87,7 +97,9 @@ def sync_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ContentEmbeddingsListResponse | HTTPValidationError]:
+) -> Response[
+    ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """List content embeddings
 
      List the embeddings (chunk vectors) for a content item, with pagination.
@@ -111,7 +123,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ContentEmbeddingsListResponse | HTTPValidationError]
+        Response[ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -137,7 +149,9 @@ def sync(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ContentEmbeddingsListResponse | HTTPValidationError | None:
+) -> (
+    ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError | None
+):
     """List content embeddings
 
      List the embeddings (chunk vectors) for a content item, with pagination.
@@ -161,7 +175,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ContentEmbeddingsListResponse | HTTPValidationError
+        ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -182,7 +196,9 @@ async def asyncio_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ContentEmbeddingsListResponse | HTTPValidationError]:
+) -> Response[
+    ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """List content embeddings
 
      List the embeddings (chunk vectors) for a content item, with pagination.
@@ -206,7 +222,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ContentEmbeddingsListResponse | HTTPValidationError]
+        Response[ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -230,7 +246,9 @@ async def asyncio(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ContentEmbeddingsListResponse | HTTPValidationError | None:
+) -> (
+    ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError | None
+):
     """List content embeddings
 
      List the embeddings (chunk vectors) for a content item, with pagination.
@@ -254,7 +272,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ContentEmbeddingsListResponse | HTTPValidationError
+        ContentEmbeddingsListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

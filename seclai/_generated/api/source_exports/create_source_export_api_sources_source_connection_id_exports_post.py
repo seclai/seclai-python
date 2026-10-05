@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 from uuid import UUID
 
@@ -10,6 +10,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.create_export_request import CreateExportRequest
 from ...models.export_response import ExportResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -44,16 +45,25 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> ExportResponse | HTTPValidationError | None:
+) -> Any | ExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 202:
         response_202 = ExportResponse.from_dict(response.json())
 
         return response_202
 
+    if response.status_code == 403:
+        response_403 = cast(Any, None)
+        return response_403
+
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -63,7 +73,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[ExportResponse | HTTPValidationError]:
+) -> Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,11 +89,13 @@ def sync_detailed(
     body: CreateExportRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ExportResponse | HTTPValidationError]:
+) -> Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]:
     """Create export
 
      Start an asynchronous export job. Poll GET .../exports/{export_id} until status becomes completed,
-    then use /download to retrieve the file.
+    then use /download to retrieve the file.  On an organization account, a key bound to a user must
+    belong to an owner or administrator; a viewer's key is refused with 403 `permission_denied`.
+    Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -96,7 +108,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportResponse | HTTPValidationError]
+        Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -120,11 +132,13 @@ def sync(
     body: CreateExportRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ExportResponse | HTTPValidationError | None:
+) -> Any | ExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Create export
 
      Start an asynchronous export job. Poll GET .../exports/{export_id} until status becomes completed,
-    then use /download to retrieve the file.
+    then use /download to retrieve the file.  On an organization account, a key bound to a user must
+    belong to an owner or administrator; a viewer's key is refused with 403 `permission_denied`.
+    Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -137,7 +151,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportResponse | HTTPValidationError
+        Any | ExportResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -156,11 +170,13 @@ async def asyncio_detailed(
     body: CreateExportRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ExportResponse | HTTPValidationError]:
+) -> Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]:
     """Create export
 
      Start an asynchronous export job. Poll GET .../exports/{export_id} until status becomes completed,
-    then use /download to retrieve the file.
+    then use /download to retrieve the file.  On an organization account, a key bound to a user must
+    belong to an owner or administrator; a viewer's key is refused with 403 `permission_denied`.
+    Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -173,7 +189,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportResponse | HTTPValidationError]
+        Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -195,11 +211,13 @@ async def asyncio(
     body: CreateExportRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ExportResponse | HTTPValidationError | None:
+) -> Any | ExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Create export
 
      Start an asynchronous export job. Poll GET .../exports/{export_id} until status becomes completed,
-    then use /download to retrieve the file.
+    then use /download to retrieve the file.  On an organization account, a key bound to a user must
+    belong to an owner or administrator; a viewer's key is refused with 403 `permission_denied`.
+    Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -212,7 +230,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportResponse | HTTPValidationError
+        Any | ExportResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

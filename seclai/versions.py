@@ -1,10 +1,12 @@
 """Dated API versions known to this release.
 
-The set is open: the API adds versions without an SDK release, and the
-``api_version`` client option is typed ``str | None``, so a date newer than this
-release knows about can be passed directly. Treat these as convenience constants
-rather than an exhaustive list — :meth:`Seclai.get_api_version` reports what the
-server actually supports.
+The API adds versions without an SDK release, so the server's set is always a
+superset of this one — :meth:`Seclai.get_api_version` reports what it actually
+supports. This list is nonetheless the client's **allowlist**, not a set of
+convenience constants: :func:`validate_api_version` fails closed on anything
+absent from it, because a newer version can reshape responses that this release
+would then mis-decode rather than reject. To move ahead of the SDK, pass
+``allow_unknown_api_version=True`` to the client.
 """
 
 from __future__ import annotations
@@ -18,13 +20,18 @@ class ApiVersion(StrEnum):
 
     V2026_07_01 = "2026-07-01"
     V2026_07_27 = "2026-07-27"
+    V2026_08_03 = "2026-08-03"
+    V2026_08_21 = "2026-08-21"
+    V2026_09_28 = "2026-09-28"
+    V2026_09_30 = "2026-09-30"
+    V2026_10_03 = "2026-10-03"
 
 
 #: Baseline applied to an unpinned, header-less caller.
 DEFAULT_API_VERSION = ApiVersion.V2026_07_01
 
 #: Newest version known to this SDK release. May lag the server.
-LATEST_API_VERSION = ApiVersion.V2026_07_27
+LATEST_API_VERSION = ApiVersion.V2026_10_03
 
 
 def validate_api_version(version: str | None, *, allow_unknown: bool) -> str | None:

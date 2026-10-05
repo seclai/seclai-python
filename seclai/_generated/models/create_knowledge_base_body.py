@@ -18,11 +18,17 @@ class CreateKnowledgeBaseBody:
     Attributes:
         name (str): Knowledge base name.
         source_ids (list[str]): List of source connection IDs to link.
-        default_score_threshold (float | None | Unset): Default minimum rerank score threshold.
-        default_top_k (int | None | Unset): Default results after reranking.
-        default_top_n (int | None | Unset): Default number of results.
+        default_score_threshold (float | None | Unset): Prefilled into Minimum Rerank Score on a new retrieval step in
+            the editor. Not applied at retrieval time — the step's own value is used.
+        default_top_k (int | None | Unset): Prefilled into Top K on a new retrieval step in the editor. Not applied at
+            retrieval time.
+        default_top_n (int | None | Unset): Prefilled into Top N on a new retrieval step in the editor. Not applied at
+            retrieval time — the step's own value is used.
         description (None | str | Unset): Optional description.
-        reranker_model (None | str | Unset): Reranker model to use (null for no reranking).
+        reranker_model (None | str | Unset): Reranker model to use — a `model_type` from `GET /models/rerankers`. Pass
+            "none" to disable reranking (not a value from that list). Omit it for a default chosen from the sources ("none"
+            when every source embeds media natively, whose chunks carry no text for a reranker to score). "" is accepted as
+            a synonym for "none".
     """
 
     name: str

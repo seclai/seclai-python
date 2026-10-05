@@ -7,6 +7,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.cancel_queued_runs_response import CancelQueuedRunsResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -33,11 +34,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> CancelQueuedRunsResponse | None:
+) -> CancelQueuedRunsResponse | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = CancelQueuedRunsResponse.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -47,7 +53,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[CancelQueuedRunsResponse]:
+) -> Response[CancelQueuedRunsResponse | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -61,11 +67,11 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[CancelQueuedRunsResponse]:
+) -> Response[CancelQueuedRunsResponse | ServiceUnavailableError]:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run
-    consumed no quota or credits at queue time, so this merely fails them. Returns the count cancelled.
+     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota, so this merely fails them. Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.
@@ -79,7 +85,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CancelQueuedRunsResponse]
+        Response[CancelQueuedRunsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -99,11 +105,11 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> CancelQueuedRunsResponse | None:
+) -> CancelQueuedRunsResponse | ServiceUnavailableError | None:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run
-    consumed no quota or credits at queue time, so this merely fails them. Returns the count cancelled.
+     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota, so this merely fails them. Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.
@@ -117,7 +123,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CancelQueuedRunsResponse
+        CancelQueuedRunsResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -132,11 +138,11 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[CancelQueuedRunsResponse]:
+) -> Response[CancelQueuedRunsResponse | ServiceUnavailableError]:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run
-    consumed no quota or credits at queue time, so this merely fails them. Returns the count cancelled.
+     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota, so this merely fails them. Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.
@@ -150,7 +156,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CancelQueuedRunsResponse]
+        Response[CancelQueuedRunsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -168,11 +174,11 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> CancelQueuedRunsResponse | None:
+) -> CancelQueuedRunsResponse | ServiceUnavailableError | None:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run
-    consumed no quota or credits at queue time, so this merely fails them. Returns the count cancelled.
+     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota, so this merely fails them. Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.
@@ -186,7 +192,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CancelQueuedRunsResponse
+        CancelQueuedRunsResponse | ServiceUnavailableError
     """
 
     return (

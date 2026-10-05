@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
 from ...models.model_recommendations_response import ModelRecommendationsResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -83,7 +84,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | ModelRecommendationsResponse | None:
+) -> (
+    HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError | None
+):
     if response.status_code == 200:
         response_200 = ModelRecommendationsResponse.from_dict(response.json())
 
@@ -94,6 +97,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -102,7 +110,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | ModelRecommendationsResponse]:
+) -> Response[
+    HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -122,7 +132,9 @@ def sync_detailed(
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | ModelRecommendationsResponse]:
+) -> Response[
+    HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError
+]:
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -150,7 +162,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ModelRecommendationsResponse]
+        Response[HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -182,7 +194,9 @@ def sync(
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | ModelRecommendationsResponse | None:
+) -> (
+    HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError | None
+):
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -210,7 +224,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ModelRecommendationsResponse
+        HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -237,7 +251,9 @@ async def asyncio_detailed(
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | ModelRecommendationsResponse]:
+) -> Response[
+    HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError
+]:
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -265,7 +281,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ModelRecommendationsResponse]
+        Response[HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -295,7 +311,9 @@ async def asyncio(
     min_output_tokens: int | None | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | ModelRecommendationsResponse | None:
+) -> (
+    HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError | None
+):
     """Get Recommendations
 
      Get replacement/upgrade recommendations for a model.
@@ -323,7 +341,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ModelRecommendationsResponse
+        HTTPValidationError | ModelRecommendationsResponse | ServiceUnavailableError
     """
 
     return (

@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.ai_conversation_history_response import AiConversationHistoryResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -60,7 +61,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AiConversationHistoryResponse | HTTPValidationError | None:
+) -> (
+    AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError | None
+):
     if response.status_code == 200:
         response_200 = AiConversationHistoryResponse.from_dict(response.json())
 
@@ -71,6 +74,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -79,7 +87,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AiConversationHistoryResponse | HTTPValidationError]:
+) -> Response[
+    AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -98,7 +108,9 @@ def sync_detailed(
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AiConversationHistoryResponse | HTTPValidationError]:
+) -> Response[
+    AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Get AI conversation history
 
      Fetch the AI assistant conversation history for a specific step of an agent.
@@ -125,7 +137,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AiConversationHistoryResponse | HTTPValidationError]
+        Response[AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -155,7 +167,9 @@ def sync(
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AiConversationHistoryResponse | HTTPValidationError | None:
+) -> (
+    AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError | None
+):
     """Get AI conversation history
 
      Fetch the AI assistant conversation history for a specific step of an agent.
@@ -182,7 +196,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AiConversationHistoryResponse | HTTPValidationError
+        AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -207,7 +221,9 @@ async def asyncio_detailed(
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AiConversationHistoryResponse | HTTPValidationError]:
+) -> Response[
+    AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Get AI conversation history
 
      Fetch the AI assistant conversation history for a specific step of an agent.
@@ -234,7 +250,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AiConversationHistoryResponse | HTTPValidationError]
+        Response[AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -262,7 +278,9 @@ async def asyncio(
     offset: int | Unset = 0,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AiConversationHistoryResponse | HTTPValidationError | None:
+) -> (
+    AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError | None
+):
     """Get AI conversation history
 
      Fetch the AI assistant conversation history for a specific step of an agent.
@@ -289,7 +307,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AiConversationHistoryResponse | HTTPValidationError
+        AiConversationHistoryResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

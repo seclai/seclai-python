@@ -12,6 +12,7 @@ from ...models.http_validation_error import HTTPValidationError
 from ...models.pending_processing_completed_failed_status import (
     PendingProcessingCompletedFailedStatus,
 )
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -62,7 +63,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentRunListResponse | HTTPValidationError | None:
+) -> AgentRunListResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AgentRunListResponse.from_dict(response.json())
 
@@ -73,6 +74,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -81,7 +87,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentRunListResponse | HTTPValidationError]:
+) -> Response[AgentRunListResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -99,7 +105,7 @@ def sync_detailed(
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentRunListResponse | HTTPValidationError]:
+) -> Response[AgentRunListResponse | HTTPValidationError | ServiceUnavailableError]:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
@@ -128,7 +134,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunListResponse | HTTPValidationError]
+        Response[AgentRunListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -156,7 +162,7 @@ def sync(
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentRunListResponse | HTTPValidationError | None:
+) -> AgentRunListResponse | HTTPValidationError | ServiceUnavailableError | None:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
@@ -185,7 +191,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunListResponse | HTTPValidationError
+        AgentRunListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -208,7 +214,7 @@ async def asyncio_detailed(
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentRunListResponse | HTTPValidationError]:
+) -> Response[AgentRunListResponse | HTTPValidationError | ServiceUnavailableError]:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
@@ -237,7 +243,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunListResponse | HTTPValidationError]
+        Response[AgentRunListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -263,7 +269,7 @@ async def asyncio(
     status: None | PendingProcessingCompletedFailedStatus | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentRunListResponse | HTTPValidationError | None:
+) -> AgentRunListResponse | HTTPValidationError | ServiceUnavailableError | None:
     """List agent runs
 
      List runs for a specific agent (most recent first), with pagination.
@@ -292,7 +298,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunListResponse | HTTPValidationError
+        AgentRunListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.6.0] - 2026-10-04
+
+### Changed
+
+- Sync the bundled OpenAPI spec, adding 10 paths and 18 schemas. The typed models gain the new response fields, including `attachments` on a run and on each step
+- Move `LATEST_API_VERSION` to `2026-10-03`
+
+### Added
+
+- Add `list_cloud_drives()`, `get_cloud_drive()`, `update_cloud_drive()`, `disconnect_cloud_drive()`, `delete_cloud_drive()`, `list_cloud_drive_providers()`, `get_agents_using_cloud_drive()` and `list_cloud_drive_rejections()` for cloud-drive connections. The list methods return the items on either response shape
+- Add `list_source_contents()` and `get_source_content_status()` to read the indexing status of a source's content, keyed by the `content_version_id` the upload methods return
+- Add `list_embedding_models()` and `list_reranker_models()`, with the pricing and defaults that sit beside each list
+- Add `ApiVersion` members for `2026-08-03`, `2026-08-21`, `2026-09-28`, `2026-09-30` and `2026-10-03`, so each can be selected without `allow_unknown_api_version`
+- Add a `param_style` argument to `paginate()` for endpoints that page by `offset` rather than `page`
+
+### Fixed
+
+- Read the body of an error response in the streaming methods. A 422 from `run_streaming_agent_and_wait()` escaped as `httpx.ResponseNotRead`, a 422 from `run_streaming_agent()` lost its field-level detail, and every streaming error had an empty `response_text`
+- Raise `SeclaiAPIStatusError` on a 422 whose `detail` is a plain string. Decoding it as field-level validation raised `ValueError` from inside the generated models
+- Replace a header case-insensitively when a per-request `headers` argument or the auth layer supplies one the client already set. Both spellings were sent
+- Yield the items from `paginate()` when the endpoint answers with a bare array. It yielded nothing
+- Copy `default_headers` at construction. Mutating the mapping afterwards put an unvalidated `Seclai-Version` on the wire
+- Reject an empty `Seclai-Version` in `default_headers`. It was read as absent, sent anyway, and suppressed `api_version`
+
 ## [1.5.0] - 2026-07-27
 
 ### Changed
@@ -158,6 +182,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.6.0]: https://github.com/seclai/seclai-python/releases/tag/1.6.0
 [1.5.0]: https://github.com/seclai/seclai-python/releases/tag/1.5.0
 [1.4.0]: https://github.com/seclai/seclai-python/releases/tag/1.4.0
 [1.3.0]: https://github.com/seclai/seclai-python/releases/tag/1.3.0

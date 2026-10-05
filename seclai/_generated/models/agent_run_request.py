@@ -22,8 +22,9 @@ class AgentRunRequest:
     Attributes:
         input_ (None | str | Unset): Input to provide to the agent upon running for agents with dynamic triggers.
         input_upload_id (None | Unset | UUID): ID of a previously uploaded file (via POST /{agent_id}/upload-input) to
-            use as the run input for dynamic-input triggers. Mutually exclusive with the 'input' field. Use
-            ``input_upload_ids`` to attach multiple files.
+            use as the run input for dynamic-input triggers. Mutually exclusive with ``input_upload_ids`` — use that field
+            to attach multiple files. May be combined with ``input``: the prompt text leads and the file's extracted text
+            follows under a ``# {filename}`` heading.
 
             **Attachment visibility:** a step only sees the upload when its template references the input — via
             ``{{input}}`` / ``{{agent.input}}`` / ``{{step.<id>.input|output}}`` (implicit, all attachments) or the
@@ -38,7 +39,9 @@ class AgentRunRequest:
             selectors (by index, filename, or fnmatch glob). The batch must satisfy every selector the agent declares —
             exact names, indexed references (length must exceed the highest index), and glob patterns (each pattern needs at
             least one match). Mismatches return HTTP 400 with the unmet requirements listed.  Mutually exclusive with
-            ``input`` and ``input_upload_id`` — pass exactly one of the three. Max 20 uploads per run.
+            ``input_upload_id`` (two spellings of the same batch), but may be combined with ``input`` — the prompt text
+            leads and the per-file sections follow, so "a photo plus a sentence about it" needs no synthetic text upload.
+            Max 20 uploads per run.
         metadata (AgentRunRequestMetadataType0 | None | Unset): Metadata to make available for string substitution
             expressions in agent tasks.
         priority (bool | Unset): If true, the agent run will be treated as priority execution. Default: False.

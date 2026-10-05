@@ -39,7 +39,7 @@ class AgentExportResponse:
             definition, default_evaluation_tier, evaluation_mode, sampling_config, max_retries, retry_on_failure,
             prompt_model_auto_upgrade_strategy, prompt_model_auto_rollback_enabled, prompt_model_auto_rollback_triggers,
             created_at, updated_at.
-        export_version (str): Schema version of the export format (currently "2").
+        export_version (str): Schema version of the export format (currently "5").
         exported_at (str): ISO-8601 timestamp of when the export was generated.
         software_version (str): Application version that produced this export.
         alert_configs (list[AgentExportResponseAlertConfigsType0Item] | None | Unset): Alert configurations.

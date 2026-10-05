@@ -11,6 +11,7 @@ from ...models.http_validation_error import HTTPValidationError
 from ...models.organization_alert_preference_response import (
     OrganizationAlertPreferenceResponse,
 )
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...models.update_organization_alert_preference_request import (
     UpdateOrganizationAlertPreferenceRequest,
 )
@@ -50,7 +51,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | OrganizationAlertPreferenceResponse | None:
+) -> (
+    HTTPValidationError
+    | OrganizationAlertPreferenceResponse
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = OrganizationAlertPreferenceResponse.from_dict(response.json())
 
@@ -61,6 +67,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -69,7 +80,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | OrganizationAlertPreferenceResponse]:
+) -> Response[
+    HTTPValidationError | OrganizationAlertPreferenceResponse | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -86,7 +99,9 @@ def sync_detailed(
     body: UpdateOrganizationAlertPreferenceRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | OrganizationAlertPreferenceResponse]:
+) -> Response[
+    HTTPValidationError | OrganizationAlertPreferenceResponse | ServiceUnavailableError
+]:
     """Update organization alert delivery preference
 
      Update the authenticated user's personal delivery preference for one alert type in one organization.
@@ -110,7 +125,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | OrganizationAlertPreferenceResponse]
+        Response[HTTPValidationError | OrganizationAlertPreferenceResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -136,7 +151,12 @@ def sync(
     body: UpdateOrganizationAlertPreferenceRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | OrganizationAlertPreferenceResponse | None:
+) -> (
+    HTTPValidationError
+    | OrganizationAlertPreferenceResponse
+    | ServiceUnavailableError
+    | None
+):
     """Update organization alert delivery preference
 
      Update the authenticated user's personal delivery preference for one alert type in one organization.
@@ -160,7 +180,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | OrganizationAlertPreferenceResponse
+        HTTPValidationError | OrganizationAlertPreferenceResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -181,7 +201,9 @@ async def asyncio_detailed(
     body: UpdateOrganizationAlertPreferenceRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | OrganizationAlertPreferenceResponse]:
+) -> Response[
+    HTTPValidationError | OrganizationAlertPreferenceResponse | ServiceUnavailableError
+]:
     """Update organization alert delivery preference
 
      Update the authenticated user's personal delivery preference for one alert type in one organization.
@@ -205,7 +227,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | OrganizationAlertPreferenceResponse]
+        Response[HTTPValidationError | OrganizationAlertPreferenceResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -229,7 +251,12 @@ async def asyncio(
     body: UpdateOrganizationAlertPreferenceRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | OrganizationAlertPreferenceResponse | None:
+) -> (
+    HTTPValidationError
+    | OrganizationAlertPreferenceResponse
+    | ServiceUnavailableError
+    | None
+):
     """Update organization alert delivery preference
 
      Update the authenticated user's personal delivery preference for one alert type in one organization.
@@ -253,7 +280,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | OrganizationAlertPreferenceResponse
+        HTTPValidationError | OrganizationAlertPreferenceResponse | ServiceUnavailableError
     """
 
     return (

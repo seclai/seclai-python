@@ -24,15 +24,29 @@ class CreateMemoryBankBody:
         description (None | str | Unset): Optional description of the bank's purpose.
         dimensions (int | None | Unset): Embedding dimensions (custom mode only).
         embedding_model (None | str | Unset): Custom embedding model (custom mode only).
-        max_age_days (int | None | Unset): Max entry age in days before compaction. Checked inline after each write and
-            by the hourly background sweep.
+        max_age_days (int | None | Unset): DEPRECATED and no longer applied. Age used to trigger compaction, which
+            duplicated retention_days — both removed the same entries at the same age. Age now belongs solely to
+            retention_days, which deletes; compaction triggers on max_size_tokens and max_turns. Rejected with 400 for
+            clients sending Seclai-Version 2026-08-03 or later; accepted and stored but inert for older clients.
         max_size_tokens (int | None | Unset): Max total tokens (per partition) before compaction. Checked inline after
             each write and by the hourly background sweep.
         max_turns (int | None | Unset): Max conversation turns (per partition) before compaction. Checked inline after
             each write and by the hourly background sweep.
         mode (str | Unset): Embedding quality / cost trade-off. One of: fast_and_cheap, balanced, slow_and_thorough,
             custom. Default: 'fast_and_cheap'.
-        retention_days (int | None | Unset): Content source retention in days. Default: 30.
+        retention_days (int | None | Unset): Retention in days — when entries are deleted outright, text and embeddings.
+            This is the only age-based control; compaction triggers on max_size_tokens and max_turns. For clients sending
+            Seclai-Version 2026-08-03 or later, omitting the field resolves per bank type: 90 days for a conversation bank,
+            indefinite for a general bank. Older clients keep the previous default of 30 days for a conversation bank —
+            unless a longer max_age_days was sent, which wins, since the window is never lowered beneath the only age the
+            caller expressed — while a general bank keeps entries indefinitely. Send an explicit value (or null for
+            indefinite) to be unambiguous on every version.
+        strip_quoted_reply_chains (bool | Unset): Conversation banks only. When true, a conversation turn written to
+            this bank has the quoted reply chain an email client prepends to a reply dropped from it. Only inbound (user)
+            turns are affected, and only words in a run of at least ~40 matching a recent turn word for word are dropped
+            (line wrapping and punctuation at a word's edge are ignored). A word the sender changed is kept, including a
+            one-character change inside a link, address or amount, unless the change is only to that edge punctuation.
+            Default: False.
         type_ (str | Unset): Bank type. 'conversation' for chat-turn data with conversation_key + speaker; 'general' for
             flat entries with optional group_key. Default: 'conversation'.
     """
@@ -48,7 +62,8 @@ class CreateMemoryBankBody:
     max_size_tokens: int | None | Unset = UNSET
     max_turns: int | None | Unset = UNSET
     mode: str | Unset = "fast_and_cheap"
-    retention_days: int | None | Unset = 30
+    retention_days: int | None | Unset = UNSET
+    strip_quoted_reply_chains: bool | Unset = False
     type_: str | Unset = "conversation"
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -117,6 +132,8 @@ class CreateMemoryBankBody:
         else:
             retention_days = self.retention_days
 
+        strip_quoted_reply_chains = self.strip_quoted_reply_chains
+
         type_ = self.type_
 
         field_dict: dict[str, Any] = {}
@@ -148,6 +165,8 @@ class CreateMemoryBankBody:
             field_dict["mode"] = mode
         if retention_days is not UNSET:
             field_dict["retention_days"] = retention_days
+        if strip_quoted_reply_chains is not UNSET:
+            field_dict["strip_quoted_reply_chains"] = strip_quoted_reply_chains
         if type_ is not UNSET:
             field_dict["type"] = type_
 
@@ -250,6 +269,8 @@ class CreateMemoryBankBody:
 
         retention_days = _parse_retention_days(d.pop("retention_days", UNSET))
 
+        strip_quoted_reply_chains = d.pop("strip_quoted_reply_chains", UNSET)
+
         type_ = d.pop("type", UNSET)
 
         create_memory_bank_body = cls(
@@ -265,6 +286,7 @@ class CreateMemoryBankBody:
             max_turns=max_turns,
             mode=mode,
             retention_days=retention_days,
+            strip_quoted_reply_chains=strip_quoted_reply_chains,
             type_=type_,
         )
 

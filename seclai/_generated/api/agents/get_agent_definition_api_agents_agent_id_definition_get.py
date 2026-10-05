@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_definition_response import AgentDefinitionResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -38,7 +39,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentDefinitionResponse | HTTPValidationError | None:
+) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AgentDefinitionResponse.from_dict(response.json())
 
@@ -49,6 +50,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -57,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentDefinitionResponse | HTTPValidationError]:
+) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,8 +78,8 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionResponse | HTTPValidationError]:
-    """Get agent definition
+) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
+    r"""Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -112,7 +118,10 @@ def sync_detailed(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming)
+    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
+    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
+    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
+    first, so its validated output becomes the run's result while the tokens act as a progress channel
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
@@ -145,7 +154,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionResponse | HTTPValidationError]
+        Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -167,8 +176,8 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionResponse | HTTPValidationError | None:
-    """Get agent definition
+) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
+    r"""Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -207,7 +216,10 @@ def sync(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming)
+    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
+    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
+    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
+    first, so its validated output becomes the run's result while the tokens act as a progress channel
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
@@ -240,7 +252,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionResponse | HTTPValidationError
+        AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -257,8 +269,8 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionResponse | HTTPValidationError]:
-    """Get agent definition
+) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
+    r"""Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -297,7 +309,10 @@ async def asyncio_detailed(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming)
+    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
+    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
+    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
+    first, so its validated output becomes the run's result while the tokens act as a progress channel
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
@@ -330,7 +345,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionResponse | HTTPValidationError]
+        Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -350,8 +365,8 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionResponse | HTTPValidationError | None:
-    """Get agent definition
+) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
+    r"""Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -390,7 +405,10 @@ async def asyncio(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming)
+    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
+    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
+    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
+    first, so its validated output becomes the run's result while the tokens act as a progress channel
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
@@ -423,7 +441,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionResponse | HTTPValidationError
+        AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

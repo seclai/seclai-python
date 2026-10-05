@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.effort_options_response import EffortOptionsResponse
+
 
 T = TypeVar("T", bound="ModelRecommendationResponse")
 
@@ -30,6 +34,7 @@ class ModelRecommendationResponse:
         supports_thinking (bool):
         supports_tool_use (bool):
         deprecated_at (None | str | Unset):
+        effort_options (EffortOptionsResponse | None | Unset):
         family (None | str | Unset):
         family_generation (float | None | Unset):
         released_at (None | str | Unset):
@@ -51,6 +56,7 @@ class ModelRecommendationResponse:
     supports_thinking: bool
     supports_tool_use: bool
     deprecated_at: None | str | Unset = UNSET
+    effort_options: EffortOptionsResponse | None | Unset = UNSET
     family: None | str | Unset = UNSET
     family_generation: float | None | Unset = UNSET
     released_at: None | str | Unset = UNSET
@@ -58,6 +64,8 @@ class ModelRecommendationResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.effort_options_response import EffortOptionsResponse
+
         description = self.description
 
         id = self.id
@@ -91,6 +99,14 @@ class ModelRecommendationResponse:
             deprecated_at = UNSET
         else:
             deprecated_at = self.deprecated_at
+
+        effort_options: dict[str, Any] | None | Unset
+        if isinstance(self.effort_options, Unset):
+            effort_options = UNSET
+        elif isinstance(self.effort_options, EffortOptionsResponse):
+            effort_options = self.effort_options.to_dict()
+        else:
+            effort_options = self.effort_options
 
         family: None | str | Unset
         if isinstance(self.family, Unset):
@@ -138,6 +154,8 @@ class ModelRecommendationResponse:
         )
         if deprecated_at is not UNSET:
             field_dict["deprecated_at"] = deprecated_at
+        if effort_options is not UNSET:
+            field_dict["effort_options"] = effort_options
         if family is not UNSET:
             field_dict["family"] = family
         if family_generation is not UNSET:
@@ -151,6 +169,8 @@ class ModelRecommendationResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.effort_options_response import EffortOptionsResponse
+
         d = dict(src_dict)
         description = d.pop("description")
 
@@ -188,6 +208,23 @@ class ModelRecommendationResponse:
             return cast(None | str | Unset, data)
 
         deprecated_at = _parse_deprecated_at(d.pop("deprecated_at", UNSET))
+
+        def _parse_effort_options(data: object) -> EffortOptionsResponse | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                effort_options_type_0 = EffortOptionsResponse.from_dict(data)
+
+                return effort_options_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(EffortOptionsResponse | None | Unset, data)
+
+        effort_options = _parse_effort_options(d.pop("effort_options", UNSET))
 
         def _parse_family(data: object) -> None | str | Unset:
             if data is None:
@@ -241,6 +278,7 @@ class ModelRecommendationResponse:
             supports_thinking=supports_thinking,
             supports_tool_use=supports_tool_use,
             deprecated_at=deprecated_at,
+            effort_options=effort_options,
             family=family,
             family_generation=family_generation,
             released_at=released_at,

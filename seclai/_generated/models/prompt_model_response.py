@@ -11,7 +11,11 @@ from dateutil.parser import isoparse
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.effort_options_response import EffortOptionsResponse
     from ..models.modality_rate_response import ModalityRateResponse
+    from ..models.prompt_model_response_generation_credits_per_variant_type_0 import (
+        PromptModelResponseGenerationCreditsPerVariantType0,
+    )
     from ..models.prompt_model_response_generation_params_type_0 import (
         PromptModelResponseGenerationParamsType0,
     )
@@ -40,16 +44,35 @@ class PromptModelResponse:
         model_id (str):
         name (str):
         provider (str):
+        chat_capable (bool | Unset): Whether this model can serve a chat request (`prompt_call`, `extract_data`). True
+            for every plain text LLM, and for a dual-capability model that generates media AND holds a conversation; false
+            for a dedicated generator (Imagen, Veo, a TTS voice), which bills per produced unit and has no chat interface.
+            Authoritative: consumers must read this rather than inferring it from `generation_params` or
+            `supported_output_media`, because the answer also depends on which inference interface serves the model —
+            something no response field exposes. Default: True.
         deprecated_at (datetime.datetime | None | Unset):
+        effort_options (EffortOptionsResponse | None | Unset): The reasoning-effort values a prompt_call or extract_data
+            step may set as `effort` with this model. Null when the model takes none.
         family (None | str | Unset):
         family_generation (float | None | Unset):
         generation_credits_per_unit (float | None | Unset): Per-unit credit cost for a dedicated media-generation model,
             in the unit named by ``generation_params.pricing_unit`` (per image / per second / per character / per output
-            token). Multiply by the produced unit count (images, seconds, characters) for the run cost. None for token-
-            billed (non-generation) models.
+            token). Multiply by the produced unit count (images, seconds, characters) for the run cost. None for models with
+            no generation descriptor. This rate applies when the model is used in a generate_image/audio/video step; a model
+            that also serves the chat path is billed per token there instead, using the input/output token rates on this
+            same record. When `generation_params.price_varies_by` is set the model has one rate per value of that option and
+            this is the **highest** of them — read `generation_credits_per_variant` for the real spread rather than
+            presenting this as the price.
+        generation_credits_per_variant (None | PromptModelResponseGenerationCreditsPerVariantType0 | Unset): Per-unit
+            credit cost keyed by the value of the option named in `generation_params.price_varies_by` (e.g. `{'720p': 1330,
+            '1080p': 1995}`). None for a model with a single rate, where `generation_credits_per_unit` already describes it
+            exactly.
         generation_params (None | PromptModelResponseGenerationParamsType0 | Unset): Media-generation descriptor
             (modality, pricing_unit, and modality-specific constraints). NULL for text LLMs; present for image/audio/video
-            generation models. See schemas.generation_params.
+            generation models. See schemas.generation_params. A present descriptor does NOT imply the model is generation-
+            only: some models serve both paths (they generate media AND hold a chat conversation). Read `chat_capable` to
+            tell whether a model with a descriptor can also be used as a chat model — do not branch on this field being non-
+            null alone, and do not re-derive the answer from `supported_output_media`.
         generation_unit_label (None | str | Unset): Human suffix for the per-unit generation rate (e.g. ``/image``,
             ``/second``, ``/1k chars``, ``/1k tokens``) — single-sourced from the pricing unit so clients render cost
             without re-deriving the mapping. None for non-generation models. Char/token rates are shown per 1,000 (the ``/1k
@@ -57,9 +80,14 @@ class PromptModelResponse:
         image_generation_tool_credits_per_image (float | None | Unset): Per-image credit cost of using the built-in
             image_generation tool (it runs gpt-image-1). Set only for models that actually support the tool (tool-use
             capable); None otherwise.
-        input_1h_cache_write_credits_per_1000_tokens (float | None | Unset):
-        input_5m_cache_write_credits_per_1000_tokens (float | None | Unset):
-        input_cache_hit_credits_per_1000_tokens (float | None | Unset):
+        input_1h_cache_write_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens written to a
+            1-hour prompt cache.
+        input_30m_cache_write_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens written to
+            a 30-minute prompt cache.
+        input_5m_cache_write_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens written to a
+            5-minute prompt cache.
+        input_cache_hit_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens read from a
+            prompt cache.
         input_credits_per_1000_tokens (float | None | Unset):
         is_new (bool | Unset):  Default: False.
         last_used (bool | Unset):  Default: False.
@@ -99,14 +127,20 @@ class PromptModelResponse:
     model_id: str
     name: str
     provider: str
+    chat_capable: bool | Unset = True
     deprecated_at: datetime.datetime | None | Unset = UNSET
+    effort_options: EffortOptionsResponse | None | Unset = UNSET
     family: None | str | Unset = UNSET
     family_generation: float | None | Unset = UNSET
     generation_credits_per_unit: float | None | Unset = UNSET
+    generation_credits_per_variant: (
+        None | PromptModelResponseGenerationCreditsPerVariantType0 | Unset
+    ) = UNSET
     generation_params: None | PromptModelResponseGenerationParamsType0 | Unset = UNSET
     generation_unit_label: None | str | Unset = UNSET
     image_generation_tool_credits_per_image: float | None | Unset = UNSET
     input_1h_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
+    input_30m_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
     input_5m_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
     input_cache_hit_credits_per_1000_tokens: float | None | Unset = UNSET
     input_credits_per_1000_tokens: float | None | Unset = UNSET
@@ -137,6 +171,10 @@ class PromptModelResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.effort_options_response import EffortOptionsResponse
+        from ..models.prompt_model_response_generation_credits_per_variant_type_0 import (
+            PromptModelResponseGenerationCreditsPerVariantType0,
+        )
         from ..models.prompt_model_response_generation_params_type_0 import (
             PromptModelResponseGenerationParamsType0,
         )
@@ -164,6 +202,8 @@ class PromptModelResponse:
 
         provider = self.provider
 
+        chat_capable = self.chat_capable
+
         deprecated_at: None | str | Unset
         if isinstance(self.deprecated_at, Unset):
             deprecated_at = UNSET
@@ -171,6 +211,14 @@ class PromptModelResponse:
             deprecated_at = self.deprecated_at.isoformat()
         else:
             deprecated_at = self.deprecated_at
+
+        effort_options: dict[str, Any] | None | Unset
+        if isinstance(self.effort_options, Unset):
+            effort_options = UNSET
+        elif isinstance(self.effort_options, EffortOptionsResponse):
+            effort_options = self.effort_options.to_dict()
+        else:
+            effort_options = self.effort_options
 
         family: None | str | Unset
         if isinstance(self.family, Unset):
@@ -189,6 +237,19 @@ class PromptModelResponse:
             generation_credits_per_unit = UNSET
         else:
             generation_credits_per_unit = self.generation_credits_per_unit
+
+        generation_credits_per_variant: dict[str, Any] | None | Unset
+        if isinstance(self.generation_credits_per_variant, Unset):
+            generation_credits_per_variant = UNSET
+        elif isinstance(
+            self.generation_credits_per_variant,
+            PromptModelResponseGenerationCreditsPerVariantType0,
+        ):
+            generation_credits_per_variant = (
+                self.generation_credits_per_variant.to_dict()
+            )
+        else:
+            generation_credits_per_variant = self.generation_credits_per_variant
 
         generation_params: dict[str, Any] | None | Unset
         if isinstance(self.generation_params, Unset):
@@ -220,6 +281,14 @@ class PromptModelResponse:
         else:
             input_1h_cache_write_credits_per_1000_tokens = (
                 self.input_1h_cache_write_credits_per_1000_tokens
+            )
+
+        input_30m_cache_write_credits_per_1000_tokens: float | None | Unset
+        if isinstance(self.input_30m_cache_write_credits_per_1000_tokens, Unset):
+            input_30m_cache_write_credits_per_1000_tokens = UNSET
+        else:
+            input_30m_cache_write_credits_per_1000_tokens = (
+                self.input_30m_cache_write_credits_per_1000_tokens
             )
 
         input_5m_cache_write_credits_per_1000_tokens: float | None | Unset
@@ -402,14 +471,22 @@ class PromptModelResponse:
                 "provider": provider,
             }
         )
+        if chat_capable is not UNSET:
+            field_dict["chat_capable"] = chat_capable
         if deprecated_at is not UNSET:
             field_dict["deprecated_at"] = deprecated_at
+        if effort_options is not UNSET:
+            field_dict["effort_options"] = effort_options
         if family is not UNSET:
             field_dict["family"] = family
         if family_generation is not UNSET:
             field_dict["family_generation"] = family_generation
         if generation_credits_per_unit is not UNSET:
             field_dict["generation_credits_per_unit"] = generation_credits_per_unit
+        if generation_credits_per_variant is not UNSET:
+            field_dict["generation_credits_per_variant"] = (
+                generation_credits_per_variant
+            )
         if generation_params is not UNSET:
             field_dict["generation_params"] = generation_params
         if generation_unit_label is not UNSET:
@@ -421,6 +498,10 @@ class PromptModelResponse:
         if input_1h_cache_write_credits_per_1000_tokens is not UNSET:
             field_dict["input_1h_cache_write_credits_per_1000_tokens"] = (
                 input_1h_cache_write_credits_per_1000_tokens
+            )
+        if input_30m_cache_write_credits_per_1000_tokens is not UNSET:
+            field_dict["input_30m_cache_write_credits_per_1000_tokens"] = (
+                input_30m_cache_write_credits_per_1000_tokens
             )
         if input_5m_cache_write_credits_per_1000_tokens is not UNSET:
             field_dict["input_5m_cache_write_credits_per_1000_tokens"] = (
@@ -487,7 +568,11 @@ class PromptModelResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.effort_options_response import EffortOptionsResponse
         from ..models.modality_rate_response import ModalityRateResponse
+        from ..models.prompt_model_response_generation_credits_per_variant_type_0 import (
+            PromptModelResponseGenerationCreditsPerVariantType0,
+        )
         from ..models.prompt_model_response_generation_params_type_0 import (
             PromptModelResponseGenerationParamsType0,
         )
@@ -518,6 +603,8 @@ class PromptModelResponse:
 
         provider = d.pop("provider")
 
+        chat_capable = d.pop("chat_capable", UNSET)
+
         def _parse_deprecated_at(data: object) -> datetime.datetime | None | Unset:
             if data is None:
                 return data
@@ -534,6 +621,23 @@ class PromptModelResponse:
             return cast(datetime.datetime | None | Unset, data)
 
         deprecated_at = _parse_deprecated_at(d.pop("deprecated_at", UNSET))
+
+        def _parse_effort_options(data: object) -> EffortOptionsResponse | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                effort_options_type_0 = EffortOptionsResponse.from_dict(data)
+
+                return effort_options_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(EffortOptionsResponse | None | Unset, data)
+
+        effort_options = _parse_effort_options(d.pop("effort_options", UNSET))
 
         def _parse_family(data: object) -> None | str | Unset:
             if data is None:
@@ -562,6 +666,31 @@ class PromptModelResponse:
 
         generation_credits_per_unit = _parse_generation_credits_per_unit(
             d.pop("generation_credits_per_unit", UNSET)
+        )
+
+        def _parse_generation_credits_per_variant(
+            data: object,
+        ) -> None | PromptModelResponseGenerationCreditsPerVariantType0 | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                generation_credits_per_variant_type_0 = (
+                    PromptModelResponseGenerationCreditsPerVariantType0.from_dict(data)
+                )
+
+                return generation_credits_per_variant_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(
+                None | PromptModelResponseGenerationCreditsPerVariantType0 | Unset, data
+            )
+
+        generation_credits_per_variant = _parse_generation_credits_per_variant(
+            d.pop("generation_credits_per_variant", UNSET)
         )
 
         def _parse_generation_params(
@@ -623,6 +752,21 @@ class PromptModelResponse:
         input_1h_cache_write_credits_per_1000_tokens = (
             _parse_input_1h_cache_write_credits_per_1000_tokens(
                 d.pop("input_1h_cache_write_credits_per_1000_tokens", UNSET)
+            )
+        )
+
+        def _parse_input_30m_cache_write_credits_per_1000_tokens(
+            data: object,
+        ) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        input_30m_cache_write_credits_per_1000_tokens = (
+            _parse_input_30m_cache_write_credits_per_1000_tokens(
+                d.pop("input_30m_cache_write_credits_per_1000_tokens", UNSET)
             )
         )
 
@@ -944,14 +1088,18 @@ class PromptModelResponse:
             model_id=model_id,
             name=name,
             provider=provider,
+            chat_capable=chat_capable,
             deprecated_at=deprecated_at,
+            effort_options=effort_options,
             family=family,
             family_generation=family_generation,
             generation_credits_per_unit=generation_credits_per_unit,
+            generation_credits_per_variant=generation_credits_per_variant,
             generation_params=generation_params,
             generation_unit_label=generation_unit_label,
             image_generation_tool_credits_per_image=image_generation_tool_credits_per_image,
             input_1h_cache_write_credits_per_1000_tokens=input_1h_cache_write_credits_per_1000_tokens,
+            input_30m_cache_write_credits_per_1000_tokens=input_30m_cache_write_credits_per_1000_tokens,
             input_5m_cache_write_credits_per_1000_tokens=input_5m_cache_write_credits_per_1000_tokens,
             input_cache_hit_credits_per_1000_tokens=input_cache_hit_credits_per_1000_tokens,
             input_credits_per_1000_tokens=input_credits_per_1000_tokens,

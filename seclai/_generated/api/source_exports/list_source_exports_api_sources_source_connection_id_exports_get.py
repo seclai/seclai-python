@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.export_list_response import ExportListResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -49,7 +50,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> ExportListResponse | HTTPValidationError | None:
+) -> ExportListResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = ExportListResponse.from_dict(response.json())
 
@@ -60,6 +61,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -68,7 +74,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[ExportListResponse | HTTPValidationError]:
+) -> Response[ExportListResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -85,7 +91,7 @@ def sync_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ExportListResponse | HTTPValidationError]:
+) -> Response[ExportListResponse | HTTPValidationError | ServiceUnavailableError]:
     """List exports
 
      List all export jobs for a source connection, ordered newest first.  Supports pagination via
@@ -104,7 +110,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportListResponse | HTTPValidationError]
+        Response[ExportListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -130,7 +136,7 @@ def sync(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ExportListResponse | HTTPValidationError | None:
+) -> ExportListResponse | HTTPValidationError | ServiceUnavailableError | None:
     """List exports
 
      List all export jobs for a source connection, ordered newest first.  Supports pagination via
@@ -149,7 +155,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportListResponse | HTTPValidationError
+        ExportListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -170,7 +176,7 @@ async def asyncio_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ExportListResponse | HTTPValidationError]:
+) -> Response[ExportListResponse | HTTPValidationError | ServiceUnavailableError]:
     """List exports
 
      List all export jobs for a source connection, ordered newest first.  Supports pagination via
@@ -189,7 +195,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportListResponse | HTTPValidationError]
+        Response[ExportListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -213,7 +219,7 @@ async def asyncio(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ExportListResponse | HTTPValidationError | None:
+) -> ExportListResponse | HTTPValidationError | ServiceUnavailableError | None:
     """List exports
 
      List all export jobs for a source connection, ordered newest first.  Supports pagination via
@@ -232,7 +238,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportListResponse | HTTPValidationError
+        ExportListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

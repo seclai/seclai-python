@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_export_response import AgentExportResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -46,7 +47,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentExportResponse | HTTPValidationError | None:
+) -> AgentExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AgentExportResponse.from_dict(response.json())
 
@@ -57,6 +58,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -65,7 +71,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentExportResponse | HTTPValidationError]:
+) -> Response[AgentExportResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +87,7 @@ def sync_detailed(
     download: bool | Unset = True,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentExportResponse | HTTPValidationError]:
+) -> Response[AgentExportResponse | HTTPValidationError | ServiceUnavailableError]:
     r"""Export agent definition
 
      Export an agent definition as a portable JSON snapshot.
@@ -91,7 +97,7 @@ def sync_detailed(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"2\"`)
+    - `export_version`: schema version (currently `\"5\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules
@@ -118,7 +124,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentExportResponse | HTTPValidationError]
+        Response[AgentExportResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -142,7 +148,7 @@ def sync(
     download: bool | Unset = True,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentExportResponse | HTTPValidationError | None:
+) -> AgentExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     r"""Export agent definition
 
      Export an agent definition as a portable JSON snapshot.
@@ -152,7 +158,7 @@ def sync(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"2\"`)
+    - `export_version`: schema version (currently `\"5\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules
@@ -179,7 +185,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentExportResponse | HTTPValidationError
+        AgentExportResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -198,7 +204,7 @@ async def asyncio_detailed(
     download: bool | Unset = True,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentExportResponse | HTTPValidationError]:
+) -> Response[AgentExportResponse | HTTPValidationError | ServiceUnavailableError]:
     r"""Export agent definition
 
      Export an agent definition as a portable JSON snapshot.
@@ -208,7 +214,7 @@ async def asyncio_detailed(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"2\"`)
+    - `export_version`: schema version (currently `\"5\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules
@@ -235,7 +241,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentExportResponse | HTTPValidationError]
+        Response[AgentExportResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -257,7 +263,7 @@ async def asyncio(
     download: bool | Unset = True,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentExportResponse | HTTPValidationError | None:
+) -> AgentExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     r"""Export agent definition
 
      Export an agent definition as a portable JSON snapshot.
@@ -267,7 +273,7 @@ async def asyncio(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"2\"`)
+    - `export_version`: schema version (currently `\"5\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules
@@ -294,7 +300,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentExportResponse | HTTPValidationError
+        AgentExportResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

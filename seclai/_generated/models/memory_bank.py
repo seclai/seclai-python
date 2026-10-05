@@ -29,14 +29,21 @@ class MemoryBank:
         description (None | str | Unset): Optional description of the memory bank's purpose.
         dimensions (int | None | Unset): Vector embedding dimensions.
         embedding_model (None | str | Unset): Embedding model identifier.
-        max_age_days (int | None | Unset): Max entry age in days before compaction. Checked both inline after each write
-            and by the hourly background sweep.
+        max_age_days (int | None | Unset): DEPRECATED and no longer applied. Age now belongs solely to retention_days,
+            which deletes; compaction triggers on max_size_tokens and max_turns. Always null for clients sending Seclai-
+            Version 2026-08-03 or later; older clients keep reading whatever value was stored.
         max_size_tokens (int | None | Unset): Max total tokens (per partition) before compaction. Checked both inline
             after each write and by the hourly background sweep.
         max_turns (int | None | Unset): Max conversation turns (per partition) before compaction. Checked both inline
             after each write and by the hourly background sweep.
         retention_days (int | None | Unset): Content retention period in days (null = indefinite).
         source_connection_id (None | str | Unset): Linked content source ID (null if not yet provisioned).
+        strip_quoted_reply_chains (bool | Unset): Conversation banks only. When true, a conversation turn written to
+            this bank has the quoted reply chain an email client prepends to a reply dropped from it. Only inbound (user)
+            turns are affected, and only words in a run of at least ~40 matching a recent turn word for word are dropped
+            (line wrapping and punctuation at a word's edge are ignored). A word the sender changed is kept, including a
+            one-character change inside a link, address or amount, unless the change is only to that edge punctuation.
+            Default: False.
     """
 
     created_at: str
@@ -56,6 +63,7 @@ class MemoryBank:
     max_turns: int | None | Unset = UNSET
     retention_days: int | None | Unset = UNSET
     source_connection_id: None | str | Unset = UNSET
+    strip_quoted_reply_chains: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -137,6 +145,8 @@ class MemoryBank:
         else:
             source_connection_id = self.source_connection_id
 
+        strip_quoted_reply_chains = self.strip_quoted_reply_chains
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -171,6 +181,8 @@ class MemoryBank:
             field_dict["retention_days"] = retention_days
         if source_connection_id is not UNSET:
             field_dict["source_connection_id"] = source_connection_id
+        if strip_quoted_reply_chains is not UNSET:
+            field_dict["strip_quoted_reply_chains"] = strip_quoted_reply_chains
 
         return field_dict
 
@@ -290,6 +302,8 @@ class MemoryBank:
             d.pop("source_connection_id", UNSET)
         )
 
+        strip_quoted_reply_chains = d.pop("strip_quoted_reply_chains", UNSET)
+
         memory_bank = cls(
             created_at=created_at,
             id=id,
@@ -308,6 +322,7 @@ class MemoryBank:
             max_turns=max_turns,
             retention_days=retention_days,
             source_connection_id=source_connection_id,
+            strip_quoted_reply_chains=strip_quoted_reply_chains,
         )
 
         memory_bank.additional_properties = d

@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.content_detail_response_metadata_type_0_item import (
         ContentDetailResponseMetadataType0Item,
@@ -42,6 +44,18 @@ class ContentDetailResponse:
         text_content_start (int): Start position of the text content.
         text_content_total_length (int): Total length of the text content.
         title (None | str): Title of the content.
+        extracted_media_capped (bool | Unset): True when extraction stopped with media still unread, so the item
+            references more media than was indexed and media search will not match anything past the cut. Two causes: a web
+            page that ran out of the budget for fetching remote assets, or a container that could not be read to the end (a
+            truncated or hostile archive). An uploaded document that reads cleanly is never capped, however much media it
+            holds — there is no limit on that. Default: False.
+        extracted_media_count (int | None | Unset): Number of embedded images / videos extracted from inside this item
+            and indexed as their own chunks. There is no limit on this — a document contributes as many as it holds. Null
+            when there is no media record for the item: the extraction pass has not run, does not apply to this container,
+            or found nothing. Treat null as 'unknown', never as zero.
+        extracted_media_limit (int | None | Unset): The bound that was reached, when extracted_media_capped is true and
+            the stop was a bound — a number of fetch attempts, or a number of seconds. Null when extraction was not capped,
+            or when it stopped because the container could not be read rather than because a bound fired.
     """
 
     content_duration: int | None
@@ -66,6 +80,9 @@ class ContentDetailResponse:
     text_content_start: int
     text_content_total_length: int
     title: None | str
+    extracted_media_capped: bool | Unset = False
+    extracted_media_count: int | None | Unset = UNSET
+    extracted_media_limit: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -129,6 +146,20 @@ class ContentDetailResponse:
         title: None | str
         title = self.title
 
+        extracted_media_capped = self.extracted_media_capped
+
+        extracted_media_count: int | None | Unset
+        if isinstance(self.extracted_media_count, Unset):
+            extracted_media_count = UNSET
+        else:
+            extracted_media_count = self.extracted_media_count
+
+        extracted_media_limit: int | None | Unset
+        if isinstance(self.extracted_media_limit, Unset):
+            extracted_media_limit = UNSET
+        else:
+            extracted_media_limit = self.extracted_media_limit
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -157,6 +188,12 @@ class ContentDetailResponse:
                 "title": title,
             }
         )
+        if extracted_media_capped is not UNSET:
+            field_dict["extracted_media_capped"] = extracted_media_capped
+        if extracted_media_count is not UNSET:
+            field_dict["extracted_media_count"] = extracted_media_count
+        if extracted_media_limit is not UNSET:
+            field_dict["extracted_media_limit"] = extracted_media_limit
 
         return field_dict
 
@@ -280,6 +317,30 @@ class ContentDetailResponse:
 
         title = _parse_title(d.pop("title"))
 
+        extracted_media_capped = d.pop("extracted_media_capped", UNSET)
+
+        def _parse_extracted_media_count(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        extracted_media_count = _parse_extracted_media_count(
+            d.pop("extracted_media_count", UNSET)
+        )
+
+        def _parse_extracted_media_limit(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        extracted_media_limit = _parse_extracted_media_limit(
+            d.pop("extracted_media_limit", UNSET)
+        )
+
         content_detail_response = cls(
             content_duration=content_duration,
             content_duration_display=content_duration_display,
@@ -303,6 +364,9 @@ class ContentDetailResponse:
             text_content_start=text_content_start,
             text_content_total_length=text_content_total_length,
             title=title,
+            extracted_media_capped=extracted_media_capped,
+            extracted_media_count=extracted_media_count,
+            extracted_media_limit=extracted_media_limit,
         )
 
         content_detail_response.additional_properties = d

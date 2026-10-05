@@ -29,6 +29,7 @@ class AiAssistantFeedbackRequest:
         comment (None | str | Unset): Optional comment.
         context (AiAssistantFeedbackRequestContextType0 | None | Unset): Additional context.
         conversation_id (None | Unset | UUID): Conversation ID for the interaction.
+        governance_conversation_id (None | Unset | UUID): Governance conversation ID, if applicable.
         prompt_call_id (None | Unset | UUID): Prompt call ID for credit tracking.
     """
 
@@ -38,6 +39,7 @@ class AiAssistantFeedbackRequest:
     comment: None | str | Unset = UNSET
     context: AiAssistantFeedbackRequestContextType0 | None | Unset = UNSET
     conversation_id: None | Unset | UUID = UNSET
+    governance_conversation_id: None | Unset | UUID = UNSET
     prompt_call_id: None | Unset | UUID = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -80,6 +82,14 @@ class AiAssistantFeedbackRequest:
         else:
             conversation_id = self.conversation_id
 
+        governance_conversation_id: None | str | Unset
+        if isinstance(self.governance_conversation_id, Unset):
+            governance_conversation_id = UNSET
+        elif isinstance(self.governance_conversation_id, UUID):
+            governance_conversation_id = str(self.governance_conversation_id)
+        else:
+            governance_conversation_id = self.governance_conversation_id
+
         prompt_call_id: None | str | Unset
         if isinstance(self.prompt_call_id, Unset):
             prompt_call_id = UNSET
@@ -104,6 +114,8 @@ class AiAssistantFeedbackRequest:
             field_dict["context"] = context
         if conversation_id is not UNSET:
             field_dict["conversation_id"] = conversation_id
+        if governance_conversation_id is not UNSET:
+            field_dict["governance_conversation_id"] = governance_conversation_id
         if prompt_call_id is not UNSET:
             field_dict["prompt_call_id"] = prompt_call_id
 
@@ -184,6 +196,25 @@ class AiAssistantFeedbackRequest:
 
         conversation_id = _parse_conversation_id(d.pop("conversation_id", UNSET))
 
+        def _parse_governance_conversation_id(data: object) -> None | Unset | UUID:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                governance_conversation_id_type_0 = UUID(data)
+
+                return governance_conversation_id_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | Unset | UUID, data)
+
+        governance_conversation_id = _parse_governance_conversation_id(
+            d.pop("governance_conversation_id", UNSET)
+        )
+
         def _parse_prompt_call_id(data: object) -> None | Unset | UUID:
             if data is None:
                 return data
@@ -208,6 +239,7 @@ class AiAssistantFeedbackRequest:
             comment=comment,
             context=context,
             conversation_id=conversation_id,
+            governance_conversation_id=governance_conversation_id,
             prompt_call_id=prompt_call_id,
         )
 

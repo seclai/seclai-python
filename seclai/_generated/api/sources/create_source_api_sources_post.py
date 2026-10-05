@@ -8,6 +8,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.create_source_body import CreateSourceBody
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...models.source_response import SourceResponse
 from ...types import UNSET, Response, Unset
 
@@ -40,7 +41,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Any | HTTPValidationError | SourceResponse | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | SourceResponse | None:
     if response.status_code == 201:
         response_201 = SourceResponse.from_dict(response.json())
 
@@ -55,6 +56,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -63,7 +69,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Any | HTTPValidationError | SourceResponse]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError | SourceResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -78,7 +84,7 @@ def sync_detailed(
     body: CreateSourceBody,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError | SourceResponse]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError | SourceResponse]:
     """Create Source
 
      Create a new content source.
@@ -102,7 +108,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError | SourceResponse]
+        Response[Any | HTTPValidationError | ServiceUnavailableError | SourceResponse]
     """
 
     kwargs = _get_kwargs(
@@ -124,7 +130,7 @@ def sync(
     body: CreateSourceBody,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | SourceResponse | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | SourceResponse | None:
     """Create Source
 
      Create a new content source.
@@ -148,7 +154,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError | SourceResponse
+        Any | HTTPValidationError | ServiceUnavailableError | SourceResponse
     """
 
     return sync_detailed(
@@ -165,7 +171,7 @@ async def asyncio_detailed(
     body: CreateSourceBody,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError | SourceResponse]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError | SourceResponse]:
     """Create Source
 
      Create a new content source.
@@ -189,7 +195,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError | SourceResponse]
+        Response[Any | HTTPValidationError | ServiceUnavailableError | SourceResponse]
     """
 
     kwargs = _get_kwargs(
@@ -209,7 +215,7 @@ async def asyncio(
     body: CreateSourceBody,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | SourceResponse | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | SourceResponse | None:
     """Create Source
 
      Create a new content source.
@@ -233,7 +239,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError | SourceResponse
+        Any | HTTPValidationError | ServiceUnavailableError | SourceResponse
     """
 
     return (

@@ -10,6 +10,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.add_comment_request import AddCommentRequest
 from ...models.alert_detail_response import AlertDetailResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -44,7 +45,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AlertDetailResponse | HTTPValidationError | None:
+) -> AlertDetailResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AlertDetailResponse.from_dict(response.json())
 
@@ -55,6 +56,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -63,7 +69,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AlertDetailResponse | HTTPValidationError]:
+) -> Response[AlertDetailResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,7 +85,7 @@ def sync_detailed(
     body: AddCommentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AlertDetailResponse | HTTPValidationError]:
+) -> Response[AlertDetailResponse | HTTPValidationError | ServiceUnavailableError]:
     """Add alert comment
 
      Add a comment to an alert. Comments are visible to all subscribers and are included in the alert
@@ -99,7 +105,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AlertDetailResponse | HTTPValidationError]
+        Response[AlertDetailResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -123,7 +129,7 @@ def sync(
     body: AddCommentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AlertDetailResponse | HTTPValidationError | None:
+) -> AlertDetailResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Add alert comment
 
      Add a comment to an alert. Comments are visible to all subscribers and are included in the alert
@@ -143,7 +149,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AlertDetailResponse | HTTPValidationError
+        AlertDetailResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -162,7 +168,7 @@ async def asyncio_detailed(
     body: AddCommentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AlertDetailResponse | HTTPValidationError]:
+) -> Response[AlertDetailResponse | HTTPValidationError | ServiceUnavailableError]:
     """Add alert comment
 
      Add a comment to an alert. Comments are visible to all subscribers and are included in the alert
@@ -182,7 +188,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AlertDetailResponse | HTTPValidationError]
+        Response[AlertDetailResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -204,7 +210,7 @@ async def asyncio(
     body: AddCommentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AlertDetailResponse | HTTPValidationError | None:
+) -> AlertDetailResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Add alert comment
 
      Add a comment to an alert. Comments are visible to all subscribers and are included in the alert
@@ -224,7 +230,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AlertDetailResponse | HTTPValidationError
+        AlertDetailResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

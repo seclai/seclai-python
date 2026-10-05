@@ -11,6 +11,7 @@ from ...models.docs_search_api_docs_search_get_mode import (
 )
 from ...models.docs_search_response import DocsSearchResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -57,7 +58,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> DocsSearchResponse | HTTPValidationError | None:
+) -> DocsSearchResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = DocsSearchResponse.from_dict(response.json())
 
@@ -68,6 +69,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -76,7 +82,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[DocsSearchResponse | HTTPValidationError]:
+) -> Response[DocsSearchResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -95,7 +101,7 @@ def sync_detailed(
     limit: int | Unset = 8,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[DocsSearchResponse | HTTPValidationError]:
+) -> Response[DocsSearchResponse | HTTPValidationError | ServiceUnavailableError]:
     """Search documentation
 
      Search the Seclai documentation by content and return matching pages. `mode=keyword` matches page
@@ -118,7 +124,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DocsSearchResponse | HTTPValidationError]
+        Response[DocsSearchResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -146,7 +152,7 @@ def sync(
     limit: int | Unset = 8,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> DocsSearchResponse | HTTPValidationError | None:
+) -> DocsSearchResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Search documentation
 
      Search the Seclai documentation by content and return matching pages. `mode=keyword` matches page
@@ -169,7 +175,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DocsSearchResponse | HTTPValidationError
+        DocsSearchResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -192,7 +198,7 @@ async def asyncio_detailed(
     limit: int | Unset = 8,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[DocsSearchResponse | HTTPValidationError]:
+) -> Response[DocsSearchResponse | HTTPValidationError | ServiceUnavailableError]:
     """Search documentation
 
      Search the Seclai documentation by content and return matching pages. `mode=keyword` matches page
@@ -215,7 +221,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DocsSearchResponse | HTTPValidationError]
+        Response[DocsSearchResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -241,7 +247,7 @@ async def asyncio(
     limit: int | Unset = 8,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> DocsSearchResponse | HTTPValidationError | None:
+) -> DocsSearchResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Search documentation
 
      Search the Seclai documentation by content and return matching pages. `mode=keyword` matches page
@@ -264,7 +270,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DocsSearchResponse | HTTPValidationError
+        DocsSearchResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

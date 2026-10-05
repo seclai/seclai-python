@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 from uuid import UUID
 
@@ -11,6 +11,7 @@ from ...models.body_upload_file_to_source_api_sources_source_connection_id_uploa
     BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
 )
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -43,11 +44,20 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | None:
+    if response.status_code == 403:
+        response_403 = cast(Any, None)
+        return response_403
+
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -57,7 +67,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,12 +83,13 @@ def sync_detailed(
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError]:
     r"""Upload a file to a content source
 
      Upload a file to a content source.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -115,6 +126,8 @@ def sync_detailed(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -128,6 +141,19 @@ def sync_detailed(
     - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
     source.
 
+    Tracking indexing progress:
+    - **Which id you get back depends on `status`, and they are not interchangeable:**
+      - `uploaded` — a new item. `content_version_id` is set and `source_connection_content_version_id`
+    is `null`. Indexing continues in the background after this call returns.
+      - `duplicate` — this exact file is already on the source, so nothing was created and nothing is
+    being indexed. `content_version_id` is `null` and `source_connection_content_version_id` is the
+    existing, already-indexed item: pass it straight to `GET /contents/{id}`. There is nothing to poll.
+    - For an `uploaded` item, poll `GET /sources/{id}/contents/{content_version_id}` with the returned
+    `content_version_id`, or `GET /sources/{id}/contents?content_version_id=…&content_version_id=…` for
+    a whole batch, to follow each item through to `completed` or `failed`.
+    - On those status endpoints `source_connection_content_version_id` stays `null` until the item
+    finishes indexing; that is the id `GET /contents/{id}` takes.
+
     Args:
         source_connection_id (str):
         x_account_id (UUID | Unset):
@@ -139,7 +165,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError]
+        Response[Any | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -163,12 +189,13 @@ def sync(
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | None:
     r"""Upload a file to a content source
 
      Upload a file to a content source.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -205,6 +232,8 @@ def sync(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -218,6 +247,19 @@ def sync(
     - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
     source.
 
+    Tracking indexing progress:
+    - **Which id you get back depends on `status`, and they are not interchangeable:**
+      - `uploaded` — a new item. `content_version_id` is set and `source_connection_content_version_id`
+    is `null`. Indexing continues in the background after this call returns.
+      - `duplicate` — this exact file is already on the source, so nothing was created and nothing is
+    being indexed. `content_version_id` is `null` and `source_connection_content_version_id` is the
+    existing, already-indexed item: pass it straight to `GET /contents/{id}`. There is nothing to poll.
+    - For an `uploaded` item, poll `GET /sources/{id}/contents/{content_version_id}` with the returned
+    `content_version_id`, or `GET /sources/{id}/contents?content_version_id=…&content_version_id=…` for
+    a whole batch, to follow each item through to `completed` or `failed`.
+    - On those status endpoints `source_connection_content_version_id` stays `null` until the item
+    finishes indexing; that is the id `GET /contents/{id}` takes.
+
     Args:
         source_connection_id (str):
         x_account_id (UUID | Unset):
@@ -229,7 +271,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError
+        Any | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -248,12 +290,13 @@ async def asyncio_detailed(
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError]:
     r"""Upload a file to a content source
 
      Upload a file to a content source.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -290,6 +333,8 @@ async def asyncio_detailed(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -303,6 +348,19 @@ async def asyncio_detailed(
     - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
     source.
 
+    Tracking indexing progress:
+    - **Which id you get back depends on `status`, and they are not interchangeable:**
+      - `uploaded` — a new item. `content_version_id` is set and `source_connection_content_version_id`
+    is `null`. Indexing continues in the background after this call returns.
+      - `duplicate` — this exact file is already on the source, so nothing was created and nothing is
+    being indexed. `content_version_id` is `null` and `source_connection_content_version_id` is the
+    existing, already-indexed item: pass it straight to `GET /contents/{id}`. There is nothing to poll.
+    - For an `uploaded` item, poll `GET /sources/{id}/contents/{content_version_id}` with the returned
+    `content_version_id`, or `GET /sources/{id}/contents?content_version_id=…&content_version_id=…` for
+    a whole batch, to follow each item through to `completed` or `failed`.
+    - On those status endpoints `source_connection_content_version_id` stays `null` until the item
+    finishes indexing; that is the id `GET /contents/{id}` takes.
+
     Args:
         source_connection_id (str):
         x_account_id (UUID | Unset):
@@ -314,7 +372,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError]
+        Response[Any | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -336,12 +394,13 @@ async def asyncio(
     body: BodyUploadFileToSourceApiSourcesSourceConnectionIdUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | None:
     r"""Upload a file to a content source
 
      Upload a file to a content source.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -378,6 +437,8 @@ async def asyncio(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -391,6 +452,19 @@ async def asyncio(
     - `status` is `uploaded` for a new upload, or `duplicate` when the same file already exists for this
     source.
 
+    Tracking indexing progress:
+    - **Which id you get back depends on `status`, and they are not interchangeable:**
+      - `uploaded` — a new item. `content_version_id` is set and `source_connection_content_version_id`
+    is `null`. Indexing continues in the background after this call returns.
+      - `duplicate` — this exact file is already on the source, so nothing was created and nothing is
+    being indexed. `content_version_id` is `null` and `source_connection_content_version_id` is the
+    existing, already-indexed item: pass it straight to `GET /contents/{id}`. There is nothing to poll.
+    - For an `uploaded` item, poll `GET /sources/{id}/contents/{content_version_id}` with the returned
+    `content_version_id`, or `GET /sources/{id}/contents?content_version_id=…&content_version_id=…` for
+    a whole batch, to follow each item through to `completed` or `failed`.
+    - On those status endpoints `source_connection_content_version_id` stays `null` until the item
+    finishes indexing; that is the id `GET /contents/{id}` takes.
+
     Args:
         source_connection_id (str):
         x_account_id (UUID | Unset):
@@ -402,7 +476,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError
+        Any | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

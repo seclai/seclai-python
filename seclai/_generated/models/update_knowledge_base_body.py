@@ -16,12 +16,16 @@ class UpdateKnowledgeBaseBody:
     """Request body for updating a knowledge base.
 
     Attributes:
-        default_score_threshold (float | None | Unset): Default score threshold (-1 to clear).
-        default_top_k (int | None | Unset): Default reranked results (0 to clear).
-        default_top_n (int | None | Unset): Default results (0 to clear).
+        default_score_threshold (float | None | Unset): Prefilled into Minimum Rerank Score on a new retrieval step (-1
+            to clear).
+        default_top_k (int | None | Unset): Prefilled into Top K on a new retrieval step (0 to clear).
+        default_top_n (int | None | Unset): Prefilled into Top N on a new retrieval step (0 to clear).
         description (None | str | Unset): New description.
         name (None | str | Unset): New name.
-        reranker_model (None | str | Unset): Reranker model (empty string for no reranking).
+        reranker_model (None | str | Unset): New reranker model — a `model_type` from `GET /models/rerankers`. Pass
+            "none" to turn reranking off (not a value from that list). Omitting the field (or sending null) leaves the
+            current reranker in place — it does NOT turn it off. "" is accepted as a synonym for "none", but prefer "none":
+            an empty string does not survive every client's serialization.
         source_ids (list[str] | None | Unset): New list of source connection IDs.
     """
 

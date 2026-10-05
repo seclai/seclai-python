@@ -9,6 +9,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, File, Response, Unset
 
 
@@ -53,7 +54,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> File | HTTPValidationError | None:
+) -> File | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = File(payload=BytesIO(response.content))
 
@@ -64,6 +65,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -72,7 +78,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[File | HTTPValidationError]:
+) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -89,18 +95,18 @@ def sync_detailed(
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[File | HTTPValidationError]:
+) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
     """Download an agent-run attachment
 
      Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the URL-safe-base64-encoded ``storage_key`` (use the encoder shared by webhook + email payload
-    builders).
+    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
+    storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
     - The calling account must own ``run_id``; lookup failures (missing run, cross-account run, soft-
-    deleted agent, unreferenced storage_key) all collapse to a single 404 to prevent cross-tenant
-    existence enumeration.
+    deleted agent, a run whose trace was purged, a file not in the run) all collapse to a single 404 to
+    prevent cross-tenant existence enumeration.
 
     MIME handling:
     - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
@@ -120,7 +126,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[File | HTTPValidationError]
+        Response[File | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -146,18 +152,18 @@ def sync(
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> File | HTTPValidationError | None:
+) -> File | HTTPValidationError | ServiceUnavailableError | None:
     """Download an agent-run attachment
 
      Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the URL-safe-base64-encoded ``storage_key`` (use the encoder shared by webhook + email payload
-    builders).
+    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
+    storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
     - The calling account must own ``run_id``; lookup failures (missing run, cross-account run, soft-
-    deleted agent, unreferenced storage_key) all collapse to a single 404 to prevent cross-tenant
-    existence enumeration.
+    deleted agent, a run whose trace was purged, a file not in the run) all collapse to a single 404 to
+    prevent cross-tenant existence enumeration.
 
     MIME handling:
     - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
@@ -177,7 +183,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        File | HTTPValidationError
+        File | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -198,18 +204,18 @@ async def asyncio_detailed(
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[File | HTTPValidationError]:
+) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
     """Download an agent-run attachment
 
      Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the URL-safe-base64-encoded ``storage_key`` (use the encoder shared by webhook + email payload
-    builders).
+    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
+    storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
     - The calling account must own ``run_id``; lookup failures (missing run, cross-account run, soft-
-    deleted agent, unreferenced storage_key) all collapse to a single 404 to prevent cross-tenant
-    existence enumeration.
+    deleted agent, a run whose trace was purged, a file not in the run) all collapse to a single 404 to
+    prevent cross-tenant existence enumeration.
 
     MIME handling:
     - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
@@ -229,7 +235,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[File | HTTPValidationError]
+        Response[File | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -253,18 +259,18 @@ async def asyncio(
     download_name: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> File | HTTPValidationError | None:
+) -> File | HTTPValidationError | ServiceUnavailableError | None:
     """Download an agent-run attachment
 
      Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the URL-safe-base64-encoded ``storage_key`` (use the encoder shared by webhook + email payload
-    builders).
+    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
+    storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
     - The calling account must own ``run_id``; lookup failures (missing run, cross-account run, soft-
-    deleted agent, unreferenced storage_key) all collapse to a single 404 to prevent cross-tenant
-    existence enumeration.
+    deleted agent, a run whose trace was purged, a file not in the run) all collapse to a single 404 to
+    prevent cross-tenant existence enumeration.
 
     MIME handling:
     - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
@@ -284,7 +290,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        File | HTTPValidationError
+        File | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

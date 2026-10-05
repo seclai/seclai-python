@@ -1,0 +1,266 @@
+from http import HTTPStatus
+from typing import Any
+from urllib.parse import quote
+from uuid import UUID
+
+import httpx
+
+from ... import errors
+from ...client import AuthenticatedClient, Client
+from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
+from ...models.source_content_status_response import SourceContentStatusResponse
+from ...types import UNSET, Response, Unset
+
+
+def _get_kwargs(
+    source_connection_id: UUID,
+    content_version_id: UUID,
+    *,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
+
+    _kwargs: dict[str, Any] = {
+        "method": "get",
+        "url": "/sources/{source_connection_id}/contents/{content_version_id}".format(
+            source_connection_id=quote(str(source_connection_id), safe=""),
+            content_version_id=quote(str(content_version_id), safe=""),
+        ),
+    }
+
+    _kwargs["headers"] = headers
+    return _kwargs
+
+
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse | None:
+    if response.status_code == 200:
+        response_200 = SourceContentStatusResponse.from_dict(response.json())
+
+        return response_200
+
+    if response.status_code == 422:
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
+    if client.raise_on_unexpected_status:
+        raise errors.UnexpectedStatus(response.status_code, response.content)
+    else:
+        return None
+
+
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse
+]:
+    return Response(
+        status_code=HTTPStatus(response.status_code),
+        content=response.content,
+        headers=response.headers,
+        parsed=_parse_response(client=client, response=response),
+    )
+
+
+def sync_detailed(
+    source_connection_id: UUID,
+    content_version_id: UUID,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse
+]:
+    """Get one content item's indexing status
+
+     Get the indexing status of a single content item, addressed by the `content_version_id` the upload
+    endpoints return.
+
+    Use this to follow one uploaded file through indexing. To follow many at once, use `GET
+    /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
+    endpoint per item.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
+
+    Args:
+        source_connection_id (UUID):
+        content_version_id (UUID):
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse]
+    """
+
+    kwargs = _get_kwargs(
+        source_connection_id=source_connection_id,
+        content_version_id=content_version_id,
+        x_account_id=x_account_id,
+        seclai_version=seclai_version,
+    )
+
+    response = client.get_httpx_client().request(
+        **kwargs,
+    )
+
+    return _build_response(client=client, response=response)
+
+
+def sync(
+    source_connection_id: UUID,
+    content_version_id: UUID,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse | None:
+    """Get one content item's indexing status
+
+     Get the indexing status of a single content item, addressed by the `content_version_id` the upload
+    endpoints return.
+
+    Use this to follow one uploaded file through indexing. To follow many at once, use `GET
+    /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
+    endpoint per item.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
+
+    Args:
+        source_connection_id (UUID):
+        content_version_id (UUID):
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse
+    """
+
+    return sync_detailed(
+        source_connection_id=source_connection_id,
+        content_version_id=content_version_id,
+        client=client,
+        x_account_id=x_account_id,
+        seclai_version=seclai_version,
+    ).parsed
+
+
+async def asyncio_detailed(
+    source_connection_id: UUID,
+    content_version_id: UUID,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse
+]:
+    """Get one content item's indexing status
+
+     Get the indexing status of a single content item, addressed by the `content_version_id` the upload
+    endpoints return.
+
+    Use this to follow one uploaded file through indexing. To follow many at once, use `GET
+    /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
+    endpoint per item.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
+
+    Args:
+        source_connection_id (UUID):
+        content_version_id (UUID):
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse]
+    """
+
+    kwargs = _get_kwargs(
+        source_connection_id=source_connection_id,
+        content_version_id=content_version_id,
+        x_account_id=x_account_id,
+        seclai_version=seclai_version,
+    )
+
+    response = await client.get_async_httpx_client().request(**kwargs)
+
+    return _build_response(client=client, response=response)
+
+
+async def asyncio(
+    source_connection_id: UUID,
+    content_version_id: UUID,
+    *,
+    client: AuthenticatedClient | Client,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse | None:
+    """Get one content item's indexing status
+
+     Get the indexing status of a single content item, addressed by the `content_version_id` the upload
+    endpoints return.
+
+    Use this to follow one uploaded file through indexing. To follow many at once, use `GET
+    /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
+    endpoint per item.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
+    account.
+
+    Args:
+        source_connection_id (UUID):
+        content_version_id (UUID):
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        HTTPValidationError | ServiceUnavailableError | SourceContentStatusResponse
+    """
+
+    return (
+        await asyncio_detailed(
+            source_connection_id=source_connection_id,
+            content_version_id=content_version_id,
+            client=client,
+            x_account_id=x_account_id,
+            seclai_version=seclai_version,
+        )
+    ).parsed

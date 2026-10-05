@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.cancel_experiment_response import CancelExperimentResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -38,7 +39,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> CancelExperimentResponse | HTTPValidationError | None:
+) -> CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = CancelExperimentResponse.from_dict(response.json())
 
@@ -49,6 +50,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -57,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[CancelExperimentResponse | HTTPValidationError]:
+) -> Response[CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,7 +78,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[CancelExperimentResponse | HTTPValidationError]:
+) -> Response[CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -81,7 +87,7 @@ def sync_detailed(
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's
-    account.
+    account and, when the credential is bound to a user, to that user; otherwise 404.
 
     Args:
         experiment_id (UUID):
@@ -93,7 +99,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CancelExperimentResponse | HTTPValidationError]
+        Response[CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -115,7 +121,7 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> CancelExperimentResponse | HTTPValidationError | None:
+) -> CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -124,7 +130,7 @@ def sync(
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's
-    account.
+    account and, when the credential is bound to a user, to that user; otherwise 404.
 
     Args:
         experiment_id (UUID):
@@ -136,7 +142,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CancelExperimentResponse | HTTPValidationError
+        CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -153,7 +159,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[CancelExperimentResponse | HTTPValidationError]:
+) -> Response[CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -162,7 +168,7 @@ async def asyncio_detailed(
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's
-    account.
+    account and, when the credential is bound to a user, to that user; otherwise 404.
 
     Args:
         experiment_id (UUID):
@@ -174,7 +180,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CancelExperimentResponse | HTTPValidationError]
+        Response[CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -194,7 +200,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> CancelExperimentResponse | HTTPValidationError | None:
+) -> CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel Experiment Endpoint
 
      Cancel a running or pending model playground experiment.
@@ -203,7 +209,7 @@ async def asyncio(
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's
-    account.
+    account and, when the credential is bound to a user, to that user; otherwise 404.
 
     Args:
         experiment_id (UUID):
@@ -215,7 +221,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CancelExperimentResponse | HTTPValidationError
+        CancelExperimentResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.email_domain_response import EmailDomainResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -38,7 +39,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> EmailDomainResponse | HTTPValidationError | None:
+) -> EmailDomainResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = EmailDomainResponse.from_dict(response.json())
 
@@ -49,6 +50,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -57,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[EmailDomainResponse | HTTPValidationError]:
+) -> Response[EmailDomainResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,12 +78,13 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[EmailDomainResponse | HTTPValidationError]:
-    """Make a verified domain the account's primary sending/inbound domain
+) -> Response[EmailDomainResponse | HTTPValidationError | ServiceUnavailableError]:
+    """Make a verified domain the account's primary sending domain
 
-     Promote a verified domain to the account's primary domain — agent email then sends FROM and receives
-    ON this domain (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared `agent.seclai.com`.
-    The domain must be verified. Owner/admin only.
+     Promote a verified domain to the account's primary domain — agent email then sends FROM this domain
+    and shows its addresses on it (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared
+    `agent.seclai.com`; addresses keep resolving on the account's other verified domains and the shared
+    form. The domain must be verified. Owner/admin only.
 
     Auth & scoping: requires an `X-API-Key` header or OAuth Bearer token bound to a **user** (an
     account-only key is refused with 403); the domain is scoped to the key's account.
@@ -92,7 +99,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[EmailDomainResponse | HTTPValidationError]
+        Response[EmailDomainResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -114,12 +121,13 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> EmailDomainResponse | HTTPValidationError | None:
-    """Make a verified domain the account's primary sending/inbound domain
+) -> EmailDomainResponse | HTTPValidationError | ServiceUnavailableError | None:
+    """Make a verified domain the account's primary sending domain
 
-     Promote a verified domain to the account's primary domain — agent email then sends FROM and receives
-    ON this domain (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared `agent.seclai.com`.
-    The domain must be verified. Owner/admin only.
+     Promote a verified domain to the account's primary domain — agent email then sends FROM this domain
+    and shows its addresses on it (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared
+    `agent.seclai.com`; addresses keep resolving on the account's other verified domains and the shared
+    form. The domain must be verified. Owner/admin only.
 
     Auth & scoping: requires an `X-API-Key` header or OAuth Bearer token bound to a **user** (an
     account-only key is refused with 403); the domain is scoped to the key's account.
@@ -134,7 +142,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        EmailDomainResponse | HTTPValidationError
+        EmailDomainResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -151,12 +159,13 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[EmailDomainResponse | HTTPValidationError]:
-    """Make a verified domain the account's primary sending/inbound domain
+) -> Response[EmailDomainResponse | HTTPValidationError | ServiceUnavailableError]:
+    """Make a verified domain the account's primary sending domain
 
-     Promote a verified domain to the account's primary domain — agent email then sends FROM and receives
-    ON this domain (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared `agent.seclai.com`.
-    The domain must be verified. Owner/admin only.
+     Promote a verified domain to the account's primary domain — agent email then sends FROM this domain
+    and shows its addresses on it (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared
+    `agent.seclai.com`; addresses keep resolving on the account's other verified domains and the shared
+    form. The domain must be verified. Owner/admin only.
 
     Auth & scoping: requires an `X-API-Key` header or OAuth Bearer token bound to a **user** (an
     account-only key is refused with 403); the domain is scoped to the key's account.
@@ -171,7 +180,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[EmailDomainResponse | HTTPValidationError]
+        Response[EmailDomainResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -191,12 +200,13 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> EmailDomainResponse | HTTPValidationError | None:
-    """Make a verified domain the account's primary sending/inbound domain
+) -> EmailDomainResponse | HTTPValidationError | ServiceUnavailableError | None:
+    """Make a verified domain the account's primary sending domain
 
-     Promote a verified domain to the account's primary domain — agent email then sends FROM and receives
-    ON this domain (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared `agent.seclai.com`.
-    The domain must be verified. Owner/admin only.
+     Promote a verified domain to the account's primary domain — agent email then sends FROM this domain
+    and shows its addresses on it (`<agentID>@<domain>`, `<alias>@<domain>`) instead of the shared
+    `agent.seclai.com`; addresses keep resolving on the account's other verified domains and the shared
+    form. The domain must be verified. Owner/admin only.
 
     Auth & scoping: requires an `X-API-Key` header or OAuth Bearer token bound to a **user** (an
     account-only key is refused with 403); the domain is scoped to the key's account.
@@ -211,7 +221,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        EmailDomainResponse | HTTPValidationError
+        EmailDomainResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

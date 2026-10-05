@@ -10,6 +10,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.agent_run_stream_request import AgentRunStreamRequest
 from ...models.http_validation_error import HTTPValidationError
 from ...models.insufficient_credits_response import InsufficientCreditsResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -44,7 +45,13 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Any | HTTPValidationError | InsufficientCreditsResponse | None:
+) -> (
+    Any
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = response.json()
         return response_200
@@ -59,6 +66,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -67,7 +79,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Any | HTTPValidationError | InsufficientCreditsResponse]:
+) -> Response[
+    Any | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -83,7 +97,9 @@ def sync_detailed(
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError | InsufficientCreditsResponse]:
+) -> Response[
+    Any | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError
+]:
     """Run an agent (stream events)
 
      Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
@@ -100,13 +116,20 @@ def sync_detailed(
 
     Input options (for `dynamic_input` triggers):
     - `input`: text input passed directly.
-    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
-    exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
+    /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
+    files; only the two upload fields are mutually exclusive with each other.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
+    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
+    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
+    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
+    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
+    the streamed text is already the run's output when the stream ends, so a run that FAILED its
+    validation step still carries that raw text in `output`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -123,7 +146,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError | InsufficientCreditsResponse]
+        Response[Any | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -147,7 +170,13 @@ def sync(
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | InsufficientCreditsResponse | None:
+) -> (
+    Any
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+    | None
+):
     """Run an agent (stream events)
 
      Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
@@ -164,13 +193,20 @@ def sync(
 
     Input options (for `dynamic_input` triggers):
     - `input`: text input passed directly.
-    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
-    exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
+    /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
+    files; only the two upload fields are mutually exclusive with each other.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
+    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
+    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
+    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
+    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
+    the streamed text is already the run's output when the stream ends, so a run that FAILED its
+    validation step still carries that raw text in `output`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -187,7 +223,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError | InsufficientCreditsResponse
+        Any | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -206,7 +242,9 @@ async def asyncio_detailed(
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError | InsufficientCreditsResponse]:
+) -> Response[
+    Any | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError
+]:
     """Run an agent (stream events)
 
      Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
@@ -223,13 +261,20 @@ async def asyncio_detailed(
 
     Input options (for `dynamic_input` triggers):
     - `input`: text input passed directly.
-    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
-    exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
+    /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
+    files; only the two upload fields are mutually exclusive with each other.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
+    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
+    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
+    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
+    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
+    the streamed text is already the run's output when the stream ends, so a run that FAILED its
+    validation step still carries that raw text in `output`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -246,7 +291,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError | InsufficientCreditsResponse]
+        Response[Any | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -268,7 +313,13 @@ async def asyncio(
     body: AgentRunStreamRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | InsufficientCreditsResponse | None:
+) -> (
+    Any
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+    | None
+):
     """Run an agent (stream events)
 
      Start a **priority** agent run and stream run events using Server-Sent Events (SSE).
@@ -285,13 +336,20 @@ async def asyncio(
 
     Input options (for `dynamic_input` triggers):
     - `input`: text input passed directly.
-    - `input_upload_id`: reference a file uploaded via `POST /agents/{agent_id}/upload-input` (mutually
-    exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
+    /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
+    files; only the two upload fields are mutually exclusive with each other.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
+    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
+    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
+    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
+    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
+    the streamed text is already the run's output when the stream ends, so a run that FAILED its
+    validation step still carries that raw text in `output`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -308,7 +366,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError | InsufficientCreditsResponse
+        Any | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError
     """
 
     return (
