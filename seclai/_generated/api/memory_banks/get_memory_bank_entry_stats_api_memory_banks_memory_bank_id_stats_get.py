@@ -12,6 +12,7 @@ from ...models.get_memory_bank_entry_stats_api_memory_banks_memory_bank_id_stats
     GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet,
 )
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -72,6 +73,7 @@ def _parse_response(
 ) -> (
     GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet
     | HTTPValidationError
+    | ServiceUnavailableError
     | None
 ):
     if response.status_code == 200:
@@ -86,6 +88,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -97,6 +104,7 @@ def _build_response(
 ) -> Response[
     GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet
     | HTTPValidationError
+    | ServiceUnavailableError
 ]:
     return Response(
         status_code=HTTPStatus(response.status_code),
@@ -118,6 +126,7 @@ def sync_detailed(
 ) -> Response[
     GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet
     | HTTPValidationError
+    | ServiceUnavailableError
 ]:
     """Get Memory Bank Entry Stats
 
@@ -138,7 +147,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError]
+        Response[GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -169,6 +178,7 @@ def sync(
 ) -> (
     GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet
     | HTTPValidationError
+    | ServiceUnavailableError
     | None
 ):
     """Get Memory Bank Entry Stats
@@ -190,7 +200,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError
+        GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -216,6 +226,7 @@ async def asyncio_detailed(
 ) -> Response[
     GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet
     | HTTPValidationError
+    | ServiceUnavailableError
 ]:
     """Get Memory Bank Entry Stats
 
@@ -236,7 +247,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError]
+        Response[GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -265,6 +276,7 @@ async def asyncio(
 ) -> (
     GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet
     | HTTPValidationError
+    | ServiceUnavailableError
     | None
 ):
     """Get Memory Bank Entry Stats
@@ -286,7 +298,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError
+        GetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGetResponseGetMemoryBankEntryStatsApiMemoryBanksMemoryBankIdStatsGet | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

@@ -8,6 +8,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.blocked_email_sender_list_response import BlockedEmailSenderListResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...models.set_auto_block_mode_request import SetAutoBlockModeRequest
 from ...types import UNSET, Response, Unset
 
@@ -40,7 +41,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> BlockedEmailSenderListResponse | HTTPValidationError | None:
+) -> (
+    BlockedEmailSenderListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = BlockedEmailSenderListResponse.from_dict(response.json())
 
@@ -51,6 +57,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -59,7 +70,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[BlockedEmailSenderListResponse | HTTPValidationError]:
+) -> Response[
+    BlockedEmailSenderListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -74,7 +87,9 @@ def sync_detailed(
     body: SetAutoBlockModeRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[BlockedEmailSenderListResponse | HTTPValidationError]:
+) -> Response[
+    BlockedEmailSenderListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Set the governance auto-block mode
 
      Set whether a governance BLOCK on an authenticated inbound email sender auto-adds them to the
@@ -94,7 +109,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BlockedEmailSenderListResponse | HTTPValidationError]
+        Response[BlockedEmailSenderListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -116,7 +131,12 @@ def sync(
     body: SetAutoBlockModeRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> BlockedEmailSenderListResponse | HTTPValidationError | None:
+) -> (
+    BlockedEmailSenderListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """Set the governance auto-block mode
 
      Set whether a governance BLOCK on an authenticated inbound email sender auto-adds them to the
@@ -136,7 +156,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BlockedEmailSenderListResponse | HTTPValidationError
+        BlockedEmailSenderListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -153,7 +173,9 @@ async def asyncio_detailed(
     body: SetAutoBlockModeRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[BlockedEmailSenderListResponse | HTTPValidationError]:
+) -> Response[
+    BlockedEmailSenderListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Set the governance auto-block mode
 
      Set whether a governance BLOCK on an authenticated inbound email sender auto-adds them to the
@@ -173,7 +195,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[BlockedEmailSenderListResponse | HTTPValidationError]
+        Response[BlockedEmailSenderListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -193,7 +215,12 @@ async def asyncio(
     body: SetAutoBlockModeRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> BlockedEmailSenderListResponse | HTTPValidationError | None:
+) -> (
+    BlockedEmailSenderListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """Set the governance auto-block mode
 
      Set whether a governance BLOCK on an authenticated inbound email sender auto-adds them to the
@@ -213,7 +240,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        BlockedEmailSenderListResponse | HTTPValidationError
+        BlockedEmailSenderListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

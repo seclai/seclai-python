@@ -20,6 +20,10 @@ All public symbols are re-exported from this package:
 - :class:`SeclaiStreamingError` — SSE stream errors
 - :class:`AgentRunStreamRequest` — typed request body for streaming runs
 - :data:`JSONValue` — recursive JSON type alias
+- :class:`ApiVersion` — dated API versions this release was built against
+- :data:`DEFAULT_API_VERSION` / :data:`LATEST_API_VERSION` — the baseline and
+  newest known version
+- :func:`unwrap_items` — read a version-gated list response in either shape
 """
 
 from .auth import (

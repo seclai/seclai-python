@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_summary_response import AgentSummaryResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -38,7 +39,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentSummaryResponse | HTTPValidationError | None:
+) -> AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AgentSummaryResponse.from_dict(response.json())
 
@@ -49,6 +50,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -57,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentSummaryResponse | HTTPValidationError]:
+) -> Response[AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,7 +78,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentSummaryResponse | HTTPValidationError]:
+) -> Response[AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError]:
     """Pause (disable) an agent
 
      Disable an agent so it stops firing from every trigger path (API runs return 409, inbound email is
@@ -94,7 +100,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentSummaryResponse | HTTPValidationError]
+        Response[AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -116,7 +122,7 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentSummaryResponse | HTTPValidationError | None:
+) -> AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Pause (disable) an agent
 
      Disable an agent so it stops firing from every trigger path (API runs return 409, inbound email is
@@ -138,7 +144,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentSummaryResponse | HTTPValidationError
+        AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -155,7 +161,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentSummaryResponse | HTTPValidationError]:
+) -> Response[AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError]:
     """Pause (disable) an agent
 
      Disable an agent so it stops firing from every trigger path (API runs return 409, inbound email is
@@ -177,7 +183,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentSummaryResponse | HTTPValidationError]
+        Response[AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -197,7 +203,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentSummaryResponse | HTTPValidationError | None:
+) -> AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Pause (disable) an agent
 
      Disable an agent so it stops firing from every trigger path (API runs return 409, inbound email is
@@ -219,7 +225,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentSummaryResponse | HTTPValidationError
+        AgentSummaryResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

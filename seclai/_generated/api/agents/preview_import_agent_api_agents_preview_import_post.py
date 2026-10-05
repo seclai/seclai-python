@@ -11,6 +11,7 @@ from ...models.agent_definition_import_error_response import (
 )
 from ...models.agent_import_preview_request import AgentImportPreviewRequest
 from ...models.agent_import_preview_response import AgentImportPreviewResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -42,7 +43,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | None:
+) -> (
+    AgentDefinitionImportErrorResponse
+    | AgentImportPreviewResponse
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = AgentImportPreviewResponse.from_dict(response.json())
 
@@ -53,6 +59,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -61,7 +72,11 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse]:
+) -> Response[
+    AgentDefinitionImportErrorResponse
+    | AgentImportPreviewResponse
+    | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -76,7 +91,11 @@ def sync_detailed(
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse]:
+) -> Response[
+    AgentDefinitionImportErrorResponse
+    | AgentImportPreviewResponse
+    | ServiceUnavailableError
+]:
     """Preview an agent_definition import
 
      Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
@@ -84,6 +103,12 @@ def sync_detailed(
     commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
     failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
     render line/column-anchored errors.
+
+    Coverage: everything decidable from the payload itself — schema, step ids, nesting depth, text
+    lengths, attachment references, prompt-tool declarations, step-graph cycles, racing step references,
+    and `for_each` aggregation. Rules that depend on account state (email recipients, memory-bank types,
+    cloud-drive connections, the agent's own trigger) can only run at save time, so `POST /agents` may
+    still reject a payload this endpoint accepts.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
@@ -99,7 +124,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse]
+        Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -121,7 +146,12 @@ def sync(
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | None:
+) -> (
+    AgentDefinitionImportErrorResponse
+    | AgentImportPreviewResponse
+    | ServiceUnavailableError
+    | None
+):
     """Preview an agent_definition import
 
      Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
@@ -129,6 +159,12 @@ def sync(
     commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
     failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
     render line/column-anchored errors.
+
+    Coverage: everything decidable from the payload itself — schema, step ids, nesting depth, text
+    lengths, attachment references, prompt-tool declarations, step-graph cycles, racing step references,
+    and `for_each` aggregation. Rules that depend on account state (email recipients, memory-bank types,
+    cloud-drive connections, the agent's own trigger) can only run at save time, so `POST /agents` may
+    still reject a payload this endpoint accepts.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
@@ -144,7 +180,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionImportErrorResponse | AgentImportPreviewResponse
+        AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -161,7 +197,11 @@ async def asyncio_detailed(
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse]:
+) -> Response[
+    AgentDefinitionImportErrorResponse
+    | AgentImportPreviewResponse
+    | ServiceUnavailableError
+]:
     """Preview an agent_definition import
 
      Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
@@ -169,6 +209,12 @@ async def asyncio_detailed(
     commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
     failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
     render line/column-anchored errors.
+
+    Coverage: everything decidable from the payload itself — schema, step ids, nesting depth, text
+    lengths, attachment references, prompt-tool declarations, step-graph cycles, racing step references,
+    and `for_each` aggregation. Rules that depend on account state (email recipients, memory-bank types,
+    cloud-drive connections, the agent's own trigger) can only run at save time, so `POST /agents` may
+    still reject a payload this endpoint accepts.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
@@ -184,7 +230,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse]
+        Response[AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -204,7 +250,12 @@ async def asyncio(
     body: AgentImportPreviewRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | None:
+) -> (
+    AgentDefinitionImportErrorResponse
+    | AgentImportPreviewResponse
+    | ServiceUnavailableError
+    | None
+):
     """Preview an agent_definition import
 
      Validate an `agent_definition` payload (the same shape produced by `GET /agents/{agent_id}/export`)
@@ -212,6 +263,12 @@ async def asyncio(
     commit (counts of steps, schedules, alert configs, evaluation criteria, governance policies). On
     failure returns the same 422 body shape used by `POST /agents` and `PUT /agents/{id}` so callers can
     render line/column-anchored errors.
+
+    Coverage: everything decidable from the payload itself — schema, step ids, nesting depth, text
+    lengths, attachment references, prompt-tool declarations, step-graph cycles, racing step references,
+    and `for_each` aggregation. Rules that depend on account state (email recipients, memory-bank types,
+    cloud-drive connections, the agent's own trigger) can only run at save time, so `POST /agents` may
+    still reject a payload this endpoint accepts.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. No DB writes.
@@ -227,7 +284,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionImportErrorResponse | AgentImportPreviewResponse
+        AgentDefinitionImportErrorResponse | AgentImportPreviewResponse | ServiceUnavailableError
     """
 
     return (

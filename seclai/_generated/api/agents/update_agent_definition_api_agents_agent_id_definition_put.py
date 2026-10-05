@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_definition_response import AgentDefinitionResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...models.update_agent_definition_request import UpdateAgentDefinitionRequest
 from ...types import UNSET, Response, Unset
 
@@ -44,7 +45,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentDefinitionResponse | HTTPValidationError | None:
+) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AgentDefinitionResponse.from_dict(response.json())
 
@@ -55,6 +56,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -63,7 +69,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentDefinitionResponse | HTTPValidationError]:
+) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,7 +85,7 @@ def sync_detailed(
     body: UpdateAgentDefinitionRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionResponse | HTTPValidationError]:
+) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
     """Update agent definition
 
      Update the agent's definition on the main branch.
@@ -124,7 +130,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionResponse | HTTPValidationError]
+        Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -148,7 +154,7 @@ def sync(
     body: UpdateAgentDefinitionRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionResponse | HTTPValidationError | None:
+) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Update agent definition
 
      Update the agent's definition on the main branch.
@@ -193,7 +199,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionResponse | HTTPValidationError
+        AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -212,7 +218,7 @@ async def asyncio_detailed(
     body: UpdateAgentDefinitionRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionResponse | HTTPValidationError]:
+) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
     """Update agent definition
 
      Update the agent's definition on the main branch.
@@ -257,7 +263,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionResponse | HTTPValidationError]
+        Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -279,7 +285,7 @@ async def asyncio(
     body: UpdateAgentDefinitionRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionResponse | HTTPValidationError | None:
+) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Update agent definition
 
      Update the agent's definition on the main branch.
@@ -324,7 +330,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionResponse | HTTPValidationError
+        AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

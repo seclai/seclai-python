@@ -23,14 +23,21 @@ class UpdateMemoryBankBody:
                 exceed a threshold are summarized into a new entry before being soft-deleted. Send empty string "" to clear and
                 disable summarisation.
             description (None | str | Unset): Optional description. Send empty string "" to clear.
-            max_age_days (int | None | Unset): Max entry age in days before compaction. Checked inline after each write and
-                by the hourly background sweep. Send 0 to disable.
+            max_age_days (int | None | Unset): DEPRECATED and no longer applied. Age now belongs solely to retention_days,
+                which deletes; compaction triggers on max_size_tokens and max_turns. Rejected with 400 for clients sending
+                Seclai-Version 2026-08-03 or later, except 0, which clears a value stored earlier. Accepted and stored but inert
+                for older clients.
             max_size_tokens (int | None | Unset): Max total tokens (per partition) before compaction. Checked inline after
                 each write and by the hourly background sweep. Send 0 to disable.
             max_turns (int | None | Unset): Max conversation turns (per partition) before compaction. Checked inline after
                 each write and by the hourly background sweep. Send 0 to disable.
             name (None | str | Unset): New name.
             retention_days (int | None | Unset): Content source retention in days. Send 0 to clear (indefinite).
+            strip_quoted_reply_chains (bool | None | Unset): Conversation banks only. When true, a conversation turn written
+                to this bank has the quoted reply chain an email client prepends to a reply dropped from it. Only inbound (user)
+                turns are affected, and only words in a run of at least ~40 matching a recent turn word for word are dropped
+                (line wrapping and punctuation at a word's edge are ignored). A word the sender changed is kept, including a
+                one-character change inside a link, address or amount, unless the change is only to that edge punctuation.
     """
 
     compaction_prompt: None | str | Unset = UNSET
@@ -40,6 +47,7 @@ class UpdateMemoryBankBody:
     max_turns: int | None | Unset = UNSET
     name: None | str | Unset = UNSET
     retention_days: int | None | Unset = UNSET
+    strip_quoted_reply_chains: bool | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -85,6 +93,12 @@ class UpdateMemoryBankBody:
         else:
             retention_days = self.retention_days
 
+        strip_quoted_reply_chains: bool | None | Unset
+        if isinstance(self.strip_quoted_reply_chains, Unset):
+            strip_quoted_reply_chains = UNSET
+        else:
+            strip_quoted_reply_chains = self.strip_quoted_reply_chains
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -102,6 +116,8 @@ class UpdateMemoryBankBody:
             field_dict["name"] = name
         if retention_days is not UNSET:
             field_dict["retention_days"] = retention_days
+        if strip_quoted_reply_chains is not UNSET:
+            field_dict["strip_quoted_reply_chains"] = strip_quoted_reply_chains
 
         return field_dict
 
@@ -172,6 +188,17 @@ class UpdateMemoryBankBody:
 
         retention_days = _parse_retention_days(d.pop("retention_days", UNSET))
 
+        def _parse_strip_quoted_reply_chains(data: object) -> bool | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(bool | None | Unset, data)
+
+        strip_quoted_reply_chains = _parse_strip_quoted_reply_chains(
+            d.pop("strip_quoted_reply_chains", UNSET)
+        )
+
         update_memory_bank_body = cls(
             compaction_prompt=compaction_prompt,
             description=description,
@@ -180,6 +207,7 @@ class UpdateMemoryBankBody:
             max_turns=max_turns,
             name=name,
             retention_days=retention_days,
+            strip_quoted_reply_chains=strip_quoted_reply_chains,
         )
 
         update_memory_bank_body.additional_properties = d

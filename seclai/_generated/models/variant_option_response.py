@@ -20,11 +20,17 @@ class VariantOptionResponse:
         title (str):
         value (str):
         description (None | str | Unset):
-        input_1h_cache_write_credits_per_1000_tokens (float | None | Unset):
-        input_5m_cache_write_credits_per_1000_tokens (float | None | Unset):
-        input_cache_hit_credits_per_1000_tokens (float | None | Unset):
+        input_1h_cache_write_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens written to a
+            1-hour prompt cache.
+        input_30m_cache_write_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens written to
+            a 30-minute prompt cache.
+        input_5m_cache_write_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens written to a
+            5-minute prompt cache.
+        input_cache_hit_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens read from a
+            prompt cache.
         input_credits_per_1000_tokens (float | None | Unset):
-        long_context_input_cache_hit_credits_per_1000_tokens (float | None | Unset):
+        long_context_input_cache_hit_credits_per_1000_tokens (float | None | Unset): Credits per 1,000 input tokens read
+            from a prompt cache, on a call whose input exceeds `long_context_threshold` tokens.
         long_context_input_credits_per_1000_tokens (float | None | Unset):
         long_context_output_credits_per_1000_tokens (float | None | Unset):
         long_context_threshold (int | None | Unset):
@@ -36,6 +42,7 @@ class VariantOptionResponse:
     value: str
     description: None | str | Unset = UNSET
     input_1h_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
+    input_30m_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
     input_5m_cache_write_credits_per_1000_tokens: float | None | Unset = UNSET
     input_cache_hit_credits_per_1000_tokens: float | None | Unset = UNSET
     input_credits_per_1000_tokens: float | None | Unset = UNSET
@@ -65,6 +72,14 @@ class VariantOptionResponse:
         else:
             input_1h_cache_write_credits_per_1000_tokens = (
                 self.input_1h_cache_write_credits_per_1000_tokens
+            )
+
+        input_30m_cache_write_credits_per_1000_tokens: float | None | Unset
+        if isinstance(self.input_30m_cache_write_credits_per_1000_tokens, Unset):
+            input_30m_cache_write_credits_per_1000_tokens = UNSET
+        else:
+            input_30m_cache_write_credits_per_1000_tokens = (
+                self.input_30m_cache_write_credits_per_1000_tokens
             )
 
         input_5m_cache_write_credits_per_1000_tokens: float | None | Unset
@@ -140,6 +155,10 @@ class VariantOptionResponse:
             field_dict["input_1h_cache_write_credits_per_1000_tokens"] = (
                 input_1h_cache_write_credits_per_1000_tokens
             )
+        if input_30m_cache_write_credits_per_1000_tokens is not UNSET:
+            field_dict["input_30m_cache_write_credits_per_1000_tokens"] = (
+                input_30m_cache_write_credits_per_1000_tokens
+            )
         if input_5m_cache_write_credits_per_1000_tokens is not UNSET:
             field_dict["input_5m_cache_write_credits_per_1000_tokens"] = (
                 input_5m_cache_write_credits_per_1000_tokens
@@ -201,6 +220,21 @@ class VariantOptionResponse:
         input_1h_cache_write_credits_per_1000_tokens = (
             _parse_input_1h_cache_write_credits_per_1000_tokens(
                 d.pop("input_1h_cache_write_credits_per_1000_tokens", UNSET)
+            )
+        )
+
+        def _parse_input_30m_cache_write_credits_per_1000_tokens(
+            data: object,
+        ) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        input_30m_cache_write_credits_per_1000_tokens = (
+            _parse_input_30m_cache_write_credits_per_1000_tokens(
+                d.pop("input_30m_cache_write_credits_per_1000_tokens", UNSET)
             )
         )
 
@@ -318,6 +352,7 @@ class VariantOptionResponse:
             value=value,
             description=description,
             input_1h_cache_write_credits_per_1000_tokens=input_1h_cache_write_credits_per_1000_tokens,
+            input_30m_cache_write_credits_per_1000_tokens=input_30m_cache_write_credits_per_1000_tokens,
             input_5m_cache_write_credits_per_1000_tokens=input_5m_cache_write_credits_per_1000_tokens,
             input_cache_hit_credits_per_1000_tokens=input_cache_hit_credits_per_1000_tokens,
             input_credits_per_1000_tokens=input_credits_per_1000_tokens,

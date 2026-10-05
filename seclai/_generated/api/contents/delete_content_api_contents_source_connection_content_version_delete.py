@@ -8,6 +8,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -39,15 +40,24 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Any | HTTPValidationError | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 204:
         response_204 = cast(Any, None)
         return response_204
+
+    if response.status_code == 403:
+        response_403 = cast(Any, None)
+        return response_403
 
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -57,7 +67,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Any | HTTPValidationError]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,7 +82,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError]:
     """Delete content
 
      Delete a content item (a `SourceConnectionContentVersion`).
@@ -83,6 +93,8 @@ def sync_detailed(
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
     account.
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
 
     Args:
         source_connection_content_version (str):
@@ -94,7 +106,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError]
+        Response[Any | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -116,7 +128,7 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | None:
     """Delete content
 
      Delete a content item (a `SourceConnectionContentVersion`).
@@ -127,6 +139,8 @@ def sync(
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
     account.
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
 
     Args:
         source_connection_content_version (str):
@@ -138,7 +152,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError
+        Any | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -155,7 +169,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError]:
+) -> Response[Any | HTTPValidationError | ServiceUnavailableError]:
     """Delete content
 
      Delete a content item (a `SourceConnectionContentVersion`).
@@ -166,6 +180,8 @@ async def asyncio_detailed(
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
     account.
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
 
     Args:
         source_connection_content_version (str):
@@ -177,7 +193,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError]
+        Response[Any | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -197,7 +213,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | None:
+) -> Any | HTTPValidationError | ServiceUnavailableError | None:
     """Delete content
 
      Delete a content item (a `SourceConnectionContentVersion`).
@@ -208,6 +224,8 @@ async def asyncio(
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only delete content belonging to your
     account.
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
 
     Args:
         source_connection_content_version (str):
@@ -219,7 +237,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError
+        Any | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

@@ -11,6 +11,7 @@ from ...models.evaluation_run_summary_list_response import (
     EvaluationRunSummaryListResponse,
 )
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -83,7 +84,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> EvaluationRunSummaryListResponse | HTTPValidationError | None:
+) -> (
+    EvaluationRunSummaryListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = EvaluationRunSummaryListResponse.from_dict(response.json())
 
@@ -94,6 +100,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -102,7 +113,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[EvaluationRunSummaryListResponse | HTTPValidationError]:
+) -> Response[
+    EvaluationRunSummaryListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -123,7 +136,9 @@ def sync_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[EvaluationRunSummaryListResponse | HTTPValidationError]:
+) -> Response[
+    EvaluationRunSummaryListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """List Evaluation Runs
 
      List evaluation results grouped by agent run.
@@ -147,7 +162,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[EvaluationRunSummaryListResponse | HTTPValidationError]
+        Response[EvaluationRunSummaryListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -181,7 +196,12 @@ def sync(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> EvaluationRunSummaryListResponse | HTTPValidationError | None:
+) -> (
+    EvaluationRunSummaryListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """List Evaluation Runs
 
      List evaluation results grouped by agent run.
@@ -205,7 +225,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        EvaluationRunSummaryListResponse | HTTPValidationError
+        EvaluationRunSummaryListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -234,7 +254,9 @@ async def asyncio_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[EvaluationRunSummaryListResponse | HTTPValidationError]:
+) -> Response[
+    EvaluationRunSummaryListResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """List Evaluation Runs
 
      List evaluation results grouped by agent run.
@@ -258,7 +280,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[EvaluationRunSummaryListResponse | HTTPValidationError]
+        Response[EvaluationRunSummaryListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -290,7 +312,12 @@ async def asyncio(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> EvaluationRunSummaryListResponse | HTTPValidationError | None:
+) -> (
+    EvaluationRunSummaryListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """List Evaluation Runs
 
      List evaluation results grouped by agent run.
@@ -314,7 +341,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        EvaluationRunSummaryListResponse | HTTPValidationError
+        EvaluationRunSummaryListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

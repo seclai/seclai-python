@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 from uuid import UUID
 
@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.export_response import ExportResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -40,16 +41,25 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> ExportResponse | HTTPValidationError | None:
+) -> Any | ExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = ExportResponse.from_dict(response.json())
 
         return response_200
 
+    if response.status_code == 403:
+        response_403 = cast(Any, None)
+        return response_403
+
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -59,7 +69,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[ExportResponse | HTTPValidationError]:
+) -> Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,11 +85,13 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ExportResponse | HTTPValidationError]:
+) -> Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel export
 
      Cancel a pending or running export.  The background task will stop at the next chunk boundary.
-    Completed, failed, expired, or already-cancelled exports cannot be cancelled.
+    Completed, failed, expired, or already-cancelled exports cannot be cancelled.  On an organization
+    account, a key bound to a user must belong to an owner or administrator; a viewer's key is refused
+    with 403 `permission_denied`. Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -92,7 +104,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportResponse | HTTPValidationError]
+        Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -116,11 +128,13 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ExportResponse | HTTPValidationError | None:
+) -> Any | ExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel export
 
      Cancel a pending or running export.  The background task will stop at the next chunk boundary.
-    Completed, failed, expired, or already-cancelled exports cannot be cancelled.
+    Completed, failed, expired, or already-cancelled exports cannot be cancelled.  On an organization
+    account, a key bound to a user must belong to an owner or administrator; a viewer's key is refused
+    with 403 `permission_denied`. Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -133,7 +147,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportResponse | HTTPValidationError
+        Any | ExportResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -152,11 +166,13 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[ExportResponse | HTTPValidationError]:
+) -> Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel export
 
      Cancel a pending or running export.  The background task will stop at the next chunk boundary.
-    Completed, failed, expired, or already-cancelled exports cannot be cancelled.
+    Completed, failed, expired, or already-cancelled exports cannot be cancelled.  On an organization
+    account, a key bound to a user must belong to an owner or administrator; a viewer's key is refused
+    with 403 `permission_denied`. Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -169,7 +185,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ExportResponse | HTTPValidationError]
+        Response[Any | ExportResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -191,11 +207,13 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> ExportResponse | HTTPValidationError | None:
+) -> Any | ExportResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel export
 
      Cancel a pending or running export.  The background task will stop at the next chunk boundary.
-    Completed, failed, expired, or already-cancelled exports cannot be cancelled.
+    Completed, failed, expired, or already-cancelled exports cannot be cancelled.  On an organization
+    account, a key bound to a user must belong to an owner or administrator; a viewer's key is refused
+    with 403 `permission_denied`. Personal accounts and account-scoped keys are unaffected.
 
     Args:
         source_connection_id (UUID):
@@ -208,7 +226,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ExportResponse | HTTPValidationError
+        Any | ExportResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

@@ -11,6 +11,7 @@ from ...models.agent_definition_import_error_response import (
 )
 from ...models.agent_summary_response import AgentSummaryResponse
 from ...models.create_agent_request import CreateAgentRequest
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -42,7 +43,13 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
+) -> (
+    AgentDefinitionImportErrorResponse
+    | AgentSummaryResponse
+    | Any
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 201:
         response_201 = AgentSummaryResponse.from_dict(response.json())
 
@@ -57,6 +64,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -65,7 +77,12 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
+) -> Response[
+    AgentDefinitionImportErrorResponse
+    | AgentSummaryResponse
+    | Any
+    | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -80,7 +97,12 @@ def sync_detailed(
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
+) -> Response[
+    AgentDefinitionImportErrorResponse
+    | AgentSummaryResponse
+    | Any
+    | ServiceUnavailableError
+]:
     """Create an agent
 
      Create a new agent.
@@ -117,7 +139,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]
+        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -139,7 +161,13 @@ def sync(
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
+) -> (
+    AgentDefinitionImportErrorResponse
+    | AgentSummaryResponse
+    | Any
+    | ServiceUnavailableError
+    | None
+):
     """Create an agent
 
      Create a new agent.
@@ -176,7 +204,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any
+        AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -193,7 +221,12 @@ async def asyncio_detailed(
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]:
+) -> Response[
+    AgentDefinitionImportErrorResponse
+    | AgentSummaryResponse
+    | Any
+    | ServiceUnavailableError
+]:
     """Create an agent
 
      Create a new agent.
@@ -230,7 +263,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any]
+        Response[AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -250,7 +283,13 @@ async def asyncio(
     body: CreateAgentRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | None:
+) -> (
+    AgentDefinitionImportErrorResponse
+    | AgentSummaryResponse
+    | Any
+    | ServiceUnavailableError
+    | None
+):
     """Create an agent
 
      Create a new agent.
@@ -287,7 +326,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any
+        AgentDefinitionImportErrorResponse | AgentSummaryResponse | Any | ServiceUnavailableError
     """
 
     return (

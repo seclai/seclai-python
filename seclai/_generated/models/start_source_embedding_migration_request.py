@@ -17,7 +17,8 @@ class StartSourceEmbeddingMigrationRequest:
 
     Attributes:
         target_dimensions (int): Target embedding dimensions
-        target_embedding_model (str): Target embedding model enum
+        target_embedding_model (str): Target embedding model — a `model_type` from `GET /models/embedders`, which also
+            reports the `dimensions` each embedder supports and the modalities it can index.
         chunk_language (None | str | Unset): Language-specific chunking language code
         chunk_overlap (int | None | Unset): Override chunk overlap (characters)
         chunk_regex_separators (bool | None | Unset): Whether chunk separators are regex patterns

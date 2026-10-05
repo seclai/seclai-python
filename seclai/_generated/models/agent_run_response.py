@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
+from dateutil.parser import isoparse
 
 from ..models.pending_processing_completed_failed_status import (
     PendingProcessingCompletedFailedStatus,
@@ -13,6 +15,7 @@ from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
     from ..models.agent_run_attempt_response import AgentRunAttemptResponse
+    from ..models.agent_run_file_response import AgentRunFileResponse
     from ..models.agent_run_step_response import AgentRunStepResponse
     from ..models.governance_policy_ref_response import GovernancePolicyRefResponse
 
@@ -25,13 +28,18 @@ class AgentRunResponse:
     """
     Attributes:
         attempts (list[AgentRunAttemptResponse]): List of attempts made for this agent run.
-        credits_ (float | None): Credits consumed by the agent run, if applicable.
+        credits_ (float | None): Credits consumed by the agent run, if applicable. Can still rise briefly after the run
+            ends, while governance screening finishes.
         error_count (int): Number of errors encountered during the run.
         input_ (None | str): Input provided to the agent for this run.
-        output (None | str): Output produced by the agent run.
+        output (None | str): The run's output text; its files are in `attachments`.  Below `Seclai-Version: 2026-09-30`
+            an output that has files is instead the manifest JSON `{schema, text, attachments: [{storage_key, mime, name,
+            label, bytes}]}`; `bytes` is absent on runs made before that version shipped.
         priority (bool): Indicates if the run was treated as a priority execution.
         run_id (str): Unique identifier for the agent run.
         status (PendingProcessingCompletedFailedStatus):
+        attachments (list[AgentRunFileResponse] | Unset): Files in the run's output, in order. Empty for runs that
+            produced none, for runs made before files were listed here, and once the run's trace is purged.
         blocked_policies (list[GovernancePolicyRefResponse] | Unset): Governance policies that produced at least one
             BLOCK verdict during this run.  Deduplicated by policy id.
         flagged_policies (list[GovernancePolicyRefResponse] | Unset): Governance policies that produced at least one
@@ -44,15 +52,18 @@ class AgentRunResponse:
         input_scan_status (None | str | Unset): Result of the prompt injection scan: safe, unsafe, skipped, timed_out,
             or error.
         output_content_type (None | str | Unset): MIME type of `output` — mirrors the terminal step's
-            `output_content_type`.  Consumers interpret `output` differently depending on this value:
-            `application/vnd.seclai.manifest+json` is a multi-asset manifest with shape `{text, attachments: [{storage_key,
-            mime, name, bytes}]}` — fetch each attachment via `GET /v2/agent-runs/{run_id}/attachments/{attachment_id}`,
-            where `attachment_id` is the URL-safe base64 of the attachment's `storage_key` (accepts an API key or OAuth
-            token).  `text/plain` / `text/*` are free-form text.  `application/json` is a JSON document.  Null on runs that
+            `output_content_type`.  `text/plain` / `text/*` are free-form text and `application/json` is a JSON document.
+            Below `Seclai-Version: 2026-09-30` an output that has files reads `application/vnd.seclai.manifest+json` (see
+            `output`); the same files are in `attachments` on every version, each with a `download_url`.  Null on runs that
             produced no terminal output or that pre-date this column.
         scan_wait_ms (int | None | Unset): Milliseconds spent waiting for prompt injection scan.
         steps (list[AgentRunStepResponse] | None | Unset): Step outputs and per-step timing/credits. Only included when
             requested.
+        trace_purged_at (datetime.datetime | None | Unset): When this run's trace content was deleted under the
+            account's agent-trace retention window.  Non-null means `input`, `output` and every step's and tool call's I/O
+            are null **by design** and will never be available again — the run aged out, it did not fail.  Branch on this
+            rather than on a null `output`: a run that genuinely produced nothing looks identical.  Status, timing and
+            credits remain accurate.
         wait_ms (int | None | Unset): Cumulative milliseconds the run was parked on standard-mode wait steps.
             Subtracted from active duration in run-detail and duration-stats responses, exactly like hitl_wait_ms.  Priority
             waits block inline and are not counted here.
@@ -66,6 +77,7 @@ class AgentRunResponse:
     priority: bool
     run_id: str
     status: PendingProcessingCompletedFailedStatus
+    attachments: list[AgentRunFileResponse] | Unset = UNSET
     blocked_policies: list[GovernancePolicyRefResponse] | Unset = UNSET
     flagged_policies: list[GovernancePolicyRefResponse] | Unset = UNSET
     governance_input_status: None | str | Unset = UNSET
@@ -75,6 +87,7 @@ class AgentRunResponse:
     output_content_type: None | str | Unset = UNSET
     scan_wait_ms: int | None | Unset = UNSET
     steps: list[AgentRunStepResponse] | None | Unset = UNSET
+    trace_purged_at: datetime.datetime | None | Unset = UNSET
     wait_ms: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -100,6 +113,13 @@ class AgentRunResponse:
         run_id = self.run_id
 
         status = self.status.value
+
+        attachments: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.attachments, Unset):
+            attachments = []
+            for attachments_item_data in self.attachments:
+                attachments_item = attachments_item_data.to_dict()
+                attachments.append(attachments_item)
 
         blocked_policies: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.blocked_policies, Unset):
@@ -163,6 +183,14 @@ class AgentRunResponse:
         else:
             steps = self.steps
 
+        trace_purged_at: None | str | Unset
+        if isinstance(self.trace_purged_at, Unset):
+            trace_purged_at = UNSET
+        elif isinstance(self.trace_purged_at, datetime.datetime):
+            trace_purged_at = self.trace_purged_at.isoformat()
+        else:
+            trace_purged_at = self.trace_purged_at
+
         wait_ms: int | None | Unset
         if isinstance(self.wait_ms, Unset):
             wait_ms = UNSET
@@ -183,6 +211,8 @@ class AgentRunResponse:
                 "status": status,
             }
         )
+        if attachments is not UNSET:
+            field_dict["attachments"] = attachments
         if blocked_policies is not UNSET:
             field_dict["blocked_policies"] = blocked_policies
         if flagged_policies is not UNSET:
@@ -201,6 +231,8 @@ class AgentRunResponse:
             field_dict["scan_wait_ms"] = scan_wait_ms
         if steps is not UNSET:
             field_dict["steps"] = steps
+        if trace_purged_at is not UNSET:
+            field_dict["trace_purged_at"] = trace_purged_at
         if wait_ms is not UNSET:
             field_dict["wait_ms"] = wait_ms
 
@@ -209,6 +241,7 @@ class AgentRunResponse:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.agent_run_attempt_response import AgentRunAttemptResponse
+        from ..models.agent_run_file_response import AgentRunFileResponse
         from ..models.agent_run_step_response import AgentRunStepResponse
         from ..models.governance_policy_ref_response import GovernancePolicyRefResponse
 
@@ -248,6 +281,15 @@ class AgentRunResponse:
         run_id = d.pop("run_id")
 
         status = PendingProcessingCompletedFailedStatus(d.pop("status"))
+
+        _attachments = d.pop("attachments", UNSET)
+        attachments: list[AgentRunFileResponse] | Unset = UNSET
+        if _attachments is not UNSET:
+            attachments = []
+            for attachments_item_data in _attachments:
+                attachments_item = AgentRunFileResponse.from_dict(attachments_item_data)
+
+                attachments.append(attachments_item)
 
         _blocked_policies = d.pop("blocked_policies", UNSET)
         blocked_policies: list[GovernancePolicyRefResponse] | Unset = UNSET
@@ -355,6 +397,23 @@ class AgentRunResponse:
 
         steps = _parse_steps(d.pop("steps", UNSET))
 
+        def _parse_trace_purged_at(data: object) -> datetime.datetime | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                trace_purged_at_type_0 = isoparse(data)
+
+                return trace_purged_at_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None | Unset, data)
+
+        trace_purged_at = _parse_trace_purged_at(d.pop("trace_purged_at", UNSET))
+
         def _parse_wait_ms(data: object) -> int | None | Unset:
             if data is None:
                 return data
@@ -373,6 +432,7 @@ class AgentRunResponse:
             priority=priority,
             run_id=run_id,
             status=status,
+            attachments=attachments,
             blocked_policies=blocked_policies,
             flagged_policies=flagged_policies,
             governance_input_status=governance_input_status,
@@ -382,6 +442,7 @@ class AgentRunResponse:
             output_content_type=output_content_type,
             scan_wait_ms=scan_wait_ms,
             steps=steps,
+            trace_purged_at=trace_purged_at,
             wait_ms=wait_ms,
         )
 

@@ -7,6 +7,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.generation_tier_list_response import GenerationTierListResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -33,11 +34,16 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> GenerationTierListResponse | None:
+) -> GenerationTierListResponse | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = GenerationTierListResponse.from_dict(response.json())
 
         return response_200
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -47,7 +53,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[GenerationTierListResponse]:
+) -> Response[GenerationTierListResponse | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -61,7 +67,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[GenerationTierListResponse]:
+) -> Response[GenerationTierListResponse | ServiceUnavailableError]:
     """Get Generation Tiers
 
      List the media-generation quality tiers and the model + cost each resolves to.
@@ -84,7 +90,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GenerationTierListResponse]
+        Response[GenerationTierListResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -104,7 +110,7 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> GenerationTierListResponse | None:
+) -> GenerationTierListResponse | ServiceUnavailableError | None:
     """Get Generation Tiers
 
      List the media-generation quality tiers and the model + cost each resolves to.
@@ -127,7 +133,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GenerationTierListResponse
+        GenerationTierListResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -142,7 +148,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[GenerationTierListResponse]:
+) -> Response[GenerationTierListResponse | ServiceUnavailableError]:
     """Get Generation Tiers
 
      List the media-generation quality tiers and the model + cost each resolves to.
@@ -165,7 +171,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GenerationTierListResponse]
+        Response[GenerationTierListResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -183,7 +189,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> GenerationTierListResponse | None:
+) -> GenerationTierListResponse | ServiceUnavailableError | None:
     """Get Generation Tiers
 
      List the media-generation quality tiers and the model + cost each resolves to.
@@ -206,7 +212,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GenerationTierListResponse
+        GenerationTierListResponse | ServiceUnavailableError
     """
 
     return (

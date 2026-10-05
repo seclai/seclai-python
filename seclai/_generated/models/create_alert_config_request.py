@@ -23,7 +23,8 @@ class CreateAlertConfigRequest:
     Attributes:
         alert_type (str): Alert type
         agent_id (None | str | Unset): Agent ID (for agent alerts)
-        cooldown_minutes (int | Unset): Cooldown period in minutes Default: 60.
+        cooldown_minutes (int | None | Unset): Cooldown period in minutes. Omit to use the per-alert-type default (1440
+            for credit alerts, 60 otherwise).
         distribution_type (str | Unset): Distribution type (owner, owner_admins, selected_members) Default: 'owner'.
         enabled (bool | Unset): Whether the alert config is enabled Default: True.
         recipient_user_ids (list[str] | None | Unset): User IDs for selected_members distribution
@@ -33,7 +34,7 @@ class CreateAlertConfigRequest:
 
     alert_type: str
     agent_id: None | str | Unset = UNSET
-    cooldown_minutes: int | Unset = 60
+    cooldown_minutes: int | None | Unset = UNSET
     distribution_type: str | Unset = "owner"
     enabled: bool | Unset = True
     recipient_user_ids: list[str] | None | Unset = UNSET
@@ -54,7 +55,11 @@ class CreateAlertConfigRequest:
         else:
             agent_id = self.agent_id
 
-        cooldown_minutes = self.cooldown_minutes
+        cooldown_minutes: int | None | Unset
+        if isinstance(self.cooldown_minutes, Unset):
+            cooldown_minutes = UNSET
+        else:
+            cooldown_minutes = self.cooldown_minutes
 
         distribution_type = self.distribution_type
 
@@ -125,7 +130,14 @@ class CreateAlertConfigRequest:
 
         agent_id = _parse_agent_id(d.pop("agent_id", UNSET))
 
-        cooldown_minutes = d.pop("cooldown_minutes", UNSET)
+        def _parse_cooldown_minutes(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        cooldown_minutes = _parse_cooldown_minutes(d.pop("cooldown_minutes", UNSET))
 
         distribution_type = d.pop("distribution_type", UNSET)
 

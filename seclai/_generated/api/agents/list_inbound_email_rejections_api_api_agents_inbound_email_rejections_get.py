@@ -8,6 +8,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
 from ...models.inbound_email_rejection_response import InboundEmailRejectionResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -50,7 +51,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | list[InboundEmailRejectionResponse] | None:
+) -> (
+    HTTPValidationError
+    | ServiceUnavailableError
+    | list[InboundEmailRejectionResponse]
+    | None
+):
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -68,6 +74,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -76,7 +87,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | list[InboundEmailRejectionResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[InboundEmailRejectionResponse]
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -92,7 +105,9 @@ def sync_detailed(
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | list[InboundEmailRejectionResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[InboundEmailRejectionResponse]
+]:
     """List discarded inbound emails
 
      List recent inbound emails that were quietly discarded before running an agent (unauthorized sender,
@@ -112,7 +127,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[InboundEmailRejectionResponse]]
+        Response[HTTPValidationError | ServiceUnavailableError | list[InboundEmailRejectionResponse]]
     """
 
     kwargs = _get_kwargs(
@@ -136,7 +151,12 @@ def sync(
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | list[InboundEmailRejectionResponse] | None:
+) -> (
+    HTTPValidationError
+    | ServiceUnavailableError
+    | list[InboundEmailRejectionResponse]
+    | None
+):
     """List discarded inbound emails
 
      List recent inbound emails that were quietly discarded before running an agent (unauthorized sender,
@@ -156,7 +176,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[InboundEmailRejectionResponse]
+        HTTPValidationError | ServiceUnavailableError | list[InboundEmailRejectionResponse]
     """
 
     return sync_detailed(
@@ -175,7 +195,9 @@ async def asyncio_detailed(
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | list[InboundEmailRejectionResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[InboundEmailRejectionResponse]
+]:
     """List discarded inbound emails
 
      List recent inbound emails that were quietly discarded before running an agent (unauthorized sender,
@@ -195,7 +217,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[InboundEmailRejectionResponse]]
+        Response[HTTPValidationError | ServiceUnavailableError | list[InboundEmailRejectionResponse]]
     """
 
     kwargs = _get_kwargs(
@@ -217,7 +239,12 @@ async def asyncio(
     limit: int | Unset = 50,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | list[InboundEmailRejectionResponse] | None:
+) -> (
+    HTTPValidationError
+    | ServiceUnavailableError
+    | list[InboundEmailRejectionResponse]
+    | None
+):
     """List discarded inbound emails
 
      List recent inbound emails that were quietly discarded before running an agent (unauthorized sender,
@@ -237,7 +264,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[InboundEmailRejectionResponse]
+        HTTPValidationError | ServiceUnavailableError | list[InboundEmailRejectionResponse]
     """
 
     return (

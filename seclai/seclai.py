@@ -46,7 +46,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, BinaryIO, Self, TypedDict, cast, overload
+from typing import Any, BinaryIO, Literal, Self, TypedDict, TypeVar, cast, overload
 
 import httpx
 
@@ -95,9 +95,9 @@ SECLAI_API_URL = os.getenv("SECLAI_API_URL", "https://seclai.com")
 def unwrap_items(payload: Any, *legacy_keys: str) -> list[dict[str, Any]]:
     """Return the items of a version-gated list endpoint, whichever shape it used.
 
-    Six endpoints key their list differently depending on the ``Seclai-Version``
+    Some endpoints key their list differently depending on the ``Seclai-Version``
     the request resolves to. On the legacy baseline it is a bare JSON array or a
-    per-resource key (``configs``, ``alerts``, ``tiers``, ``experiments``); from
+    per-resource key (``configs``, ``alerts``, ``models`` and the like); from
     ``2026-07-27`` it is the canonical
     ``{"data": [...], "pagination": {...}}`` envelope. Both are live during the
     rollout, so reading only one breaks the day the other arrives.
@@ -140,13 +140,52 @@ def unwrap_items(payload: Any, *legacy_keys: str) -> list[dict[str, Any]]:
     )
 
 
-#: Deprecated alias kept for internal call sites; use :func:`unwrap_items`.
-_unwrap_data = unwrap_items
+def _as_page(result: Any) -> dict[str, Any]:
+    """Normalise a version-gated list response to the ``{data, ...}`` envelope.
+
+    The canonical envelope is passed through untouched, including its
+    ``pagination`` key; the legacy bare array is wrapped so callers can read
+    ``["data"]`` either way and use ``.get("pagination")`` to tell them apart.
+    """
+    if isinstance(result, dict):
+        return cast(dict[str, Any], result)
+    return {"data": result}
+
+
+def _empty_page(*, page: int, limit: int) -> dict[str, Any]:
+    """The canonical envelope for a listing that matched nothing."""
+    return {
+        "data": [],
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": 0,
+            "pages": 0,
+            "has_next": False,
+            "has_prev": False,
+        },
+    }
 
 
 def _strip_none(params: dict[str, Any]) -> dict[str, Any]:
     """Remove keys with ``None`` values from a parameter dictionary."""
     return {k: v for k, v in params.items() if v is not None}
+
+
+_ModelT = TypeVar("_ModelT")
+
+
+def _expect_model(parsed: object, model: type[_ModelT]) -> _ModelT:
+    """Narrow a generated-client result to the success model its caller declares.
+
+    The generated union also carries each documented error body, which the
+    status check before this call has already raised on.
+    """
+    if not isinstance(parsed, model):
+        raise SeclaiError(
+            f"Expected {model.__name__} in the response, got {type(parsed).__name__}."
+        )
+    return parsed
 
 
 class SeclaiError(Exception):
@@ -274,6 +313,40 @@ class ClientOptions:
     allow_unknown_api_version: bool = False
 
 
+def _merge_headers(
+    base: dict[str, str], overrides: Mapping[str, str] | None
+) -> dict[str, str]:
+    """Apply ``overrides`` onto ``base`` case-insensitively, in place.
+
+    Header names are case-insensitive on the wire but dict keys are not, so a
+    plain ``dict.update`` leaves two spellings of one header in the mapping;
+    httpx then emits both and the server picks one arbitrarily.
+
+    The match is recomputed per key rather than once up front: ``overrides`` may
+    itself carry two spellings of one header, and a snapshot taken before the
+    loop would not see the first of them being added.
+    """
+    if not overrides:
+        return base
+    for key, value in overrides.items():
+        lowered = key.lower()
+        for existing in [k for k in base if k.lower() == lowered]:
+            del base[existing]
+        base[key] = value
+    return base
+
+
+def _setdefault_header(headers: dict[str, str], name: str, value: str) -> None:
+    """Set ``name`` only when no spelling of it is already present.
+
+    ``dict.setdefault`` is case-sensitive, so a caller-supplied ``Accept`` would
+    not stop the SDK adding its own lowercase ``accept`` and both would go out.
+    """
+    lowered = name.lower()
+    if not any(k.lower() == lowered for k in headers):
+        headers[name] = value
+
+
 def _build_default_headers(
     *,
     auth_state: AuthState,
@@ -303,19 +376,7 @@ def _build_default_headers(
     # against, so upgrading the SDK alone never changes the wire contract.
     if api_version:
         headers["seclai-version"] = api_version
-    if default_headers:
-        # Case-insensitively, so a caller-supplied `Seclai-Version` (or any other
-        # differently-cased default) replaces ours rather than joining it. httpx
-        # emits both keys otherwise and the server picks one arbitrarily.
-        #
-        # Recomputed per key rather than once up front: `default_headers` may
-        # itself carry two spellings of one header, and a snapshot taken before
-        # the loop would not see the first of them being added.
-        for key, value in default_headers.items():
-            for existing in [k for k in headers if k.lower() == key.lower()]:
-                del headers[existing]
-            headers[key] = value
-    return headers
+    return _merge_headers(headers, default_headers)
 
 
 def _merge_request_headers(
@@ -337,9 +398,9 @@ def _merge_request_headers(
             raise SeclaiConfigurationError(str(exc)) from exc
         except Exception as exc:
             raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
-        merged.update(auth_headers)
-    if request_headers:
-        merged.update(request_headers)
+        _merge_headers(merged, auth_headers)
+    _validate_request_version(options, request_headers)
+    _merge_headers(merged, request_headers)
     return merged
 
 
@@ -362,20 +423,14 @@ async def _merge_request_headers_async(
             raise SeclaiConfigurationError(str(exc)) from exc
         except Exception as exc:
             raise SeclaiConfigurationError(f"Auth resolution failed: {exc}") from exc
-        merged.update(auth_headers)
-    if request_headers:
-        merged.update(request_headers)
+        _merge_headers(merged, auth_headers)
+    _validate_request_version(options, request_headers)
+    _merge_headers(merged, request_headers)
     return merged
 
 
 def _raise_for_status(response: httpx.Response) -> None:
-    """Raise on a non-success status, `SeclaiAPIValidationError` for a 422.
-
-    The generated-client path has always distinguished the two; this one did not,
-    so every method built on :meth:`Seclai.request` — most of the SDK — reported a
-    validation failure as a bare status error and discarded the field-level
-    detail the API returned.
-    """
+    """Raise on a non-success status, `SeclaiAPIValidationError` for a 422."""
     if 200 <= response.status_code < 400:
         return
     try:
@@ -388,14 +443,26 @@ def _raise_for_status(response: httpx.Response) -> None:
         except Exception:
             payload = None
         if isinstance(payload, dict) and "detail" in payload:
-            raise SeclaiAPIValidationError(
-                message="Validation error",
-                status_code=response.status_code,
-                method=response.request.method,
-                url=str(response.request.url),
-                response_text=response_text,
-                validation_error=HTTPValidationError.from_dict(payload),
-            )
+            # `detail` only holds a list of `{loc, msg, type}` objects when the
+            # 422 came from request-model validation. A hand-raised
+            # `HTTPException(422, detail="...")` puts a bare string there, and
+            # `from_dict` then iterates it and raises ValueError/TypeError/
+            # KeyError from inside the generated models. Fall through to the
+            # status error rather than replacing an API failure with a decoding
+            # one that no `except SeclaiError` handler catches.
+            try:
+                validation_error = HTTPValidationError.from_dict(payload)
+            except Exception:
+                validation_error = None
+            if validation_error is not None:
+                raise SeclaiAPIValidationError(
+                    message="Validation error",
+                    status_code=response.status_code,
+                    method=response.request.method,
+                    url=str(response.request.url),
+                    response_text=response_text,
+                    validation_error=validation_error,
+                )
     raise SeclaiAPIStatusError(
         message=f"Request failed with status {response.status_code}",
         status_code=response.status_code,
@@ -403,6 +470,40 @@ def _raise_for_status(response: httpx.Response) -> None:
         url=str(response.request.url),
         response_text=response_text,
     )
+
+
+def _raise_on_error_status(response: httpx.Response) -> None:
+    """httpx response hook: raise for an error status before its body is decoded."""
+    if response.status_code >= 400:
+        response.read()
+        _raise_for_status(response)
+
+
+async def _raise_on_error_status_async(response: httpx.Response) -> None:
+    """Async twin of :func:`_raise_on_error_status`."""
+    if response.status_code >= 400:
+        await response.aread()
+        _raise_for_status(response)
+
+
+def _validate_request_version(
+    options: ClientOptions, request_headers: Mapping[str, str] | None
+) -> None:
+    """Apply the unknown-version guard to a per-request ``Seclai-Version``."""
+    # The last spelling is the one `_merge_headers` leaves on the wire.
+    versions = [
+        value
+        for key, value in (request_headers or {}).items()
+        if key.lower() == "seclai-version"
+    ]
+    if not versions:
+        return
+    try:
+        validate_api_version(
+            versions[-1], allow_unknown=options.allow_unknown_api_version
+        )
+    except ValueError as e:
+        raise SeclaiConfigurationError(f"{e} (via headers['Seclai-Version'])") from e
 
 
 class _SeclaiBase:
@@ -476,6 +577,12 @@ class _SeclaiBase:
         except RuntimeError as e:
             raise SeclaiConfigurationError(str(e)) from e
 
+        # Snapshotted, not aliased: `_build_default_headers` re-reads this on
+        # every request, so keeping the caller's mapping would let a later
+        # `hdrs["Seclai-Version"] = ...` put an unvalidated version on the wire
+        # and defeat the guard below.
+        frozen_headers: dict[str, str] = dict(default_headers or {})
+
         # `default_headers` is applied last so an explicit header wins, which
         # means it can also carry a Seclai-Version. Validate whichever value
         # actually reaches the wire, not just the argument — otherwise the guard
@@ -483,17 +590,23 @@ class _SeclaiBase:
         # The LAST matching key, because that is the one the header merge keeps.
         # Taking the first match would approve a value the client never sends
         # when `default_headers` carries two spellings of the same header.
-        header_version = None
-        for k, v in (default_headers or {}).items():
+        header_version: str | None = None
+        for k, v in frozen_headers.items():
             if k.lower() == "seclai-version":
                 header_version = v
+        # `is None`, not truthiness: an empty `Seclai-Version` still reaches the
+        # wire and still suppresses the `api_version` opt-in, so it has to be
+        # validated (and rejected) rather than read as "no header supplied".
         try:
             validate_api_version(
-                header_version or api_version, allow_unknown=allow_unknown_api_version
+                api_version if header_version is None else header_version,
+                allow_unknown=allow_unknown_api_version,
             )
         except ValueError as e:
             source = (
-                "default_headers['Seclai-Version']" if header_version else "api_version"
+                "default_headers['Seclai-Version']"
+                if header_version is not None
+                else "api_version"
             )
             raise SeclaiConfigurationError(f"{e} (via {source})") from e
 
@@ -501,7 +614,7 @@ class _SeclaiBase:
             auth_state=auth_state,
             timeout=timeout,
             api_key_header=api_key_header,
-            default_headers=default_headers or {},
+            default_headers=frozen_headers,
             api_version=api_version,
             allow_unknown_api_version=allow_unknown_api_version,
         )
@@ -529,8 +642,9 @@ class _SeclaiBase:
     def _generated_client(self) -> GeneratedClient:
         """Return a cached generated OpenAPI client configured with this client's auth.
 
-        This is primarily used internally by the wrapper methods in this file. Advanced
-        usage may call this to access generated request helpers.
+        Used by the wrapper methods in this file. Once one of them has run, the
+        client's httpx client raises `SeclaiAPIStatusError` for a 4xx/5xx rather
+        than returning it to a generated request helper.
         """
         if self._generated_client_instance is None:
             self._generated_client_instance = GeneratedClient(
@@ -541,11 +655,10 @@ class _SeclaiBase:
         return self._generated_client_instance
 
     def _sync_generated_client(self) -> GeneratedClient:
-        """Return the generated client with dynamic auth headers applied (sync).
+        """Return the generated client, ready to send (sync).
 
-        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
-        and updates the generated client before returning it. For static modes
-        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        Resolves fresh auth headers for the ``bearer_provider`` and ``sso`` modes,
+        and makes its httpx client raise through :func:`_raise_for_status`.
         """
         gc = self._generated_client()
         if self._options.auth_state.mode in ("bearer_provider", "sso"):
@@ -568,14 +681,17 @@ class _SeclaiBase:
             # so pre-configured transports (e.g. in tests) aren't lost.
             if gc._client is not None:
                 evolved.set_httpx_client(gc._client)
-        return self._generated_client_instance  # type: ignore[return-value]
+        client = self._generated_client()
+        hooks = client.get_httpx_client().event_hooks["response"]
+        if _raise_on_error_status not in hooks:
+            hooks.append(_raise_on_error_status)
+        return client
 
     async def _async_generated_client(self) -> GeneratedClient:
-        """Return the generated client with dynamic auth headers applied (async).
+        """Return the generated client, ready to send (async).
 
-        For ``bearer_provider`` and ``sso`` modes, this resolves fresh auth headers
-        and updates the generated client before returning it. For static modes
-        (``api_key``, ``bearer_static``) this is identical to :meth:`_generated_client`.
+        Resolves fresh auth headers for the ``bearer_provider`` and ``sso`` modes,
+        and makes its httpx client raise through :func:`_raise_for_status`.
         """
         gc = self._generated_client()
         if self._options.auth_state.mode in ("bearer_provider", "sso"):
@@ -593,7 +709,11 @@ class _SeclaiBase:
             self._generated_client_instance = evolved
             if gc._async_client is not None:
                 evolved.set_async_httpx_client(gc._async_client)
-        return self._generated_client_instance  # type: ignore[return-value]
+        client = self._generated_client()
+        hooks = client.get_async_httpx_client().event_hooks["response"]
+        if _raise_on_error_status_async not in hooks:
+            hooks.append(_raise_on_error_status_async)
+        return client
 
     def _build_url(self, path: str) -> str:
         """Build an absolute URL string from a request path.
@@ -891,7 +1011,7 @@ class Seclai(_SeclaiBase):
         merged_headers = _merge_request_headers(
             options=self._options, request_headers=headers
         )
-        merged_headers.setdefault("accept", "text/event-stream")
+        _setdefault_header(merged_headers, "accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
         start = _time.monotonic()
@@ -904,16 +1024,10 @@ class Seclai(_SeclaiBase):
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
-                if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-                    payload = response.json()
-                    raise SeclaiAPIValidationError(
-                        message=f"Request failed with status {response.status_code}",
-                        status_code=int(response.status_code),
-                        method="POST",
-                        url=self._build_url(path),
-                        response_text=response.text,
-                        validation_error=HTTPValidationError.from_dict(payload),
-                    )
+                if response.status_code >= 400:
+                    # Lazy body inside `stream()`; read it so the error carries
+                    # its text and a 422 its field-level detail.
+                    response.read()
                 _raise_for_status(response)
 
                 current_event: str | None = None
@@ -1027,7 +1141,7 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, AgentRunListResponse)
 
     @overload
     def get_agent_run(
@@ -1101,7 +1215,7 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, AgentRunResponse)
 
     @overload
     def delete_agent_run(self, run_id: str, /) -> AgentRunResponse: ...
@@ -1163,7 +1277,7 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, AgentRunResponse)
 
     def get_content_detail(
         self,
@@ -1223,7 +1337,7 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, ContentDetailResponse)
 
     def delete_content(self, source_connection_content_version: str) -> None:
         """Delete a specific content version.
@@ -1312,7 +1426,7 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, ContentEmbeddingsListResponse)
 
     def list_sources(
         self,
@@ -1378,7 +1492,7 @@ class Seclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, SourceListResponse)
 
     def upload_file_to_source(
         self,
@@ -1670,7 +1784,7 @@ class Seclai(_SeclaiBase):
                     response_text=None,
                     validation_error=parsed,
                 )
-            return parsed
+            return _expect_model(parsed, FileUploadResponse)
         finally:
             if created_payload is not None:
                 created_payload.close()
@@ -2216,7 +2330,7 @@ class Seclai(_SeclaiBase):
         page_result = self.list_evaluation_criteria_page(
             agent_id, page=page, limit=limit
         )
-        return _unwrap_data(page_result)
+        return unwrap_items(page_result)
 
     def list_evaluation_criteria_page(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -2243,9 +2357,7 @@ class Seclai(_SeclaiBase):
             f"/agents/{agent_id}/evaluation-criteria",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        if isinstance(result, dict):
-            return cast(dict[str, Any], result)
-        return {"data": result}
+        return _as_page(result)
 
     def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -2459,7 +2571,7 @@ class Seclai(_SeclaiBase):
         page_result = self.list_run_evaluation_results_page(
             agent_id, run_id, page=page, limit=limit
         )
-        return _unwrap_data(page_result)
+        return unwrap_items(page_result)
 
     def list_run_evaluation_results_page(
         self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
@@ -2483,9 +2595,7 @@ class Seclai(_SeclaiBase):
             f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        if isinstance(result, dict):
-            return cast(dict[str, Any], result)
-        return {"data": result}
+        return _as_page(result)
 
     def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -3109,6 +3219,74 @@ class Seclai(_SeclaiBase):
                 f"/sources/{source_connection_id}",
                 json=body,
             ),
+        )
+
+    def list_source_contents(
+        self,
+        source_id: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+        sort: str | None = None,
+        order: str | None = None,
+        status: str | None = None,
+        content_version_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """List a source's content items and their indexing status.
+
+        Args:
+            source_id: Source identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (1-100, default 20).
+            sort: Sort field — ``created_at``, ``title`` or ``status``.
+            order: ``asc`` or ``desc``.
+            status: Keep only one status: ``pending``, ``fetching``,
+                ``transcribing``, ``scanning``, ``indexing``, ``completed`` or
+                ``failed``.
+            content_version_ids: Keep only these items — the
+                ``content_version_id`` values the upload methods return — to
+                poll a batch of uploads in one request. At most 500.
+
+        Returns:
+            ``{"data": [...], "pagination": {...}}`` on every API version. An
+            empty ``content_version_ids`` matches nothing: an empty page is
+            returned without sending a request.
+        """
+        if content_version_ids is not None and not content_version_ids:
+            return _empty_page(page=page or 1, limit=limit or 20)
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/sources/{source_id}/contents",
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "sort": sort,
+                        "order": order,
+                        "status": status,
+                        "content_version_id": content_version_ids,
+                    }
+                ),
+            ),
+        )
+
+    def get_source_content_status(
+        self, source_id: str, content_version_id: str
+    ) -> dict[str, Any]:
+        """Get one content item's indexing status.
+
+        Args:
+            source_id: Source identifier.
+            content_version_id: The ``content_version_id`` an upload returned.
+
+        Returns:
+            The item and its indexing status.
+        """
+        return cast(
+            dict[str, Any],
+            self.request("GET", f"/sources/{source_id}/contents/{content_version_id}"),
         )
 
     # ── Source Exports ────────────────────────────────────────────────────────
@@ -4057,6 +4235,47 @@ class Seclai(_SeclaiBase):
         """
         return cast(dict[str, Any], self.request("GET", "/models/generation-tiers"))
 
+    def list_embedding_models(
+        self, *, supports_input_media: str | None = None
+    ) -> dict[str, Any]:
+        """List the embedding models a source can index with, and their pricing.
+
+        Args:
+            supports_input_media: Keep only embedders that can index this input
+                modality.
+
+        Returns:
+            The embedders under ``models`` by default, and under ``data`` with
+            ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later; the defaults and pricing sit
+            beside them on either shape. Read the list with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(client.list_embedding_models(), "models")
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/models/embedders",
+                params=_strip_none({"supports_input_media": supports_input_media}),
+            ),
+        )
+
+    def list_reranker_models(self) -> dict[str, Any]:
+        """List the reranker models a knowledge base can use, and their pricing.
+
+        Returns:
+            The rerankers under ``models`` by default, and under ``data`` with
+            ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later; the default and pricing sit
+            beside them on either shape. Read the list with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(client.list_reranker_models(), "models")
+        """
+        return cast(dict[str, Any], self.request("GET", "/models/rerankers"))
+
     # ── Model Playground Experiments ──────────────────────────────────────────
 
     def list_experiments(
@@ -4144,6 +4363,112 @@ class Seclai(_SeclaiBase):
             experiment_id: Experiment identifier.
         """
         self.request("DELETE", f"/models/playground/experiments/{experiment_id}")
+
+    # ── Cloud Drives ──────────────────────────────────────────────────────────
+
+    def list_cloud_drive_providers(self) -> list[dict[str, Any]]:
+        """List the cloud-drive providers available to the account.
+
+        Returns:
+            The providers, read from either response shape.
+        """
+        return unwrap_items(self.request("GET", "/cloud-drives/providers"))
+
+    def list_cloud_drives(self) -> list[dict[str, Any]]:
+        """List the account's cloud-drive connections.
+
+        Returns:
+            The connections, read from either response shape.
+        """
+        return unwrap_items(self.request("GET", "/cloud-drives"))
+
+    def get_cloud_drive(self, connection_id: str) -> dict[str, Any]:
+        """Get a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+
+        Returns:
+            The connection.
+        """
+        return cast(
+            dict[str, Any], self.request("GET", f"/cloud-drives/{connection_id}")
+        )
+
+    def update_cloud_drive(
+        self, connection_id: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Update a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+            body: Fields to change — ``name`` and/or ``folder_path``.
+
+        Returns:
+            The updated connection.
+        """
+        return cast(
+            dict[str, Any],
+            self.request("PATCH", f"/cloud-drives/{connection_id}", json=body),
+        )
+
+    def disconnect_cloud_drive(self, connection_id: str) -> dict[str, Any]:
+        """Disconnect a cloud-drive connection, keeping the connection itself.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+
+        Returns:
+            The connection in its disconnected state.
+        """
+        return cast(
+            dict[str, Any],
+            self.request("POST", f"/cloud-drives/{connection_id}/disconnect"),
+        )
+
+    def delete_cloud_drive(self, connection_id: str) -> None:
+        """Delete a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+        """
+        self.request("DELETE", f"/cloud-drives/{connection_id}")
+
+    def get_agents_using_cloud_drive(self, connection_id: str) -> list[dict[str, Any]]:
+        """List the agents that use a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+
+        Returns:
+            The agents, read from either response shape.
+        """
+        return unwrap_items(
+            self.request("GET", f"/cloud-drives/{connection_id}/agents")
+        )
+
+    def list_cloud_drive_rejections(
+        self, connection_id: str, *, limit: int | None = None
+    ) -> list[dict[str, Any]]:
+        """List the files a cloud-drive connection skipped, newest first.
+
+        A skipped file fires no trigger, so this is where to look when an agent
+        did not run for a file.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+            limit: Maximum number of rejections (1-200, default 50).
+
+        Returns:
+            The rejections with their reasons, read from either response shape.
+        """
+        return unwrap_items(
+            self.request(
+                "GET",
+                f"/cloud-drives/{connection_id}/rejections",
+                params=_strip_none({"limit": limit}),
+            )
+        )
 
     # ── Search ────────────────────────────────────────────────────────────────
 
@@ -4472,6 +4797,7 @@ class Seclai(_SeclaiBase):
         params: dict[str, Any] | None = None,
         limit: int = 50,
         items_key: str = "data",
+        param_style: Literal["page", "offset"] = "page",
     ) -> Generator[dict[str, Any]]:
         """Auto-paginate a list endpoint.
 
@@ -4481,26 +4807,47 @@ class Seclai(_SeclaiBase):
         Args:
             method: HTTP method (typically ``"GET"``).
             path: API path.
-            params: Extra query parameters (``page`` and ``limit`` are managed automatically).
+            params: Extra query parameters (the cursor and ``limit`` are managed
+                automatically).
             limit: Items per page.
-            items_key: JSON key containing the list of items (default ``"data"``).
+            items_key: Per-resource key the items sit under when the response
+                is not the ``data`` envelope, which is always read first.
+            param_style: ``"page"`` (default) sends a 1-indexed ``page``;
+                ``"offset"`` sends a 0-based ``offset``. A few endpoints —
+                ``/models/alerts`` among them — declare only ``offset`` and
+                reject or ignore ``page``, which makes every request after the
+                first return page 1.
 
         Yields:
             Individual item dicts from each page.
+
+        Raises:
+            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``.
+            SeclaiError: If a page is neither a list nor an object carrying
+                ``data`` or ``items_key``.
         """
+        if param_style not in ("page", "offset"):
+            raise ValueError(
+                f"param_style must be 'page' or 'offset', not {param_style!r}"
+            )
         page = 1
         base_params = dict(params) if params else {}
         while True:
-            base_params["page"] = page
+            if param_style == "offset":
+                base_params["offset"] = (page - 1) * limit
+            else:
+                base_params["page"] = page
             base_params["limit"] = limit
             result = self.request(method, path, params=base_params)
-            if not isinstance(result, dict):
+            # A bare array is an unpaginated response: it is everything, so
+            # asking for a second page would return the same items again.
+            if isinstance(result, list):
+                for item in result:
+                    yield cast(dict[str, Any], item)
                 return
-            items = result.get(items_key, [])
-            if not isinstance(items, list):
-                return
+            items = unwrap_items(result, items_key)
             for item in items:
-                yield cast(dict[str, Any], item)
+                yield item
             if len(items) < limit:
                 return
             page += 1
@@ -4574,7 +4921,7 @@ class Seclai(_SeclaiBase):
         merged_headers = _merge_request_headers(
             options=self._options, request_headers=headers
         )
-        merged_headers.setdefault("accept", "text/event-stream")
+        _setdefault_header(merged_headers, "accept", "text/event-stream")
         timeout_seconds = self._options.timeout if timeout is None else timeout
         start = time.monotonic()
 
@@ -4586,6 +4933,10 @@ class Seclai(_SeclaiBase):
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
+                if response.status_code >= 400:
+                    # Lazy body inside `stream()`; read it so a 422's field-level
+                    # detail survives into SeclaiAPIValidationError.
+                    response.read()
                 _raise_for_status(response)
                 current_event: str | None = None
                 data_lines: list[str] = []
@@ -4887,7 +5238,7 @@ class AsyncSeclai(_SeclaiBase):
         merged_headers = await _merge_request_headers_async(
             options=self._options, request_headers=headers
         )
-        merged_headers.setdefault("accept", "text/event-stream")
+        _setdefault_header(merged_headers, "accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
         start = _time.monotonic()
@@ -4900,16 +5251,10 @@ class AsyncSeclai(_SeclaiBase):
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
-                if response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-                    payload = response.json()
-                    raise SeclaiAPIValidationError(
-                        message=f"Request failed with status {response.status_code}",
-                        status_code=int(response.status_code),
-                        method="POST",
-                        url=self._build_url(path),
-                        response_text=response.text,
-                        validation_error=HTTPValidationError.from_dict(payload),
-                    )
+                if response.status_code >= 400:
+                    # Lazy body inside `stream()`; read it so the error carries
+                    # its text and a 422 its field-level detail.
+                    await response.aread()
                 _raise_for_status(response)
 
                 current_event: str | None = None
@@ -5023,7 +5368,7 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, AgentRunListResponse)
 
     @overload
     async def get_agent_run(
@@ -5097,7 +5442,7 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, AgentRunResponse)
 
     @overload
     async def delete_agent_run(self, run_id: str, /) -> AgentRunResponse: ...
@@ -5164,7 +5509,7 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, AgentRunResponse)
 
     async def get_content_detail(
         self,
@@ -5224,7 +5569,7 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, ContentDetailResponse)
 
     async def delete_content(self, source_connection_content_version: str) -> None:
         """Delete a specific content version.
@@ -5313,7 +5658,7 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, ContentEmbeddingsListResponse)
 
     async def list_sources(
         self,
@@ -5379,7 +5724,7 @@ class AsyncSeclai(_SeclaiBase):
                 response_text=None,
                 validation_error=parsed,
             )
-        return parsed
+        return _expect_model(parsed, SourceListResponse)
 
     async def upload_file_to_source(
         self,
@@ -5668,7 +6013,7 @@ class AsyncSeclai(_SeclaiBase):
                     response_text=None,
                     validation_error=parsed,
                 )
-            return parsed
+            return _expect_model(parsed, FileUploadResponse)
         finally:
             if created_payload is not None:
                 created_payload.close()
@@ -6232,7 +6577,7 @@ class AsyncSeclai(_SeclaiBase):
         page_result = await self.list_evaluation_criteria_page(
             agent_id, page=page, limit=limit
         )
-        return _unwrap_data(page_result)
+        return unwrap_items(page_result)
 
     async def list_evaluation_criteria_page(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -6259,9 +6604,7 @@ class AsyncSeclai(_SeclaiBase):
             f"/agents/{agent_id}/evaluation-criteria",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        if isinstance(result, dict):
-            return cast(dict[str, Any], result)
-        return {"data": result}
+        return _as_page(result)
 
     async def create_evaluation_criteria(
         self, agent_id: str, body: dict[str, Any]
@@ -6475,7 +6818,7 @@ class AsyncSeclai(_SeclaiBase):
         page_result = await self.list_run_evaluation_results_page(
             agent_id, run_id, page=page, limit=limit
         )
-        return _unwrap_data(page_result)
+        return unwrap_items(page_result)
 
     async def list_run_evaluation_results_page(
         self, agent_id: str, run_id: str, *, page: int = 1, limit: int = 50
@@ -6499,9 +6842,7 @@ class AsyncSeclai(_SeclaiBase):
             f"/agents/{agent_id}/runs/{run_id}/evaluation-results",
             params=_strip_none({"page": page, "limit": limit}),
         )
-        if isinstance(result, dict):
-            return cast(dict[str, Any], result)
-        return {"data": result}
+        return _as_page(result)
 
     async def list_evaluation_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -7135,6 +7476,76 @@ class AsyncSeclai(_SeclaiBase):
                 "POST",
                 f"/sources/{source_connection_id}",
                 json=body,
+            ),
+        )
+
+    async def list_source_contents(
+        self,
+        source_id: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+        sort: str | None = None,
+        order: str | None = None,
+        status: str | None = None,
+        content_version_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """List a source's content items and their indexing status.
+
+        Args:
+            source_id: Source identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (1-100, default 20).
+            sort: Sort field — ``created_at``, ``title`` or ``status``.
+            order: ``asc`` or ``desc``.
+            status: Keep only one status: ``pending``, ``fetching``,
+                ``transcribing``, ``scanning``, ``indexing``, ``completed`` or
+                ``failed``.
+            content_version_ids: Keep only these items — the
+                ``content_version_id`` values the upload methods return — to
+                poll a batch of uploads in one request. At most 500.
+
+        Returns:
+            ``{"data": [...], "pagination": {...}}`` on every API version. An
+            empty ``content_version_ids`` matches nothing: an empty page is
+            returned without sending a request.
+        """
+        if content_version_ids is not None and not content_version_ids:
+            return _empty_page(page=page or 1, limit=limit or 20)
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/sources/{source_id}/contents",
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "sort": sort,
+                        "order": order,
+                        "status": status,
+                        "content_version_id": content_version_ids,
+                    }
+                ),
+            ),
+        )
+
+    async def get_source_content_status(
+        self, source_id: str, content_version_id: str
+    ) -> dict[str, Any]:
+        """Get one content item's indexing status.
+
+        Args:
+            source_id: Source identifier.
+            content_version_id: The ``content_version_id`` an upload returned.
+
+        Returns:
+            The item and its indexing status.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET", f"/sources/{source_id}/contents/{content_version_id}"
             ),
         )
 
@@ -7901,7 +8312,7 @@ class AsyncSeclai(_SeclaiBase):
             ``api_version="2026-07-27"`` or later. Read either with
             :func:`unwrap_items`::
 
-                items = unwrap_items(client.list_alert_configs(), "configs")
+                items = unwrap_items(await client.list_alert_configs(), "configs")
         """
         return await self.request(
             "GET",
@@ -8099,12 +8510,53 @@ class AsyncSeclai(_SeclaiBase):
             ``api_version="2026-07-27"`` or later. Read either with
             :func:`unwrap_items`::
 
-                items = unwrap_items(client.get_generation_tiers(), "tiers")
+                items = unwrap_items(await client.get_generation_tiers(), "tiers")
         """
         return cast(
             dict[str, Any],
             await self.request("GET", "/models/generation-tiers"),
         )
+
+    async def list_embedding_models(
+        self, *, supports_input_media: str | None = None
+    ) -> dict[str, Any]:
+        """List the embedding models a source can index with, and their pricing.
+
+        Args:
+            supports_input_media: Keep only embedders that can index this input
+                modality.
+
+        Returns:
+            The embedders under ``models`` by default, and under ``data`` with
+            ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later; the defaults and pricing sit
+            beside them on either shape. Read the list with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(await client.list_embedding_models(), "models")
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/models/embedders",
+                params=_strip_none({"supports_input_media": supports_input_media}),
+            ),
+        )
+
+    async def list_reranker_models(self) -> dict[str, Any]:
+        """List the reranker models a knowledge base can use, and their pricing.
+
+        Returns:
+            The rerankers under ``models`` by default, and under ``data`` with
+            ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later; the default and pricing sit
+            beside them on either shape. Read the list with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(await client.list_reranker_models(), "models")
+        """
+        return cast(dict[str, Any], await self.request("GET", "/models/rerankers"))
 
     # ── Model Playground Experiments ──────────────────────────────────────────
 
@@ -8127,7 +8579,12 @@ class AsyncSeclai(_SeclaiBase):
             offset: Pagination offset.
 
         Returns:
-            Paginated list of experiments.
+            The experiments, under ``experiments`` alongside ``total`` by default,
+            and under ``data`` with ``pagination`` once the client opts in with
+            ``api_version="2026-07-27"`` or later. Read either with
+            :func:`unwrap_items`::
+
+                items = unwrap_items(await client.list_experiments(), "experiments")
         """
         return await self.request(
             "GET",
@@ -8190,6 +8647,115 @@ class AsyncSeclai(_SeclaiBase):
             experiment_id: Experiment identifier.
         """
         await self.request("DELETE", f"/models/playground/experiments/{experiment_id}")
+
+    # ── Cloud Drives ──────────────────────────────────────────────────────────
+
+    async def list_cloud_drive_providers(self) -> list[dict[str, Any]]:
+        """List the cloud-drive providers available to the account.
+
+        Returns:
+            The providers, read from either response shape.
+        """
+        return unwrap_items(await self.request("GET", "/cloud-drives/providers"))
+
+    async def list_cloud_drives(self) -> list[dict[str, Any]]:
+        """List the account's cloud-drive connections.
+
+        Returns:
+            The connections, read from either response shape.
+        """
+        return unwrap_items(await self.request("GET", "/cloud-drives"))
+
+    async def get_cloud_drive(self, connection_id: str) -> dict[str, Any]:
+        """Get a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+
+        Returns:
+            The connection.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("GET", f"/cloud-drives/{connection_id}"),
+        )
+
+    async def update_cloud_drive(
+        self, connection_id: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Update a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+            body: Fields to change — ``name`` and/or ``folder_path``.
+
+        Returns:
+            The updated connection.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("PATCH", f"/cloud-drives/{connection_id}", json=body),
+        )
+
+    async def disconnect_cloud_drive(self, connection_id: str) -> dict[str, Any]:
+        """Disconnect a cloud-drive connection, keeping the connection itself.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+
+        Returns:
+            The connection in its disconnected state.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request("POST", f"/cloud-drives/{connection_id}/disconnect"),
+        )
+
+    async def delete_cloud_drive(self, connection_id: str) -> None:
+        """Delete a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+        """
+        await self.request("DELETE", f"/cloud-drives/{connection_id}")
+
+    async def get_agents_using_cloud_drive(
+        self, connection_id: str
+    ) -> list[dict[str, Any]]:
+        """List the agents that use a cloud-drive connection.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+
+        Returns:
+            The agents, read from either response shape.
+        """
+        return unwrap_items(
+            await self.request("GET", f"/cloud-drives/{connection_id}/agents")
+        )
+
+    async def list_cloud_drive_rejections(
+        self, connection_id: str, *, limit: int | None = None
+    ) -> list[dict[str, Any]]:
+        """List the files a cloud-drive connection skipped, newest first.
+
+        A skipped file fires no trigger, so this is where to look when an agent
+        did not run for a file.
+
+        Args:
+            connection_id: Cloud-drive connection identifier.
+            limit: Maximum number of rejections (1-200, default 50).
+
+        Returns:
+            The rejections with their reasons, read from either response shape.
+        """
+        return unwrap_items(
+            await self.request(
+                "GET",
+                f"/cloud-drives/{connection_id}/rejections",
+                params=_strip_none({"limit": limit}),
+            )
+        )
 
     # ── Search ────────────────────────────────────────────────────────────────
 
@@ -8522,6 +9088,7 @@ class AsyncSeclai(_SeclaiBase):
         params: dict[str, Any] | None = None,
         limit: int = 50,
         items_key: str = "data",
+        param_style: Literal["page", "offset"] = "page",
     ) -> AsyncGenerator[dict[str, Any]]:
         """Auto-paginate a list endpoint, yielding items lazily.
 
@@ -8532,26 +9099,47 @@ class AsyncSeclai(_SeclaiBase):
         Args:
             method: HTTP method (typically ``"GET"``).
             path: API path.
-            params: Extra query parameters (``page`` and ``limit`` are managed automatically).
+            params: Extra query parameters (the cursor and ``limit`` are managed
+                automatically).
             limit: Items per page.
-            items_key: JSON key containing the list of items (default ``"data"``).
+            items_key: Per-resource key the items sit under when the response
+                is not the ``data`` envelope, which is always read first.
+            param_style: ``"page"`` (default) sends a 1-indexed ``page``;
+                ``"offset"`` sends a 0-based ``offset``. A few endpoints —
+                ``/models/alerts`` among them — declare only ``offset`` and
+                reject or ignore ``page``, which makes every request after the
+                first return page 1.
 
         Yields:
             Individual items from each page.
+
+        Raises:
+            ValueError: If ``param_style`` is neither ``"page"`` nor ``"offset"``.
+            SeclaiError: If a page is neither a list nor an object carrying
+                ``data`` or ``items_key``.
         """
+        if param_style not in ("page", "offset"):
+            raise ValueError(
+                f"param_style must be 'page' or 'offset', not {param_style!r}"
+            )
         page = 1
         base_params = dict(params) if params else {}
         while True:
-            base_params["page"] = page
+            if param_style == "offset":
+                base_params["offset"] = (page - 1) * limit
+            else:
+                base_params["page"] = page
             base_params["limit"] = limit
             result = await self.request(method, path, params=base_params)
-            if not isinstance(result, dict):
+            # A bare array is an unpaginated response: it is everything, so
+            # asking for a second page would return the same items again.
+            if isinstance(result, list):
+                for item in result:
+                    yield cast(dict[str, Any], item)
                 break
-            items = result.get(items_key, [])
-            if not isinstance(items, list):
-                break
+            items = unwrap_items(result, items_key)
             for item in items:
-                yield cast(dict[str, Any], item)
+                yield item
             if len(items) < limit:
                 break
             page += 1
@@ -8627,7 +9215,7 @@ class AsyncSeclai(_SeclaiBase):
         merged_headers = await _merge_request_headers_async(
             options=self._options, request_headers=headers
         )
-        merged_headers.setdefault("accept", "text/event-stream")
+        _setdefault_header(merged_headers, "accept", "text/event-stream")
         timeout_seconds = self._options.timeout if timeout is None else timeout
         start = time.monotonic()
 
@@ -8639,6 +9227,10 @@ class AsyncSeclai(_SeclaiBase):
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
+                if response.status_code >= 400:
+                    # Lazy body inside `stream()`; read it so a 422's field-level
+                    # detail survives into SeclaiAPIValidationError.
+                    await response.aread()
                 _raise_for_status(response)
                 current_event: str | None = None
                 data_lines: list[str] = []

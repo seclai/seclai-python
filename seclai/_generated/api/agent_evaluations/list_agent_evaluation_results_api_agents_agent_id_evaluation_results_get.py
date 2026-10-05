@@ -11,6 +11,7 @@ from ...models.evaluation_result_with_criteria_list_response import (
     EvaluationResultWithCriteriaListResponse,
 )
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -86,7 +87,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> EvaluationResultWithCriteriaListResponse | HTTPValidationError | None:
+) -> (
+    EvaluationResultWithCriteriaListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = EvaluationResultWithCriteriaListResponse.from_dict(
             response.json()
@@ -99,6 +105,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -107,7 +118,11 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[EvaluationResultWithCriteriaListResponse | HTTPValidationError]:
+) -> Response[
+    EvaluationResultWithCriteriaListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -129,7 +144,11 @@ def sync_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[EvaluationResultWithCriteriaListResponse | HTTPValidationError]:
+) -> Response[
+    EvaluationResultWithCriteriaListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+]:
     """List Agent Evaluation Results
 
      List evaluation results across all criteria configured on an agent.
@@ -154,7 +173,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[EvaluationResultWithCriteriaListResponse | HTTPValidationError]
+        Response[EvaluationResultWithCriteriaListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -190,7 +209,12 @@ def sync(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> EvaluationResultWithCriteriaListResponse | HTTPValidationError | None:
+) -> (
+    EvaluationResultWithCriteriaListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """List Agent Evaluation Results
 
      List evaluation results across all criteria configured on an agent.
@@ -215,7 +239,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        EvaluationResultWithCriteriaListResponse | HTTPValidationError
+        EvaluationResultWithCriteriaListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -246,7 +270,11 @@ async def asyncio_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[EvaluationResultWithCriteriaListResponse | HTTPValidationError]:
+) -> Response[
+    EvaluationResultWithCriteriaListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+]:
     """List Agent Evaluation Results
 
      List evaluation results across all criteria configured on an agent.
@@ -271,7 +299,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[EvaluationResultWithCriteriaListResponse | HTTPValidationError]
+        Response[EvaluationResultWithCriteriaListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -305,7 +333,12 @@ async def asyncio(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> EvaluationResultWithCriteriaListResponse | HTTPValidationError | None:
+) -> (
+    EvaluationResultWithCriteriaListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """List Agent Evaluation Results
 
      List evaluation results across all criteria configured on an agent.
@@ -330,7 +363,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        EvaluationResultWithCriteriaListResponse | HTTPValidationError
+        EvaluationResultWithCriteriaListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

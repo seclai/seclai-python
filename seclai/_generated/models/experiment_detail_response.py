@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
+    from ..models.experiment_detail_response_effort import (
+        ExperimentDetailResponseEffort,
+    )
     from ..models.experiment_detail_response_result_data_type_0 import (
         ExperimentDetailResponseResultDataType0,
     )
@@ -38,6 +43,7 @@ class ExperimentDetailResponse:
         started_at (None | str):
         status (str):
         system_prompt (str):
+        effort (ExperimentDetailResponseEffort | Unset): The reasoning effort each model was run at, by model ID.
     """
 
     completed_at: None | str
@@ -59,6 +65,7 @@ class ExperimentDetailResponse:
     started_at: None | str
     status: str
     system_prompt: str
+    effort: ExperimentDetailResponseEffort | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -117,6 +124,10 @@ class ExperimentDetailResponse:
 
         system_prompt = self.system_prompt
 
+        effort: dict[str, Any] | Unset = UNSET
+        if not isinstance(self.effort, Unset):
+            effort = self.effort.to_dict()
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -142,11 +153,16 @@ class ExperimentDetailResponse:
                 "system_prompt": system_prompt,
             }
         )
+        if effort is not UNSET:
+            field_dict["effort"] = effort
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.experiment_detail_response_effort import (
+            ExperimentDetailResponseEffort,
+        )
         from ..models.experiment_detail_response_result_data_type_0 import (
             ExperimentDetailResponseResultDataType0,
         )
@@ -255,6 +271,13 @@ class ExperimentDetailResponse:
 
         system_prompt = d.pop("system_prompt")
 
+        _effort = d.pop("effort", UNSET)
+        effort: ExperimentDetailResponseEffort | Unset
+        if isinstance(_effort, Unset):
+            effort = UNSET
+        else:
+            effort = ExperimentDetailResponseEffort.from_dict(_effort)
+
         experiment_detail_response = cls(
             completed_at=completed_at,
             created_at=created_at,
@@ -275,6 +298,7 @@ class ExperimentDetailResponse:
             started_at=started_at,
             status=status,
             system_prompt=system_prompt,
+            effort=effort,
         )
 
         experiment_detail_response.additional_properties = d

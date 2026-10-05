@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 from uuid import UUID
 
@@ -12,6 +12,7 @@ from ...models.body_upload_file_to_content_api_contents_source_connection_conten
 )
 from ...models.file_upload_response import FileUploadResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -46,16 +47,25 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> FileUploadResponse | HTTPValidationError | None:
+) -> Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = FileUploadResponse.from_dict(response.json())
 
         return response_200
 
+    if response.status_code == 403:
+        response_403 = cast(Any, None)
+        return response_403
+
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -65,7 +75,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[FileUploadResponse | HTTPValidationError]:
+) -> Response[Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -81,7 +91,7 @@ def sync_detailed(
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[FileUploadResponse | HTTPValidationError]:
+) -> Response[Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError]:
     r"""Replace a content version with a new upload
 
      Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
@@ -89,7 +99,8 @@ def sync_detailed(
     This behaves like a source file upload, but it targets an existing content version ID. This is
     useful when you want to correct or update an uploaded document while keeping references stable.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -126,6 +137,11 @@ def sync_detailed(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
+    - The replacement is indexed in the background. This `SourceConnectionContentVersion` ID keeps
+    working, and reads return the previous content until indexing finishes; poll
+    `list_source_content_status` to follow it. The returned `content_version_id` is the new version.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -150,7 +166,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[FileUploadResponse | HTTPValidationError]
+        Response[Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -174,7 +190,7 @@ def sync(
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> FileUploadResponse | HTTPValidationError | None:
+) -> Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError | None:
     r"""Replace a content version with a new upload
 
      Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
@@ -182,7 +198,8 @@ def sync(
     This behaves like a source file upload, but it targets an existing content version ID. This is
     useful when you want to correct or update an uploaded document while keeping references stable.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -219,6 +236,11 @@ def sync(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
+    - The replacement is indexed in the background. This `SourceConnectionContentVersion` ID keeps
+    working, and reads return the previous content until indexing finishes; poll
+    `list_source_content_status` to follow it. The returned `content_version_id` is the new version.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -243,7 +265,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        FileUploadResponse | HTTPValidationError
+        Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -262,7 +284,7 @@ async def asyncio_detailed(
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[FileUploadResponse | HTTPValidationError]:
+) -> Response[Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError]:
     r"""Replace a content version with a new upload
 
      Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
@@ -270,7 +292,8 @@ async def asyncio_detailed(
     This behaves like a source file upload, but it targets an existing content version ID. This is
     useful when you want to correct or update an uploaded document while keeping references stable.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -307,6 +330,11 @@ async def asyncio_detailed(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
+    - The replacement is indexed in the background. This `SourceConnectionContentVersion` ID keeps
+    working, and reads return the previous content until indexing finishes; poll
+    `list_source_content_status` to follow it. The returned `content_version_id` is the new version.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -331,7 +359,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[FileUploadResponse | HTTPValidationError]
+        Response[Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -353,7 +381,7 @@ async def asyncio(
     body: BodyUploadFileToContentApiContentsSourceConnectionContentVersionUploadPost,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> FileUploadResponse | HTTPValidationError | None:
+) -> Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError | None:
     r"""Replace a content version with a new upload
 
      Upload a new file and replace the content backing an existing `SourceConnectionContentVersion`.
@@ -361,7 +389,8 @@ async def asyncio(
     This behaves like a source file upload, but it targets an existing content version ID. This is
     useful when you want to correct or update an uploaded document while keeping references stable.
 
-    **Maximum file size:** 209715200 bytes.
+    **Maximum file size:** 209715200 bytes, except `image/svg+xml` at 5242880 bytes (SVG is sanitized
+    before it is stored).
 
     **Supported MIME types:**
     - `application/epub+zip`
@@ -398,6 +427,11 @@ async def asyncio(
     - `video/x-msvideo`
 
     Notes:
+    - A key bound to a user must belong to an owner or administrator of the account; a viewer's key is
+    refused with 403 `permission_denied`. Account-scoped keys carry no user and are unaffected.
+    - The replacement is indexed in the background. This `SourceConnectionContentVersion` ID keeps
+    working, and reads return the previous content until indexing finishes; poll
+    `list_source_content_status` to follow it. The returned `content_version_id` is the new version.
     - If the uploaded file's content type is `application/octet-stream`, the server attempts to infer
     the type from the file extension.
     - Use `metadata` to attach an arbitrary JSON object of metadata (for example
@@ -422,7 +456,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        FileUploadResponse | HTTPValidationError
+        Any | FileUploadResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

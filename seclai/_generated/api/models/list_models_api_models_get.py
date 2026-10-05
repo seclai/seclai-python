@@ -8,6 +8,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
 from ...models.provider_group_response import ProviderGroupResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -79,7 +80,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | list[ProviderGroupResponse] | None:
+) -> HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse] | None:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -95,6 +96,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -103,7 +109,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | list[ProviderGroupResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse]
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -122,13 +130,19 @@ def sync_detailed(
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | list[ProviderGroupResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse]
+]:
     """List Models
 
-     List all enabled LLM models with full details.
+     List the enabled LLM models with full details.
 
     Returns models grouped by provider, including capabilities, credit pricing, tool support, variant
     tiers, and lifecycle status.
+
+    A model whose credit rate has not been published yet is omitted, so you are never offered a model
+    that cannot be billed and therefore cannot be run. Such a model may appear later without any other
+    change.
 
     Optional query parameters:
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
@@ -159,7 +173,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[ProviderGroupResponse]]
+        Response[HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse]]
     """
 
     kwargs = _get_kwargs(
@@ -189,13 +203,17 @@ def sync(
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | list[ProviderGroupResponse] | None:
+) -> HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse] | None:
     """List Models
 
-     List all enabled LLM models with full details.
+     List the enabled LLM models with full details.
 
     Returns models grouped by provider, including capabilities, credit pricing, tool support, variant
     tiers, and lifecycle status.
+
+    A model whose credit rate has not been published yet is omitted, so you are never offered a model
+    that cannot be billed and therefore cannot be run. Such a model may appear later without any other
+    change.
 
     Optional query parameters:
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
@@ -226,7 +244,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[ProviderGroupResponse]
+        HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse]
     """
 
     return sync_detailed(
@@ -251,13 +269,19 @@ async def asyncio_detailed(
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | list[ProviderGroupResponse]]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse]
+]:
     """List Models
 
-     List all enabled LLM models with full details.
+     List the enabled LLM models with full details.
 
     Returns models grouped by provider, including capabilities, credit pricing, tool support, variant
     tiers, and lifecycle status.
+
+    A model whose credit rate has not been published yet is omitted, so you are never offered a model
+    that cannot be billed and therefore cannot be run. Such a model may appear later without any other
+    change.
 
     Optional query parameters:
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
@@ -288,7 +312,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[ProviderGroupResponse]]
+        Response[HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse]]
     """
 
     kwargs = _get_kwargs(
@@ -316,13 +340,17 @@ async def asyncio(
     supports_output_media: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | list[ProviderGroupResponse] | None:
+) -> HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse] | None:
     """List Models
 
-     List all enabled LLM models with full details.
+     List the enabled LLM models with full details.
 
     Returns models grouped by provider, including capabilities, credit pricing, tool support, variant
     tiers, and lifecycle status.
+
+    A model whose credit rate has not been published yet is omitted, so you are never offered a model
+    that cannot be billed and therefore cannot be run. Such a model may appear later without any other
+    change.
 
     Optional query parameters:
     - `provider`: filter by provider (e.g. 'anthropic', 'openai')
@@ -353,7 +381,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[ProviderGroupResponse]
+        HTTPValidationError | ServiceUnavailableError | list[ProviderGroupResponse]
     """
 
     return (

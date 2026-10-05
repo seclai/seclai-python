@@ -174,7 +174,9 @@ reshape responses, and this client would decode them incorrectly rather than
 reject them. Upgrade the package to adopt a new version, or pass
 `allow_unknown_api_version=True` if you have to move first and accept that risk.
 
-The guard only covers the header. An account pinned server-side can still be
+The guard covers the header however it is supplied — `api_version`,
+`default_headers`, or a per-request `headers` argument — and nothing else. An
+account pinned server-side can still be
 newer than this release — `get_api_version()` reports the `effective_version` the
 request resolved to, and comparing it against `LATEST_API_VERSION` is how you
 detect the gap.
@@ -184,8 +186,6 @@ of being ignored, and list endpoints move to the canonical
 `{"data": [...], "pagination": {...}}` envelope. The affected methods read both
 shapes, so they keep working either way — but the metadata moves:
 
-| Method | Before | From 2026-07-27 |
-| --- | --- | --- |
 | Method | Before | From 2026-07-27 | Legacy paging |
 | --- | --- | --- | --- |
 | `list_evaluation_criteria_page()` | bare list | `data` + `pagination` | none — returns everything |
@@ -210,8 +210,25 @@ then removed once the canonical envelope is the default.
 
 The two evaluation endpoints are **unpaginated** on the legacy shape — they
 ignore `page`/`limit` and return everything — so a paginate-until-empty loop over
-them only terminates once you have opted in. The other four paginate on either
-shape.
+them only terminates once you have opted in. `get_generation_tiers()` takes no
+paging arguments at all and always returns the full set. The remaining three
+paginate on either shape.
+
+**Later versions.** Each is cumulative, and none changes a response shape this
+client decodes:
+
+| Version | What it changes |
+| --- | --- |
+| `2026-08-03` | `create_memory_bank()` and `update_memory_bank()` reject a non-zero `max_age_days` with a 400, and an omitted `retention_days` on create resolves per bank type |
+| `2026-08-21` | `create_source()` rejects an embedding dimension its embedder does not support with a 400 — `list_embedding_models()` reports the supported ones |
+| `2026-09-28` | Agent-definition writes use the current file-list grammar: an omitted `attachments` keeps the stored list and `[]` means no files |
+| `2026-09-30` | A run's and a step's `output`, and a step's `input`, are the text rather than a JSON manifest; files are in `attachments` on every version |
+| `2026-10-03` | A new LLM step written without `attachments` takes its parent's files, and a new retrieval step's matched media are its files |
+
+The cloud-drive listings and `list_embedding_models()` / `list_reranker_models()`
+follow the `2026-07-27` envelope rule as well. The cloud-drive methods return
+the items on either shape; read the two model listings with
+`unwrap_items(result, "models")`.
 
 ## Resources
 
@@ -282,9 +299,9 @@ search = client.search_agent_runs({"query": "test"})
 # Fetch run details (optionally with step outputs)
 detail = client.get_agent_run("run_id", include_step_outputs=True)
 
-# Cancel or delete
+# Cancel an in-flight or queued run. `delete_agent_run()` is the same
+# operation on the same endpoint, returning a typed model instead of a dict.
 client.cancel_agent_run("run_id")
-client.delete_agent_run("run_id")
 ```
 
 ### Streaming
@@ -366,8 +383,8 @@ with response:
 steps = client.generate_agent_steps("agent_id", {"user_input": "Build a RAG pipeline"})
 config = client.generate_step_config("agent_id", {"step_type": "llm", "user_input": "..."})
 
-# Conversation history
-history = client.get_agent_ai_conversation_history("agent_id")
+# Conversation history — step_type is required by the API
+history = client.get_agent_ai_conversation_history("agent_id", step_type="llm")
 client.mark_agent_ai_suggestion("agent_id", "conversation_id", {"accepted": True})
 ```
 
@@ -446,6 +463,33 @@ source = client.create_source({"name": "My Source"})
 fetched = client.get_source("source_id")
 client.update_source("source_id", {"name": "Updated"})
 client.delete_source("source_id")
+```
+
+Indexing status of a source's content, keyed by the `content_version_id` the
+upload methods return:
+
+```python
+failed = client.list_source_contents("source_id", status="failed")
+batch = client.list_source_contents(
+    "source_id", content_version_ids=["cv_1", "cv_2"]
+)
+one = client.get_source_content_status("source_id", "cv_1")
+```
+
+### Cloud drives
+
+```python
+providers = client.list_cloud_drive_providers()
+drives = client.list_cloud_drives()
+drive = client.get_cloud_drive("connection_id")
+client.update_cloud_drive("connection_id", {"name": "Contracts"})
+
+# Which agents depend on it, and which files it skipped and why
+agents = client.get_agents_using_cloud_drive("connection_id")
+skipped = client.list_cloud_drive_rejections("connection_id", limit=20)
+
+client.disconnect_cloud_drive("connection_id")  # keeps the connection
+client.delete_cloud_drive("connection_id")
 ```
 
 ### File uploads
@@ -657,6 +701,10 @@ print(removed.get("cleanup_note"))  # set when the domain was Seclai-managed
 # Media-generation quality tiers (fast/balanced/thorough) and what each resolves to
 tiers = client.get_generation_tiers()
 
+# Embedding and reranker models, with their pricing
+embedders = unwrap_items(client.list_embedding_models(), "models")
+rerankers = unwrap_items(client.list_reranker_models(), "models")
+
 alerts = client.list_model_alerts()
 client.mark_model_alert_read("alert_id")
 client.mark_all_model_alerts_read()
@@ -719,8 +767,14 @@ All list methods accept `page` and `limit` parameters. For auto-pagination acros
 for agent in client.paginate("GET", "/agents"):
     print(agent["name"])
 
-# With a custom items key
-for alert in client.paginate("GET", "/alerts", items_key="items"):
+# With a per-resource items key; `data` is read first, so this works on
+# either response shape
+for config in client.paginate("GET", "/alerts/configs", items_key="configs"):
+    print(config["id"])
+
+# Endpoints that declare `offset` rather than `page`
+for alert in client.paginate("GET", "/models/alerts", items_key="alerts",
+                             param_style="offset"):
     print(alert["id"])
 ```
 

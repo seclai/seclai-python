@@ -24,12 +24,15 @@ class CreateSourceBody:
         chunk_size (int | None | Unset): Chunk size for content processing.
         content_filter (None | str | Unset): Content filter type.
         dimensions (int | None | Unset): Embedding dimensions override.
-        embedding_model (None | str | Unset): Embedding model override.
+        embedding_model (None | str | Unset): Embedding model override — a `model_type` from `GET /models/embedders`,
+            which also reports each embedder's `supported_input_media`. Defaults to the platform embedder
+            (`default_model_type` on that endpoint) when omitted. Indexing images or video requires an embedder that lists
+            that modality.
         index_mode (None | SourceIndexMode | Unset): Index mode for custom_index sources: fast_and_cheap (default),
             balanced, slow_and_thorough, or custom.
         media_types (list[str] | None | Unset): Media kinds to extract from indexed content and embed as multi-modal KB
-            chunks. Subset of ['images', 'video']. Only kinds the source's embedder can index are honored; unsupported
-            values are dropped. Omit / [] for text-only.
+            chunks. Subset of ['images', 'video']. Only kinds the source's embedder can index are honored (see
+            `supported_input_media` on GET /models/embedders); unsupported values are dropped. Omit / [] for text-only.
         polling (None | str | Unset): Polling interval (e.g. hourly, daily).
         polling_action (None | str | Unset): Polling action.
         polling_max_items (int | None | Unset): Max items per poll.

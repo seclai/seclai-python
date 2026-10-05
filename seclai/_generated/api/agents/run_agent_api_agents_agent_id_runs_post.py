@@ -11,6 +11,7 @@ from ...models.agent_run_request import AgentRunRequest
 from ...models.agent_run_response import AgentRunResponse
 from ...models.http_validation_error import HTTPValidationError
 from ...models.insufficient_credits_response import InsufficientCreditsResponse
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -45,7 +46,13 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | None:
+) -> (
+    AgentRunResponse
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = AgentRunResponse.from_dict(response.json())
 
@@ -61,6 +68,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -69,7 +81,12 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]:
+) -> Response[
+    AgentRunResponse
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -85,7 +102,12 @@ def sync_detailed(
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]:
+) -> Response[
+    AgentRunResponse
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+]:
     """Run an agent
 
      Start an agent run.
@@ -100,8 +122,10 @@ def sync_detailed(
 
     Key fields:
     - `input`: text input for agents with a `dynamic_input` trigger.
-    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
-    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
+    /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
+    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
@@ -126,7 +150,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]
+        Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -150,7 +174,13 @@ def sync(
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | None:
+) -> (
+    AgentRunResponse
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+    | None
+):
     """Run an agent
 
      Start an agent run.
@@ -165,8 +195,10 @@ def sync(
 
     Key fields:
     - `input`: text input for agents with a `dynamic_input` trigger.
-    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
-    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
+    /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
+    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
@@ -191,7 +223,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse
+        AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -210,7 +242,12 @@ async def asyncio_detailed(
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]:
+) -> Response[
+    AgentRunResponse
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+]:
     """Run an agent
 
      Start an agent run.
@@ -225,8 +262,10 @@ async def asyncio_detailed(
 
     Key fields:
     - `input`: text input for agents with a `dynamic_input` trigger.
-    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
-    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
+    /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
+    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
@@ -251,7 +290,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse]
+        Response[AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -273,7 +312,13 @@ async def asyncio(
     body: AgentRunRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | None:
+) -> (
+    AgentRunResponse
+    | HTTPValidationError
+    | InsufficientCreditsResponse
+    | ServiceUnavailableError
+    | None
+):
     """Run an agent
 
      Start an agent run.
@@ -288,8 +333,10 @@ async def asyncio(
 
     Key fields:
     - `input`: text input for agents with a `dynamic_input` trigger.
-    - `input_upload_id`: alternatively, reference a file previously uploaded via `POST
-    /agents/{agent_id}/upload-input` (mutually exclusive with `input`).
+    - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
+    /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
+    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
@@ -314,7 +361,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse
+        AgentRunResponse | HTTPValidationError | InsufficientCreditsResponse | ServiceUnavailableError
     """
 
     return (

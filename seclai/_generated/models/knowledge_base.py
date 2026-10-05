@@ -24,9 +24,9 @@ class KnowledgeBase:
         id (str): Unique knowledge base identifier.
         name (str): Human-readable name.
         updated_at (str): ISO-8601 last-update timestamp.
-        default_score_threshold (float | None | Unset): Default minimum rerank score.
-        default_top_k (int | None | Unset): Default results after reranking.
-        default_top_n (int | None | Unset): Default number of results to return.
+        default_score_threshold (float | None | Unset): Editor default for a new retrieval step's Minimum Rerank Score.
+        default_top_k (int | None | Unset): Editor default for a new retrieval step's Top K.
+        default_top_n (int | None | Unset): Editor default for a new retrieval step's Top N.
         description (None | str | Unset): Optional description.
         readonly (bool | Unset): Whether the knowledge base is read-only. Default: False.
         reranker_model (None | str | Unset): Reranker model in use.

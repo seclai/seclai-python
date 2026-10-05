@@ -21,7 +21,8 @@ class MemoryBankConfigResponse:
         type_ (str): Memory bank type: conversation or general.
         compaction_prompt (None | str | Unset): Suggested compaction prompt.
         description (None | str | Unset): Suggested description.
-        max_age_days (int | None | Unset): Max age in days.
+        max_age_days (int | None | Unset): Always null. Age-based compaction is retired — the assistant never suggests
+            it. Kept so an SDK generated before the change still validates this response.
         max_size_tokens (int | None | Unset): Max size in tokens.
         max_turns (int | None | Unset): Max conversation turns.
         retention_days (int | None | Unset): Retention in days.

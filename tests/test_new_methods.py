@@ -14,7 +14,7 @@ import httpx
 import pytest
 
 import seclai
-from seclai import AsyncSeclai, Seclai
+from seclai import AgentRunStreamRequest, AsyncSeclai, Seclai
 from seclai import versions as seclai_versions
 
 # ---------------------------------------------------------------------------
@@ -3101,13 +3101,20 @@ class TestGenerationTiersAndDocsSearch:
         def handler(req: httpx.Request) -> httpx.Response:
             seen["method"] = req.method
             seen["path"] = req.url.path
-            return _json_response({"image": {"fast": {"model": "m1"}}}, status=200)
+            # The legacy shape the endpoint actually serves. The previous
+            # fixture used a nested modality->tier mapping the API never sends,
+            # which the documented `unwrap_items(..., "tiers")` cannot read.
+            return _json_response(
+                {"tiers": [{"modality": "image", "tier": "fast"}]}, status=200
+            )
 
         client = _sync_client(handler)
         result = client.get_generation_tiers()
         assert seen["method"] == "GET"
         assert seen["path"] == "/models/generation-tiers"
-        assert result == {"image": {"fast": {"model": "m1"}}}
+        assert seclai.unwrap_items(result, "tiers") == [
+            {"modality": "image", "tier": "fast"}
+        ]
 
     def test_search_docs(self) -> None:
         seen: dict[str, Any] = {}
@@ -3455,6 +3462,296 @@ class TestApiVersionConstants:
         assert seen["body"] == {"version": "2099-01-01"}
 
 
+_ENVELOPE_PAGINATION = {
+    "page": 1,
+    "limit": 1,
+    "total": 1,
+    "pages": 1,
+    "has_next": False,
+    "has_prev": False,
+}
+
+# (method, args, kwargs, verb, path, query, body) for every 2026-10 endpoint.
+# One table drives the sync and async tests, so the two classes cannot be
+# asserted against different expectations.
+_SYNC_2026_10_CALLS: list[
+    tuple[str, tuple[Any, ...], dict[str, Any], str, str, list[tuple[str, str]], Any]
+] = [
+    ("list_cloud_drive_providers", (), {}, "GET", "/cloud-drives/providers", [], None),
+    ("list_cloud_drives", (), {}, "GET", "/cloud-drives", [], None),
+    ("get_cloud_drive", ("c1",), {}, "GET", "/cloud-drives/c1", [], None),
+    (
+        "update_cloud_drive",
+        ("c1", {"name": "Contracts"}),
+        {},
+        "PATCH",
+        "/cloud-drives/c1",
+        [],
+        {"name": "Contracts"},
+    ),
+    (
+        "disconnect_cloud_drive",
+        ("c1",),
+        {},
+        "POST",
+        "/cloud-drives/c1/disconnect",
+        [],
+        None,
+    ),
+    ("delete_cloud_drive", ("c1",), {}, "DELETE", "/cloud-drives/c1", [], None),
+    (
+        "get_agents_using_cloud_drive",
+        ("c1",),
+        {},
+        "GET",
+        "/cloud-drives/c1/agents",
+        [],
+        None,
+    ),
+    (
+        "list_cloud_drive_rejections",
+        ("c1",),
+        {"limit": 20},
+        "GET",
+        "/cloud-drives/c1/rejections",
+        [("limit", "20")],
+        None,
+    ),
+    (
+        "list_cloud_drive_rejections",
+        ("c1",),
+        {},
+        "GET",
+        "/cloud-drives/c1/rejections",
+        [],
+        None,
+    ),
+    (
+        "list_embedding_models",
+        (),
+        {"supports_input_media": "image"},
+        "GET",
+        "/models/embedders",
+        [("supports_input_media", "image")],
+        None,
+    ),
+    ("list_reranker_models", (), {}, "GET", "/models/rerankers", [], None),
+    (
+        "list_source_contents",
+        ("s1",),
+        {
+            "page": 2,
+            "limit": 10,
+            "sort": "title",
+            "order": "asc",
+            "status": "failed",
+            "content_version_ids": ["cv1", "cv2"],
+        },
+        "GET",
+        "/sources/s1/contents",
+        [
+            ("page", "2"),
+            ("limit", "10"),
+            ("sort", "title"),
+            ("order", "asc"),
+            ("status", "failed"),
+            ("content_version_id", "cv1"),
+            ("content_version_id", "cv2"),
+        ],
+        None,
+    ),
+    ("list_source_contents", ("s1",), {}, "GET", "/sources/s1/contents", [], None),
+    (
+        "get_source_content_status",
+        ("s1", "cv1"),
+        {},
+        "GET",
+        "/sources/s1/contents/cv1",
+        [],
+        None,
+    ),
+]
+
+# Methods that return the items of a version-gated list, and so must read both
+# the legacy bare array and the canonical envelope.
+_LIST_2026_10_METHODS = [
+    ("list_cloud_drive_providers", ()),
+    ("list_cloud_drives", ()),
+    ("get_agents_using_cloud_drive", ("c1",)),
+    ("list_cloud_drive_rejections", ("c1",)),
+]
+
+
+def _recording_handler(seen: dict[str, Any], body: Any) -> Any:
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen["method"] = req.method
+        seen["path"] = req.url.path
+        seen["query"] = list(req.url.params.multi_items())
+        seen["body"] = json.loads(req.content) if req.content else None
+        return _json_response(body)
+
+    return handler
+
+
+class TestCloudDrivesModelsAndSourceContents:
+    @pytest.mark.parametrize(
+        ("name", "args", "kwargs", "verb", "path", "query", "body"),
+        _SYNC_2026_10_CALLS,
+    )
+    def test_request(
+        self,
+        name: str,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        verb: str,
+        path: str,
+        query: list[tuple[str, str]],
+        body: Any,
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _sync_client(_recording_handler(seen, {"data": []}))
+        getattr(client, name)(*args, **kwargs)
+        assert seen == {"method": verb, "path": path, "query": query, "body": body}
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("name", "args", "kwargs", "verb", "path", "query", "body"),
+        _SYNC_2026_10_CALLS,
+    )
+    async def test_request_async(
+        self,
+        name: str,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        verb: str,
+        path: str,
+        query: list[tuple[str, str]],
+        body: Any,
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _async_client(_recording_handler(seen, {"data": []}))
+        await getattr(client, name)(*args, **kwargs)
+        assert seen == {"method": verb, "path": path, "query": query, "body": body}
+
+    @pytest.mark.parametrize(("name", "args"), _LIST_2026_10_METHODS)
+    @pytest.mark.parametrize(
+        "payload",
+        [[{"id": "x1"}], {"data": [{"id": "x1"}], "pagination": _ENVELOPE_PAGINATION}],
+        ids=["legacy-array", "envelope"],
+    )
+    def test_list_reads_both_shapes(
+        self, name: str, args: tuple[Any, ...], payload: Any
+    ) -> None:
+        client = _sync_client(lambda req: _json_response(payload))
+        assert getattr(client, name)(*args) == [{"id": "x1"}]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("name", "args"), _LIST_2026_10_METHODS)
+    @pytest.mark.parametrize(
+        "payload",
+        [[{"id": "x1"}], {"data": [{"id": "x1"}], "pagination": _ENVELOPE_PAGINATION}],
+        ids=["legacy-array", "envelope"],
+    )
+    async def test_list_reads_both_shapes_async(
+        self, name: str, args: tuple[Any, ...], payload: Any
+    ) -> None:
+        client = _async_client(lambda req: _json_response(payload))
+        assert await getattr(client, name)(*args) == [{"id": "x1"}]
+
+    @pytest.mark.parametrize("name", ["list_embedding_models", "list_reranker_models"])
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"models": [{"model_type": "m1"}], "default_model_type": "m1"},
+            {
+                "data": [{"model_type": "m1"}],
+                "pagination": _ENVELOPE_PAGINATION,
+                "default_model_type": "m1",
+            },
+        ],
+        ids=["legacy-key", "envelope"],
+    )
+    def test_model_listing_keeps_pricing_beside_the_items(
+        self, name: str, payload: Any
+    ) -> None:
+        client = _sync_client(lambda req: _json_response(payload))
+        result = getattr(client, name)()
+        assert seclai.unwrap_items(result, "models") == [{"model_type": "m1"}]
+        assert result["default_model_type"] == "m1"
+
+    def test_an_empty_content_version_filter_matches_nothing(self) -> None:
+        # An empty list encodes as no parameter at all, which the API reads as
+        # "no filter" and answers with every item in the source.
+        requests: list[httpx.Request] = []
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            requests.append(req)
+            return _json_response({"data": [{"id": "x1"}]})
+
+        client = _sync_client(handler)
+        result = client.list_source_contents(
+            "s1", page=3, limit=50, content_version_ids=[]
+        )
+        assert requests == []
+        assert result == {
+            "data": [],
+            "pagination": {**_ENVELOPE_PAGINATION, "page": 3, "limit": 50}
+            | {"total": 0, "pages": 0},
+        }
+
+    @pytest.mark.asyncio
+    async def test_an_empty_content_version_filter_matches_nothing_async(
+        self,
+    ) -> None:
+        requests: list[httpx.Request] = []
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            requests.append(req)
+            return _json_response({"data": [{"id": "x1"}]})
+
+        client = _async_client(handler)
+        result = await client.list_source_contents("s1", content_version_ids=[])
+        assert requests == []
+        assert result["data"] == []
+        assert result["pagination"]["page"] == 1
+        assert result["pagination"]["limit"] == 20
+        assert result["pagination"]["total"] == 0
+
+
+def _unread_validation_error(req: httpx.Request) -> httpx.Response:
+    """A 422 whose body is still a stream, as it is on a real connection."""
+
+    def body() -> Any:
+        yield json.dumps(
+            {"detail": [{"loc": ["body", "input"], "msg": "required", "type": "x"}]}
+        ).encode()
+
+    return httpx.Response(
+        422, headers={"content-type": "application/json"}, content=body()
+    )
+
+
+class TestStreamingErrorBodies:
+    def test_a_422_from_run_and_wait_keeps_its_field_detail(self) -> None:
+        client = _sync_client(_unread_validation_error)
+        with pytest.raises(seclai.SeclaiAPIValidationError) as exc:
+            client.run_streaming_agent_and_wait(
+                "a1", AgentRunStreamRequest(input="hi", metadata={})
+            )
+        assert exc.value.response_text
+        assert exc.value.validation_error is not None
+
+    def test_a_422_from_the_event_stream_keeps_its_field_detail(self) -> None:
+        client = _sync_client(_unread_validation_error)
+        events = client.run_streaming_agent(
+            "a1", AgentRunStreamRequest(input="hi", metadata={})
+        )
+        with pytest.raises(seclai.SeclaiAPIValidationError) as exc:
+            next(events)
+        assert exc.value.response_text
+        assert exc.value.validation_error is not None
+
+
 class TestAsyncParityForNewBehaviour:
     """AsyncSeclai hand-duplicates every method, so nothing in the sync tests
     proves the async copy behaves the same. Each case here mirrors a sync test
@@ -3617,11 +3914,50 @@ class TestVersionGuardCannotBeBypassed:
         assert seen["values"] == ["2099-01-01"]
 
     def test_a_known_version_in_default_headers_needs_no_escape_hatch(self) -> None:
+        # Asserting only that construction succeeded would pass even if the
+        # header were dropped on the way to the wire, so check the wire.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
         client = _sync_client(
-            lambda req: _json_response({"data": []}),
+            handler,
             default_headers={"Seclai-Version": seclai_versions.LATEST_API_VERSION},
         )
-        assert client is not None
+        client.list_agents()
+        assert seen["values"] == [seclai_versions.LATEST_API_VERSION]
+
+    def test_an_empty_version_header_is_rejected(self) -> None:
+        # An empty `Seclai-Version` still reaches the wire and still suppresses
+        # the `api_version` opt-in, so reading it as "no header supplied" let a
+        # client silently send a version it never validated.
+        with pytest.raises(seclai.SeclaiConfigurationError) as exc:
+            Seclai(
+                api_key="k",
+                api_version=seclai_versions.LATEST_API_VERSION,
+                default_headers={"Seclai-Version": ""},
+            )
+        assert "default_headers" in str(exc.value)
+
+    def test_default_headers_are_snapshotted(self) -> None:
+        # `_build_default_headers` re-reads this mapping on every request, so
+        # holding the caller's dict let a later mutation put an unvalidated
+        # version on the wire.
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        headers: dict[str, str] = {
+            "Seclai-Version": seclai_versions.DEFAULT_API_VERSION
+        }
+        client = _sync_client(handler, default_headers=headers)
+        headers["Seclai-Version"] = "2099-01-01"
+        client.list_agents()
+        assert seen["values"] == [seclai_versions.DEFAULT_API_VERSION]
 
 
 class TestDuplicateVersionHeaderSpellings:
@@ -3655,3 +3991,201 @@ class TestDuplicateVersionHeaderSpellings:
         )
         client.list_agents()
         assert seen["values"] == [seclai_versions.LATEST_API_VERSION]
+
+
+class TestValidationErrorsFromTheRequestPath:
+    """A 422 through `request()` must always surface as a SeclaiError.
+
+    `HTTPValidationError.from_dict` assumes `detail` is a list of
+    `{loc, msg, type}` objects. A hand-raised `HTTPException(422, detail="...")`
+    is not, and parsing it unguarded turned an API failure into a ValueError /
+    TypeError / KeyError that no `except SeclaiError` handler catches.
+    """
+
+    def test_a_well_formed_detail_becomes_a_validation_error(self) -> None:
+        body = {
+            "detail": [{"loc": ["query", "q"], "msg": "field required", "type": "x"}]
+        }
+        client = _sync_client(lambda req: _json_response(body, status=422))
+        with pytest.raises(seclai.SeclaiAPIValidationError) as exc:
+            client.get_me()
+        assert exc.value.status_code == 422
+        assert exc.value.validation_error is not None
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            {"detail": "insufficient credits"},
+            {"detail": None},
+            {"detail": [{"msg": "bad", "type": "x"}]},
+            {"detail": {"msg": "bad"}},
+            {"errors": []},
+        ],
+    )
+    def test_an_unparseable_detail_still_raises_a_status_error(self, body: Any) -> None:
+        client = _sync_client(lambda req: _json_response(body, status=422))
+        with pytest.raises(seclai.SeclaiAPIStatusError) as exc:
+            client.get_me()
+        assert exc.value.status_code == 422
+
+    def test_a_non_json_422_still_raises_a_status_error(self) -> None:
+        client = _sync_client(
+            lambda req: httpx.Response(status_code=422, text="<html>gateway</html>")
+        )
+        with pytest.raises(seclai.SeclaiAPIStatusError):
+            client.get_me()
+
+    @pytest.mark.asyncio
+    async def test_async_parity(self) -> None:
+        client = _async_client(
+            lambda req: _json_response({"detail": "nope"}, status=422)
+        )
+        with pytest.raises(seclai.SeclaiAPIStatusError):
+            await client.get_me()
+
+
+class TestPerRequestHeaderMerge:
+    """Per-request `headers=` must replace a default case-insensitively.
+
+    Header names are case-insensitive on the wire but dict keys are not, so a
+    plain `dict.update` left two spellings in the mapping and httpx put both on
+    the wire for the server to choose between.
+    """
+
+    def test_a_per_request_version_replaces_the_client_default(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(handler, api_version="2026-07-01")
+        client.request("GET", "/agents", headers={"Seclai-Version": "2026-07-27"})
+        assert seen["values"] == ["2026-07-27"]
+
+    def test_a_per_request_api_key_replaces_the_client_default(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("x-api-key")
+            return _json_response({"data": []})
+
+        client = _sync_client(handler)
+        client.request("GET", "/agents", headers={"X-Api-Key": "override"})
+        assert seen["values"] == ["override"]
+
+    @pytest.mark.asyncio
+    async def test_async_parity(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("seclai-version")
+            return _json_response({"data": []})
+
+        client = _async_client(handler, api_version="2026-07-01")
+        await client.request("GET", "/agents", headers={"Seclai-Version": "2026-07-27"})
+        assert seen["values"] == ["2026-07-27"]
+
+    def test_a_caller_supplied_accept_replaces_the_streaming_default(self) -> None:
+        seen: dict[str, Any] = {}
+
+        done = json.dumps(
+            {
+                "attempts": [],
+                "credits": None,
+                "error_count": 0,
+                "input": None,
+                "output": "ok",
+                "priority": False,
+                "run_id": "r1",
+                "status": "completed",
+            }
+        )
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["values"] = req.headers.get_list("accept")
+            return httpx.Response(
+                status_code=200,
+                headers={"content-type": "text/event-stream"},
+                content=f"event: done\ndata: {done}\n\n".encode(),
+            )
+
+        client = _sync_client(handler)
+        client.run_streaming_agent_and_wait(
+            "a1",
+            AgentRunStreamRequest(input="x", metadata={}),
+            headers={"Accept": "text/event-stream"},
+        )
+        assert seen["values"] == ["text/event-stream"]
+
+
+class TestUnwrapItems:
+    """`unwrap_items` is the documented entry point for the version-gated
+    endpoints that keep a per-resource key, but nothing exercised that path."""
+
+    def test_reads_a_bare_array(self) -> None:
+        assert seclai.unwrap_items([{"id": "a"}], "configs") == [{"id": "a"}]
+
+    def test_prefers_data_over_the_legacy_key(self) -> None:
+        payload = {"data": [{"id": "new"}], "configs": [{"id": "old"}]}
+        assert seclai.unwrap_items(payload, "configs") == [{"id": "new"}]
+
+    def test_reads_the_legacy_key(self) -> None:
+        payload = {"configs": [{"id": "a"}], "total": 1}
+        assert seclai.unwrap_items(payload, "configs") == [{"id": "a"}]
+
+    def test_an_explicit_null_is_an_empty_page(self) -> None:
+        assert seclai.unwrap_items({"data": None}, "configs") == []
+
+    def test_an_unrecognised_envelope_raises(self) -> None:
+        with pytest.raises(seclai.SeclaiError):
+            seclai.unwrap_items({"widgets": []}, "configs")
+
+    def test_a_non_list_under_a_known_key_raises(self) -> None:
+        with pytest.raises(seclai.SeclaiError):
+            seclai.unwrap_items({"data": {"id": "a"}}, "configs")
+
+
+class TestPaginateShapes:
+    """`paginate()` predates the version-gated shapes and the offset-only
+    endpoints, so it sent `page` everywhere and could not read a bare array."""
+
+    def test_a_bare_array_yields_its_items_and_stops(self) -> None:
+        calls: list[int] = []
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            calls.append(1)
+            return _json_response([{"id": "ec1"}, {"id": "ec2"}])
+
+        client = _sync_client(handler)
+        items = list(client.paginate("GET", "/agents/a1/evaluation-criteria"))
+        assert items == [{"id": "ec1"}, {"id": "ec2"}]
+        assert len(calls) == 1
+
+    def test_offset_style_sends_offset_not_page(self) -> None:
+        seen: list[dict[str, str]] = []
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.append(dict(req.url.params))
+            return _json_response({"alerts": []})
+
+        client = _sync_client(handler)
+        list(
+            client.paginate(
+                "GET",
+                "/models/alerts",
+                items_key="alerts",
+                limit=25,
+                param_style="offset",
+            )
+        )
+        assert seen == [{"offset": "0", "limit": "25"}]
+
+    @pytest.mark.asyncio
+    async def test_async_parity(self) -> None:
+        client = _async_client(lambda req: _json_response([{"id": "ec1"}]))
+        items = [
+            item
+            async for item in client.paginate("GET", "/agents/a1/evaluation-criteria")
+        ]
+        assert items == [{"id": "ec1"}]

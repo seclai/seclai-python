@@ -24,12 +24,13 @@ class AgentRunStreamRequest:
     Attributes:
         input_ (None | str | Unset): Input to provide to the agent upon running for agents with dynamic triggers.
         input_upload_id (None | Unset | UUID): ID of a previously uploaded file (via POST /{agent_id}/upload-input) to
-            use as the run input for dynamic-input triggers. Mutually exclusive with the 'input' field. Use
-            ``input_upload_ids`` to attach multiple files. Subject to the same per-batch attachment-selector validation as
-            the non-streaming endpoint.
+            use as the run input for dynamic-input triggers. Mutually exclusive with ``input_upload_ids`` — use that field
+            to attach multiple files. May be combined with ``input``. Subject to the same per-batch attachment-selector
+            validation as the non-streaming endpoint.
         input_upload_ids (list[UUID] | None | Unset): IDs of multiple previously uploaded files. See the non-streaming
             endpoint for full semantics, including per-batch selector validation (exact names, indexed references, and glob
-            patterns must all be satisfied or the run is rejected with HTTP 400). Max 20.
+            patterns must all be satisfied or the run is rejected with HTTP 400) and combining the batch with ``input``
+            prompt text. Max 20.
         metadata (AgentRunStreamRequestMetadataType0 | None | Unset): Metadata to make available for string substitution
             expressions in agent tasks.
         replay_of_run_id (None | Unset | UUID): Re-run reusing a prior run's uploaded input files (re-resolved server-

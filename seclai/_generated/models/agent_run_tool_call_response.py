@@ -25,7 +25,8 @@ class AgentRunToolCallResponse:
         input_ (None | str | Unset): JSON arguments the LLM passed to the tool, if persisted.
         output (None | str | Unset): JSON result the tool returned to the LLM, if persisted.
         round_index (int | Unset): 0-based tool-loop round this call belonged to. Default: 0.
-        sequence (int | Unset): 0-based ordinal of this call within its step run. Default: 0.
+        sequence (int | Unset): 0-based ordinal of this call within one attempt of the step, so it repeats across a
+            retried step's attempts. This list holds the latest attempt only. Default: 0.
         started_at (None | str | Unset): Timestamp when the tool call started.
         succeeded (bool | Unset): Whether the tool call completed without error. Default: True.
     """

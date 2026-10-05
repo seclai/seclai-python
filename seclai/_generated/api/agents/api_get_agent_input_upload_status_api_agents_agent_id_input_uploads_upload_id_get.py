@@ -8,6 +8,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...models.upload_agent_input_api_response import UploadAgentInputApiResponse
 from ...types import UNSET, Response, Unset
 
@@ -40,7 +41,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | UploadAgentInputApiResponse | None:
+) -> HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse | None:
     if response.status_code == 200:
         response_200 = UploadAgentInputApiResponse.from_dict(response.json())
 
@@ -51,6 +52,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -59,7 +65,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | UploadAgentInputApiResponse]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,7 +83,9 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | UploadAgentInputApiResponse]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse
+]:
     """Get upload status
 
      Poll the processing status of a file upload created via `POST /agents/{agent_id}/upload-input`.
@@ -97,7 +107,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UploadAgentInputApiResponse]
+        Response[HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse]
     """
 
     kwargs = _get_kwargs(
@@ -121,7 +131,7 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | UploadAgentInputApiResponse | None:
+) -> HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse | None:
     """Get upload status
 
      Poll the processing status of a file upload created via `POST /agents/{agent_id}/upload-input`.
@@ -143,7 +153,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UploadAgentInputApiResponse
+        HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse
     """
 
     return sync_detailed(
@@ -162,7 +172,9 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | UploadAgentInputApiResponse]:
+) -> Response[
+    HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse
+]:
     """Get upload status
 
      Poll the processing status of a file upload created via `POST /agents/{agent_id}/upload-input`.
@@ -184,7 +196,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UploadAgentInputApiResponse]
+        Response[HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse]
     """
 
     kwargs = _get_kwargs(
@@ -206,7 +218,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | UploadAgentInputApiResponse | None:
+) -> HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse | None:
     """Get upload status
 
      Poll the processing status of a file upload created via `POST /agents/{agent_id}/upload-input`.
@@ -228,7 +240,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UploadAgentInputApiResponse
+        HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse
     """
 
     return (

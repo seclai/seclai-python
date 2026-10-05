@@ -10,6 +10,7 @@ from ...models.http_validation_error import HTTPValidationError
 from ...models.non_manual_evaluation_summary_response import (
     NonManualEvaluationSummaryResponse,
 )
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -68,7 +69,12 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | NonManualEvaluationSummaryResponse | None:
+) -> (
+    HTTPValidationError
+    | NonManualEvaluationSummaryResponse
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = NonManualEvaluationSummaryResponse.from_dict(response.json())
 
@@ -79,6 +85,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -87,7 +98,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | NonManualEvaluationSummaryResponse]:
+) -> Response[
+    HTTPValidationError | NonManualEvaluationSummaryResponse | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -105,7 +118,9 @@ def sync_detailed(
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | NonManualEvaluationSummaryResponse]:
+) -> Response[
+    HTTPValidationError | NonManualEvaluationSummaryResponse | ServiceUnavailableError
+]:
     """Get Non Manual Evaluation Summary
 
      Get an evaluation summary for API key clients.
@@ -132,7 +147,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | NonManualEvaluationSummaryResponse]
+        Response[HTTPValidationError | NonManualEvaluationSummaryResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -160,7 +175,12 @@ def sync(
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | NonManualEvaluationSummaryResponse | None:
+) -> (
+    HTTPValidationError
+    | NonManualEvaluationSummaryResponse
+    | ServiceUnavailableError
+    | None
+):
     """Get Non Manual Evaluation Summary
 
      Get an evaluation summary for API key clients.
@@ -187,7 +207,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | NonManualEvaluationSummaryResponse
+        HTTPValidationError | NonManualEvaluationSummaryResponse | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -210,7 +230,9 @@ async def asyncio_detailed(
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[HTTPValidationError | NonManualEvaluationSummaryResponse]:
+) -> Response[
+    HTTPValidationError | NonManualEvaluationSummaryResponse | ServiceUnavailableError
+]:
     """Get Non Manual Evaluation Summary
 
      Get an evaluation summary for API key clients.
@@ -237,7 +259,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | NonManualEvaluationSummaryResponse]
+        Response[HTTPValidationError | NonManualEvaluationSummaryResponse | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -263,7 +285,12 @@ async def asyncio(
     end_date: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> HTTPValidationError | NonManualEvaluationSummaryResponse | None:
+) -> (
+    HTTPValidationError
+    | NonManualEvaluationSummaryResponse
+    | ServiceUnavailableError
+    | None
+):
     """Get Non Manual Evaluation Summary
 
      Get an evaluation summary for API key clients.
@@ -290,7 +317,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | NonManualEvaluationSummaryResponse
+        HTTPValidationError | NonManualEvaluationSummaryResponse | ServiceUnavailableError
     """
 
     return (

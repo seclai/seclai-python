@@ -8,6 +8,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...models.source_embedding_migration_response import (
     SourceEmbeddingMigrationResponse,
 )
@@ -48,7 +49,13 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Any | HTTPValidationError | SourceEmbeddingMigrationResponse | None:
+) -> (
+    Any
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | SourceEmbeddingMigrationResponse
+    | None
+):
     if response.status_code == 200:
         response_200 = SourceEmbeddingMigrationResponse.from_dict(response.json())
 
@@ -63,6 +70,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -71,7 +83,12 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Any | HTTPValidationError | SourceEmbeddingMigrationResponse]:
+) -> Response[
+    Any
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | SourceEmbeddingMigrationResponse
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -87,7 +104,12 @@ def sync_detailed(
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError | SourceEmbeddingMigrationResponse]:
+) -> Response[
+    Any
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | SourceEmbeddingMigrationResponse
+]:
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
@@ -116,7 +138,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError | SourceEmbeddingMigrationResponse]
+        Response[Any | HTTPValidationError | ServiceUnavailableError | SourceEmbeddingMigrationResponse]
     """
 
     kwargs = _get_kwargs(
@@ -140,7 +162,13 @@ def sync(
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | SourceEmbeddingMigrationResponse | None:
+) -> (
+    Any
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | SourceEmbeddingMigrationResponse
+    | None
+):
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
@@ -169,7 +197,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError | SourceEmbeddingMigrationResponse
+        Any | HTTPValidationError | ServiceUnavailableError | SourceEmbeddingMigrationResponse
     """
 
     return sync_detailed(
@@ -188,7 +216,12 @@ async def asyncio_detailed(
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | HTTPValidationError | SourceEmbeddingMigrationResponse]:
+) -> Response[
+    Any
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | SourceEmbeddingMigrationResponse
+]:
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
@@ -217,7 +250,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | HTTPValidationError | SourceEmbeddingMigrationResponse]
+        Response[Any | HTTPValidationError | ServiceUnavailableError | SourceEmbeddingMigrationResponse]
     """
 
     kwargs = _get_kwargs(
@@ -239,7 +272,13 @@ async def asyncio(
     body: StartSourceEmbeddingMigrationRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | HTTPValidationError | SourceEmbeddingMigrationResponse | None:
+) -> (
+    Any
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | SourceEmbeddingMigrationResponse
+    | None
+):
     """Start Source Embedding Migration
 
      Start an embedding model migration for a custom-index source.
@@ -268,7 +307,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | HTTPValidationError | SourceEmbeddingMigrationResponse
+        Any | HTTPValidationError | ServiceUnavailableError | SourceEmbeddingMigrationResponse
     """
 
     return (

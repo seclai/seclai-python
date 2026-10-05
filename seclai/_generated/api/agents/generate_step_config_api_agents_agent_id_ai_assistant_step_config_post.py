@@ -10,6 +10,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.generate_step_config_request import GenerateStepConfigRequest
 from ...models.generate_step_config_response import GenerateStepConfigResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -44,7 +45,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> GenerateStepConfigResponse | HTTPValidationError | None:
+) -> GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = GenerateStepConfigResponse.from_dict(response.json())
 
@@ -55,6 +56,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -63,7 +69,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[GenerateStepConfigResponse | HTTPValidationError]:
+) -> Response[
+    GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,7 +87,9 @@ def sync_detailed(
     body: GenerateStepConfigRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[GenerateStepConfigResponse | HTTPValidationError]:
+) -> Response[
+    GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Generate step configuration
 
      Use the AI assistant to generate or refine a single step's configuration.
@@ -103,7 +113,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GenerateStepConfigResponse | HTTPValidationError]
+        Response[GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -127,7 +137,7 @@ def sync(
     body: GenerateStepConfigRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> GenerateStepConfigResponse | HTTPValidationError | None:
+) -> GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Generate step configuration
 
      Use the AI assistant to generate or refine a single step's configuration.
@@ -151,7 +161,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GenerateStepConfigResponse | HTTPValidationError
+        GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -170,7 +180,9 @@ async def asyncio_detailed(
     body: GenerateStepConfigRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[GenerateStepConfigResponse | HTTPValidationError]:
+) -> Response[
+    GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Generate step configuration
 
      Use the AI assistant to generate or refine a single step's configuration.
@@ -194,7 +206,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GenerateStepConfigResponse | HTTPValidationError]
+        Response[GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -216,7 +228,7 @@ async def asyncio(
     body: GenerateStepConfigRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> GenerateStepConfigResponse | HTTPValidationError | None:
+) -> GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Generate step configuration
 
      Use the AI assistant to generate or refine a single step's configuration.
@@ -240,7 +252,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GenerateStepConfigResponse | HTTPValidationError
+        GenerateStepConfigResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

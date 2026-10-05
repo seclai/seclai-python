@@ -9,6 +9,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.governance_ai_assistant_request import GovernanceAiAssistantRequest
 from ...models.governance_ai_assistant_response import GovernanceAiAssistantResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -40,7 +41,13 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Any | GovernanceAiAssistantResponse | HTTPValidationError | None:
+) -> (
+    Any
+    | GovernanceAiAssistantResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     if response.status_code == 200:
         response_200 = GovernanceAiAssistantResponse.from_dict(response.json())
 
@@ -59,6 +66,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -67,7 +79,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]:
+) -> Response[
+    Any | GovernanceAiAssistantResponse | HTTPValidationError | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -82,7 +96,9 @@ def sync_detailed(
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]:
+) -> Response[
+    Any | GovernanceAiAssistantResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Generate a governance plan
 
      Send a natural-language request to the governance AI assistant to generate a plan of policy changes.
@@ -100,7 +116,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]
+        Response[Any | GovernanceAiAssistantResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -122,7 +138,13 @@ def sync(
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | GovernanceAiAssistantResponse | HTTPValidationError | None:
+) -> (
+    Any
+    | GovernanceAiAssistantResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """Generate a governance plan
 
      Send a natural-language request to the governance AI assistant to generate a plan of policy changes.
@@ -140,7 +162,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | GovernanceAiAssistantResponse | HTTPValidationError
+        Any | GovernanceAiAssistantResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -157,7 +179,9 @@ async def asyncio_detailed(
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]:
+) -> Response[
+    Any | GovernanceAiAssistantResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Generate a governance plan
 
      Send a natural-language request to the governance AI assistant to generate a plan of policy changes.
@@ -175,7 +199,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | GovernanceAiAssistantResponse | HTTPValidationError]
+        Response[Any | GovernanceAiAssistantResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -195,7 +219,13 @@ async def asyncio(
     body: GovernanceAiAssistantRequest,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Any | GovernanceAiAssistantResponse | HTTPValidationError | None:
+) -> (
+    Any
+    | GovernanceAiAssistantResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
     """Generate a governance plan
 
      Send a natural-language request to the governance AI assistant to generate a plan of policy changes.
@@ -213,7 +243,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | GovernanceAiAssistantResponse | HTTPValidationError
+        Any | GovernanceAiAssistantResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

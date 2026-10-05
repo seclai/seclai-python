@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -14,6 +14,12 @@ from ..models.playground_create_request_evaluation_mode import (
 )
 from ..types import UNSET, Unset
 
+if TYPE_CHECKING:
+    from ..models.playground_create_request_effort_type_0 import (
+        PlaygroundCreateRequestEffortType0,
+    )
+
+
 T = TypeVar("T", bound="PlaygroundCreateRequest")
 
 
@@ -24,6 +30,8 @@ class PlaygroundCreateRequest:
     Attributes:
         model_ids (list[str]): Selected model IDs (1-10).
         prompt (str): Prompt text for the experiment.
+        effort (None | PlaygroundCreateRequestEffortType0 | Unset): Reasoning effort per model id, each one of that
+            model's `effort_options` values. Not combinable with `json_template`.
         evaluation_complexity (PlaygroundCreateRequestEvaluationComplexity | Unset): simple, medium, or complex Default:
             PlaygroundCreateRequestEvaluationComplexity.MEDIUM.
         evaluation_mode (PlaygroundCreateRequestEvaluationMode | Unset): manual or prompt Default:
@@ -38,6 +46,7 @@ class PlaygroundCreateRequest:
 
     model_ids: list[str]
     prompt: str
+    effort: None | PlaygroundCreateRequestEffortType0 | Unset = UNSET
     evaluation_complexity: PlaygroundCreateRequestEvaluationComplexity | Unset = (
         PlaygroundCreateRequestEvaluationComplexity.MEDIUM
     )
@@ -52,9 +61,21 @@ class PlaygroundCreateRequest:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.playground_create_request_effort_type_0 import (
+            PlaygroundCreateRequestEffortType0,
+        )
+
         model_ids = self.model_ids
 
         prompt = self.prompt
+
+        effort: dict[str, Any] | None | Unset
+        if isinstance(self.effort, Unset):
+            effort = UNSET
+        elif isinstance(self.effort, PlaygroundCreateRequestEffortType0):
+            effort = self.effort.to_dict()
+        else:
+            effort = self.effort
 
         evaluation_complexity: str | Unset = UNSET
         if not isinstance(self.evaluation_complexity, Unset):
@@ -94,6 +115,8 @@ class PlaygroundCreateRequest:
                 "prompt": prompt,
             }
         )
+        if effort is not UNSET:
+            field_dict["effort"] = effort
         if evaluation_complexity is not UNSET:
             field_dict["evaluation_complexity"] = evaluation_complexity
         if evaluation_mode is not UNSET:
@@ -115,10 +138,33 @@ class PlaygroundCreateRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.playground_create_request_effort_type_0 import (
+            PlaygroundCreateRequestEffortType0,
+        )
+
         d = dict(src_dict)
         model_ids = cast(list[str], d.pop("model_ids"))
 
         prompt = d.pop("prompt")
+
+        def _parse_effort(
+            data: object,
+        ) -> None | PlaygroundCreateRequestEffortType0 | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                effort_type_0 = PlaygroundCreateRequestEffortType0.from_dict(data)
+
+                return effort_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | PlaygroundCreateRequestEffortType0 | Unset, data)
+
+        effort = _parse_effort(d.pop("effort", UNSET))
 
         _evaluation_complexity = d.pop("evaluation_complexity", UNSET)
         evaluation_complexity: PlaygroundCreateRequestEvaluationComplexity | Unset
@@ -176,6 +222,7 @@ class PlaygroundCreateRequest:
         playground_create_request = cls(
             model_ids=model_ids,
             prompt=prompt,
+            effort=effort,
             evaluation_complexity=evaluation_complexity,
             evaluation_mode=evaluation_mode,
             evaluator_model_id=evaluator_model_id,

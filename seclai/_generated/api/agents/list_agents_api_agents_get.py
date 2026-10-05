@@ -8,6 +8,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_list_response import AgentListResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -45,7 +46,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentListResponse | HTTPValidationError | None:
+) -> AgentListResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AgentListResponse.from_dict(response.json())
 
@@ -56,6 +57,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -64,7 +70,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentListResponse | HTTPValidationError]:
+) -> Response[AgentListResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -80,7 +86,7 @@ def sync_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentListResponse | HTTPValidationError]:
+) -> Response[AgentListResponse | HTTPValidationError | ServiceUnavailableError]:
     """List agents
 
      List agents for the account with pagination.
@@ -100,7 +106,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentListResponse | HTTPValidationError]
+        Response[AgentListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -124,7 +130,7 @@ def sync(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentListResponse | HTTPValidationError | None:
+) -> AgentListResponse | HTTPValidationError | ServiceUnavailableError | None:
     """List agents
 
      List agents for the account with pagination.
@@ -144,7 +150,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentListResponse | HTTPValidationError
+        AgentListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -163,7 +169,7 @@ async def asyncio_detailed(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentListResponse | HTTPValidationError]:
+) -> Response[AgentListResponse | HTTPValidationError | ServiceUnavailableError]:
     """List agents
 
      List agents for the account with pagination.
@@ -183,7 +189,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentListResponse | HTTPValidationError]
+        Response[AgentListResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -205,7 +211,7 @@ async def asyncio(
     limit: int | Unset = 20,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentListResponse | HTTPValidationError | None:
+) -> AgentListResponse | HTTPValidationError | ServiceUnavailableError | None:
     """List agents
 
      List agents for the account with pagination.
@@ -225,7 +231,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentListResponse | HTTPValidationError
+        AgentListResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

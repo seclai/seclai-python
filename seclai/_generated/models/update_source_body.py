@@ -17,17 +17,20 @@ class UpdateSourceBody:
 
     Attributes:
         media_types (list[str] | None | Unset): Media kinds to extract from indexed content and embed as multi-modal KB
-            chunks. Subset of ['images', 'video']. Only kinds the source's embedder can index are honored; unsupported
-            values are dropped. [] disables media extraction (text-only).
+            chunks. Subset of ['images', 'video']. Only kinds the source's embedder can index are honored (see
+            `supported_input_media` on GET /models/embedders); unsupported values are dropped. [] disables media extraction
+            (text-only).
         name (None | str | Unset): New name.
         polling (None | str | Unset): New polling interval.
-        retention_days (int | None | Unset): New retention period in days (null for unlimited). Default: -1.
+        retention_days (int | None | Unset): New retention period in days — content older than this is deleted
+            permanently. Send null to clear the window: content is then kept indefinitely. Omit the field to leave it
+            unchanged.
     """
 
     media_types: list[str] | None | Unset = UNSET
     name: None | str | Unset = UNSET
     polling: None | str | Unset = UNSET
-    retention_days: int | None | Unset = -1
+    retention_days: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

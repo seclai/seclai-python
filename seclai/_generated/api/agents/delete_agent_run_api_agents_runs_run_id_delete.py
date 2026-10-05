@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.agent_run_response import AgentRunResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -38,7 +39,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> AgentRunResponse | HTTPValidationError | None:
+) -> AgentRunResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = AgentRunResponse.from_dict(response.json())
 
@@ -49,6 +50,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -57,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[AgentRunResponse | HTTPValidationError]:
+) -> Response[AgentRunResponse | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,13 +78,13 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentRunResponse | HTTPValidationError]:
+) -> Response[AgentRunResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel an agent run
 
      Cancel an in-flight (`processing`) or queued (`queued`) agent run.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; cancelling it consumes no quota or credits.
+    dispatched; it has consumed no quota.
 
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
@@ -96,7 +102,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | HTTPValidationError]
+        Response[AgentRunResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -118,13 +124,13 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentRunResponse | HTTPValidationError | None:
+) -> AgentRunResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel an agent run
 
      Cancel an in-flight (`processing`) or queued (`queued`) agent run.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; cancelling it consumes no quota or credits.
+    dispatched; it has consumed no quota.
 
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
@@ -142,7 +148,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | HTTPValidationError
+        AgentRunResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -159,13 +165,13 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[AgentRunResponse | HTTPValidationError]:
+) -> Response[AgentRunResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel an agent run
 
      Cancel an in-flight (`processing`) or queued (`queued`) agent run.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; cancelling it consumes no quota or credits.
+    dispatched; it has consumed no quota.
 
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
@@ -183,7 +189,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[AgentRunResponse | HTTPValidationError]
+        Response[AgentRunResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -203,13 +209,13 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> AgentRunResponse | HTTPValidationError | None:
+) -> AgentRunResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel an agent run
 
      Cancel an in-flight (`processing`) or queued (`queued`) agent run.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; cancelling it consumes no quota or credits.
+    dispatched; it has consumed no quota.
 
     If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
 
@@ -227,7 +233,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        AgentRunResponse | HTTPValidationError
+        AgentRunResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (

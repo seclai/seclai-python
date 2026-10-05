@@ -12,6 +12,7 @@ from ..models.pending_processing_completed_failed_status import (
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.agent_run_file_response import AgentRunFileResponse
     from ..models.agent_run_tool_call_response import AgentRunToolCallResponse
 
 
@@ -23,17 +24,25 @@ class AgentRunStepResponse:
     """
     Attributes:
         agent_step_id (str): Agent step identifier.
-        credits_used (float): Credits consumed by the step attempt, if applicable.
+        credits_used (float): Credits consumed by this step across every attempt it made. Some charges made outside any
+            step, such as governance screening of the run's input, count toward the run's total but no step's. The
+            timestamps above and the tool calls below describe the latest attempt only.
         duration_seconds (float | None): Duration of the step attempt in seconds.
         ended_at (None | str): Timestamp when the step attempt ended.
-        input_ (None | str): Input provided to the step, if any.
-        output (None | str): Output produced by the step, if any.
+        input_ (None | str): Input text provided to the step, if any.  Below `Seclai-Version: 2026-09-30`, the manifest
+            JSON when the step that produced it output files and is not a `for_each`.
+        output (None | str): Output text produced by the step, if any; its files are in `attachments`.  Below `Seclai-
+            Version: 2026-09-30`, the manifest JSON when the step output files and is not a `for_each`.
         output_content_type (None | str): Content type of the step output, if any.
         started_at (None | str): Timestamp when the step attempt started.
         status (PendingProcessingCompletedFailedStatus):
         step_type (str): Type of the agent step.
+        attachments (list[AgentRunFileResponse] | Unset): Files in this step's output, in order. Empty for steps that
+            produced none, for steps run before files were listed here, and once the run's trace is purged.
         tool_calls (list[AgentRunToolCallResponse] | Unset): LLM tool calls made during this step (prompt_call steps
             only), ordered by execution. Empty for steps that invoked no tools.
+        warnings (list[str] | None | Unset): Authoring problems the step ran into, whether or not it then failed, such
+            as a file name selector that matched none of its source's files.
     """
 
     agent_step_id: str
@@ -46,7 +55,9 @@ class AgentRunStepResponse:
     started_at: None | str
     status: PendingProcessingCompletedFailedStatus
     step_type: str
+    attachments: list[AgentRunFileResponse] | Unset = UNSET
     tool_calls: list[AgentRunToolCallResponse] | Unset = UNSET
+    warnings: list[str] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -76,12 +87,28 @@ class AgentRunStepResponse:
 
         step_type = self.step_type
 
+        attachments: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.attachments, Unset):
+            attachments = []
+            for attachments_item_data in self.attachments:
+                attachments_item = attachments_item_data.to_dict()
+                attachments.append(attachments_item)
+
         tool_calls: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.tool_calls, Unset):
             tool_calls = []
             for tool_calls_item_data in self.tool_calls:
                 tool_calls_item = tool_calls_item_data.to_dict()
                 tool_calls.append(tool_calls_item)
+
+        warnings: list[str] | None | Unset
+        if isinstance(self.warnings, Unset):
+            warnings = UNSET
+        elif isinstance(self.warnings, list):
+            warnings = self.warnings
+
+        else:
+            warnings = self.warnings
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -99,13 +126,18 @@ class AgentRunStepResponse:
                 "step_type": step_type,
             }
         )
+        if attachments is not UNSET:
+            field_dict["attachments"] = attachments
         if tool_calls is not UNSET:
             field_dict["tool_calls"] = tool_calls
+        if warnings is not UNSET:
+            field_dict["warnings"] = warnings
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.agent_run_file_response import AgentRunFileResponse
         from ..models.agent_run_tool_call_response import AgentRunToolCallResponse
 
         d = dict(src_dict)
@@ -159,6 +191,15 @@ class AgentRunStepResponse:
 
         step_type = d.pop("step_type")
 
+        _attachments = d.pop("attachments", UNSET)
+        attachments: list[AgentRunFileResponse] | Unset = UNSET
+        if _attachments is not UNSET:
+            attachments = []
+            for attachments_item_data in _attachments:
+                attachments_item = AgentRunFileResponse.from_dict(attachments_item_data)
+
+                attachments.append(attachments_item)
+
         _tool_calls = d.pop("tool_calls", UNSET)
         tool_calls: list[AgentRunToolCallResponse] | Unset = UNSET
         if _tool_calls is not UNSET:
@@ -169,6 +210,23 @@ class AgentRunStepResponse:
                 )
 
                 tool_calls.append(tool_calls_item)
+
+        def _parse_warnings(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                warnings_type_0 = cast(list[str], data)
+
+                return warnings_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        warnings = _parse_warnings(d.pop("warnings", UNSET))
 
         agent_run_step_response = cls(
             agent_step_id=agent_step_id,
@@ -181,7 +239,9 @@ class AgentRunStepResponse:
             started_at=started_at,
             status=status,
             step_type=step_type,
+            attachments=attachments,
             tool_calls=tool_calls,
+            warnings=warnings,
         )
 
         agent_run_step_response.additional_properties = d

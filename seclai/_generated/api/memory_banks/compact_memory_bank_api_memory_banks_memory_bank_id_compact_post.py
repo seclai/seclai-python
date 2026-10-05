@@ -9,6 +9,7 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.compaction_scheduled_response import CompactionScheduledResponse
 from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
 from ...types import UNSET, Response, Unset
 
 
@@ -38,7 +39,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> CompactionScheduledResponse | HTTPValidationError | None:
+) -> CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 202:
         response_202 = CompactionScheduledResponse.from_dict(response.json())
 
@@ -49,6 +50,11 @@ def _parse_response(
 
         return response_422
 
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -57,7 +63,9 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[CompactionScheduledResponse | HTTPValidationError]:
+) -> Response[
+    CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,13 +80,16 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[CompactionScheduledResponse | HTTPValidationError]:
+) -> Response[
+    CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
 
-    The bank must have at least one compaction threshold configured (max_age_days, max_turns, or
-    max_size_tokens). Compaction runs asynchronously — the response confirms scheduling, not completion.
+    The bank must have at least one compaction threshold configured (max_turns or max_size_tokens). Age
+    no longer triggers compaction — use retention_days to remove entries by age. Compaction runs
+    asynchronously — the response confirms scheduling, not completion.
 
     Args:
         memory_bank_id (str):
@@ -90,7 +101,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CompactionScheduledResponse | HTTPValidationError]
+        Response[CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -112,13 +123,14 @@ def sync(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> CompactionScheduledResponse | HTTPValidationError | None:
+) -> CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
 
-    The bank must have at least one compaction threshold configured (max_age_days, max_turns, or
-    max_size_tokens). Compaction runs asynchronously — the response confirms scheduling, not completion.
+    The bank must have at least one compaction threshold configured (max_turns or max_size_tokens). Age
+    no longer triggers compaction — use retention_days to remove entries by age. Compaction runs
+    asynchronously — the response confirms scheduling, not completion.
 
     Args:
         memory_bank_id (str):
@@ -130,7 +142,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CompactionScheduledResponse | HTTPValidationError
+        CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -147,13 +159,16 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[CompactionScheduledResponse | HTTPValidationError]:
+) -> Response[
+    CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError
+]:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
 
-    The bank must have at least one compaction threshold configured (max_age_days, max_turns, or
-    max_size_tokens). Compaction runs asynchronously — the response confirms scheduling, not completion.
+    The bank must have at least one compaction threshold configured (max_turns or max_size_tokens). Age
+    no longer triggers compaction — use retention_days to remove entries by age. Compaction runs
+    asynchronously — the response confirms scheduling, not completion.
 
     Args:
         memory_bank_id (str):
@@ -165,7 +180,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CompactionScheduledResponse | HTTPValidationError]
+        Response[CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
@@ -185,13 +200,14 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> CompactionScheduledResponse | HTTPValidationError | None:
+) -> CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Compact Memory Bank
 
      Trigger an on-demand compaction run for a memory bank.
 
-    The bank must have at least one compaction threshold configured (max_age_days, max_turns, or
-    max_size_tokens). Compaction runs asynchronously — the response confirms scheduling, not completion.
+    The bank must have at least one compaction threshold configured (max_turns or max_size_tokens). Age
+    no longer triggers compaction — use retention_days to remove entries by age. Compaction runs
+    asynchronously — the response confirms scheduling, not completion.
 
     Args:
         memory_bank_id (str):
@@ -203,7 +219,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CompactionScheduledResponse | HTTPValidationError
+        CompactionScheduledResponse | HTTPValidationError | ServiceUnavailableError
     """
 
     return (
