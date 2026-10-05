@@ -3245,7 +3245,9 @@ class Seclai(_SeclaiBase):
                 ``failed``.
             content_version_ids: Keep only these items — the
                 ``content_version_id`` values the upload methods return — to
-                poll a batch of uploads in one request. At most 500.
+                poll a batch of uploads in one request. Keep it to about 100:
+                the ids travel in the query string, and a URL over 8,192 bytes
+                is rejected with a 414. The API itself accepts at most 500.
 
         Returns:
             ``{"data": [...], "pagination": {...}}`` on every API version. An
@@ -7503,7 +7505,9 @@ class AsyncSeclai(_SeclaiBase):
                 ``failed``.
             content_version_ids: Keep only these items — the
                 ``content_version_id`` values the upload methods return — to
-                poll a batch of uploads in one request. At most 500.
+                poll a batch of uploads in one request. Keep it to about 100:
+                the ids travel in the query string, and a URL over 8,192 bytes
+                is rejected with a 414. The API itself accepts at most 500.
 
         Returns:
             ``{"data": [...], "pagination": {...}}`` on every API version. An
