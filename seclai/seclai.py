@@ -338,7 +338,7 @@ def _parse_model(payload: object, model: type[_ModelT]) -> _ModelT:
     `SeclaiError` rather than the ``KeyError``/``TypeError`` the generated
     ``from_dict`` would, so ``except SeclaiError`` handlers still catch it.
     Its callers use ``request`` rather than the generated ``sync_detailed`` for
-    that reason and so the client's default timeout applies; keep them on it.
+    that reason.
     """
     if not isinstance(payload, dict):
         raise SeclaiError(
