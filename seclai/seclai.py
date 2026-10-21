@@ -115,8 +115,8 @@ class AgentRunStreamRequest(TypedDict):
     #: Receive ``stream_reasoning`` events carrying the model's reasoning, for a
     #: ``streaming_result`` step whose author enabled ``show_reasoning``. Only
     #: :meth:`Seclai.run_streaming_agent` yields them;
-    #: :meth:`Seclai.run_streaming_agent_and_wait` discards every event but
-    #: ``init`` and ``done``, so there it only adds traffic.
+    #: :meth:`Seclai.run_streaming_agent_and_wait` removes this key before
+    #: sending, since it keeps only the ``init`` and ``done`` events.
     include_reasoning: NotRequired[bool]
     input_upload_id: NotRequired[str | None]
     input_upload_ids: NotRequired[list[str] | None]
@@ -305,6 +305,11 @@ def _empty_page(*, page: int, limit: int) -> dict[str, Any]:
     }
 
 
+def _without_reasoning(body: AgentRunStreamRequest) -> dict[str, Any]:
+    """Return ``body`` without ``include_reasoning``, for a caller that drops reasoning events."""
+    return {k: v for k, v in body.items() if k != "include_reasoning"}
+
+
 def _strip_none(params: dict[str, Any]) -> dict[str, Any]:
     """Remove keys with ``None`` values from a parameter dictionary."""
     return {k: v for k, v in params.items() if v is not None}
@@ -332,6 +337,12 @@ def _parse_model(payload: object, model: type[_ModelT]) -> _ModelT:
     A body that is not a JSON object, or does not fit the model, raises
     `SeclaiError` rather than the ``KeyError``/``TypeError`` the generated
     ``from_dict`` would, so ``except SeclaiError`` handlers still catch it.
+
+    The methods that call this send through ``request`` rather than a generated
+    ``sync_detailed``: that route applies only an explicitly passed client
+    timeout (kept so existing calls on it are not cut off at 30 seconds), and
+    its ``_parse_response`` calls ``from_dict`` unguarded, so a bad 200 body
+    there raises ``KeyError``/``TypeError`` before ``_expect_model`` runs.
     """
     if not isinstance(payload, dict):
         raise SeclaiError(
@@ -632,6 +643,54 @@ def _raise_for_status(response: httpx.Response) -> None:
         url=str(response.request.url),
         response_text=response_text,
     )
+
+
+def _raise_for_unread_status(response: httpx.Response) -> None:
+    """Raise on an error status of a streamed response whose body is unread.
+
+    The body is read for the error text and the response closed before
+    raising. A transport error while reading that body still raises the status
+    error, without response text and with the transport error as its
+    ``__cause__``, so the status a caller sees does not depend on whether the
+    error body arrived.
+    """
+    if not response.is_error:
+        return
+    read_error: httpx.HTTPError | None = None
+    try:
+        response.read()
+    except httpx.HTTPError as e:
+        read_error = e
+    finally:
+        response.close()
+    _raise_for_read_status(response, read_error)
+
+
+async def _araise_for_unread_status(response: httpx.Response) -> None:
+    """Async twin of :func:`_raise_for_unread_status`."""
+    if not response.is_error:
+        return
+    read_error: httpx.HTTPError | None = None
+    try:
+        await response.aread()
+    except httpx.HTTPError as e:
+        read_error = e
+    finally:
+        await response.aclose()
+    _raise_for_read_status(response, read_error)
+
+
+def _raise_for_read_status(
+    response: httpx.Response, read_error: httpx.HTTPError | None
+) -> None:
+    """Raise the status error, chained to ``read_error`` when the body read failed."""
+    if read_error is None:
+        _raise_for_status(response)
+        return
+    try:
+        _raise_for_status(response)
+    except SeclaiError as e:
+        raise e from read_error
 
 
 def _send_url(client: httpx.Client | httpx.AsyncClient, path: str) -> str:
@@ -1078,9 +1137,8 @@ class Seclai(_SeclaiBase):
         """Send a GET and return the response unread, for the caller to stream.
 
         On an error status the body is read for the error message and the
-        connection released before raising. A transport error while reading
-        that body still closes the response and raises the status error, with
-        no response text, rather than the transport error.
+        connection released before raising; see
+        :func:`_raise_for_unread_status`.
         """
         request = self._client.build_request(
             "GET",
@@ -1093,14 +1151,7 @@ class Seclai(_SeclaiBase):
             ),
         )
         response = self._client.send(request, stream=True)
-        if response.is_error:
-            try:
-                response.read()
-            except httpx.HTTPError:
-                pass
-            finally:
-                response.close()
-            _raise_for_status(response)
+        _raise_for_unread_status(response)
         return response
 
     def run_agent(self, agent_id: str, body: AgentRunRequest) -> AgentRunResponse:
@@ -1166,9 +1217,10 @@ class Seclai(_SeclaiBase):
 
         This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
         The method returns when an `event: done` message is received. Every event
-        but `init` and `done` is discarded, so `include_reasoning` has no effect
-        here beyond extra traffic; use `run_streaming_agent` to receive
-        `stream_reasoning` events.
+        but `init` and `done` is discarded, so `include_reasoning` is removed
+        from the body before it is sent: reasoning events would only add
+        traffic and count against `timeout`. Use `run_streaming_agent` to
+        receive `stream_reasoning` events.
 
         Args:
             agent_id: Agent identifier.
@@ -1204,15 +1256,13 @@ class Seclai(_SeclaiBase):
             with self._client.stream(
                 "POST",
                 path,
-                json=body,
+                json=_without_reasoning(body),
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
-                if response.status_code >= 400:
-                    # Lazy body inside `stream()`; read it so the error carries
-                    # its text and a 422 its field-level detail.
-                    response.read()
-                _raise_for_status(response)
+                # Lazy body inside `stream()`; read it so the error carries
+                # its text and a 422 its field-level detail.
+                _raise_for_unread_status(response)
 
                 current_event: str | None = None
                 data_lines: list[str] = []
@@ -1666,8 +1716,9 @@ class Seclai(_SeclaiBase):
             end: End offset of the returned text. Omitted, the API uses 5000.
                 Any value from 0, the API's minimum, is sent as given, so
                 ``end=0`` asks for the status and metadata without the text.
-                :meth:`get_content_detail` also sends ``end=0``; it differs
-                only in sending its defaults explicitly.
+                Unlike :meth:`get_content_detail`, which defaults to
+                ``start=0`` and ``end=5000`` and always sends both, this sends
+                ``start`` and ``end`` only when given.
 
         Returns:
             The attachment's indexing status and reason, its metadata, and the
@@ -5377,11 +5428,9 @@ class Seclai(_SeclaiBase):
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
-                if response.status_code >= 400:
-                    # Lazy body inside `stream()`; read it so a 422's field-level
-                    # detail survives into SeclaiAPIValidationError.
-                    response.read()
-                _raise_for_status(response)
+                # Lazy body inside `stream()`; read it so a 422's field-level
+                # detail survives into SeclaiAPIValidationError.
+                _raise_for_unread_status(response)
                 current_event: str | None = None
                 data_lines: list[str] = []
 
@@ -5627,9 +5676,8 @@ class AsyncSeclai(_SeclaiBase):
         """Send a GET and return the response unread, for the caller to stream.
 
         On an error status the body is read for the error message and the
-        connection released before raising. A transport error while reading
-        that body still closes the response and raises the status error, with
-        no response text, rather than the transport error.
+        connection released before raising; see
+        :func:`_raise_for_unread_status`.
         """
         request = self._client.build_request(
             "GET",
@@ -5642,14 +5690,7 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
         response = await self._client.send(request, stream=True)
-        if response.is_error:
-            try:
-                await response.aread()
-            except httpx.HTTPError:
-                pass
-            finally:
-                await response.aclose()
-            _raise_for_status(response)
+        await _araise_for_unread_status(response)
         return response
 
     async def run_agent(self, agent_id: str, body: AgentRunRequest) -> AgentRunResponse:
@@ -5717,9 +5758,10 @@ class AsyncSeclai(_SeclaiBase):
 
         This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
         The method returns when an `event: done` message is received. Every event
-        but `init` and `done` is discarded, so `include_reasoning` has no effect
-        here beyond extra traffic; use `run_streaming_agent` to receive
-        `stream_reasoning` events.
+        but `init` and `done` is discarded, so `include_reasoning` is removed
+        from the body before it is sent: reasoning events would only add
+        traffic and count against `timeout`. Use `run_streaming_agent` to
+        receive `stream_reasoning` events.
         """
         import json as _json
         import time as _time
@@ -5740,15 +5782,13 @@ class AsyncSeclai(_SeclaiBase):
             async with self._client.stream(
                 "POST",
                 path,
-                json=body,
+                json=_without_reasoning(body),
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
-                if response.status_code >= 400:
-                    # Lazy body inside `stream()`; read it so the error carries
-                    # its text and a 422 its field-level detail.
-                    await response.aread()
-                _raise_for_status(response)
+                # Lazy body inside `stream()`; read it so the error carries
+                # its text and a 422 its field-level detail.
+                await _araise_for_unread_status(response)
 
                 current_event: str | None = None
                 data_lines: list[str] = []
@@ -6207,8 +6247,9 @@ class AsyncSeclai(_SeclaiBase):
             end: End offset of the returned text. Omitted, the API uses 5000.
                 Any value from 0, the API's minimum, is sent as given, so
                 ``end=0`` asks for the status and metadata without the text.
-                :meth:`get_content_detail` also sends ``end=0``; it differs
-                only in sending its defaults explicitly.
+                Unlike :meth:`get_content_detail`, which defaults to
+                ``start=0`` and ``end=5000`` and always sends both, this sends
+                ``start`` and ``end`` only when given.
 
         Returns:
             The attachment's indexing status and reason, its metadata, and the
@@ -9979,11 +10020,9 @@ class AsyncSeclai(_SeclaiBase):
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
-                if response.status_code >= 400:
-                    # Lazy body inside `stream()`; read it so a 422's field-level
-                    # detail survives into SeclaiAPIValidationError.
-                    await response.aread()
-                _raise_for_status(response)
+                # Lazy body inside `stream()`; read it so a 422's field-level
+                # detail survives into SeclaiAPIValidationError.
+                await _araise_for_unread_status(response)
                 current_event: str | None = None
                 data_lines: list[str] = []
 

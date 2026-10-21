@@ -357,7 +357,8 @@ for event_type, data in client.run_streaming_agent(
 Set `include_reasoning=True` in the request to also receive `stream_reasoning`
 events with the model's reasoning, for a `streaming_result` step whose author
 enabled `show_reasoning`. `run_streaming_agent_and_wait()` keeps only the
-`init` and `done` events, so there the flag only adds traffic.
+`init` and `done` events, so it removes `include_reasoning` from the body
+before sending.
 
 Every key of `AgentRunStreamRequest` is optional, so a run on an uploaded file
 can send just `AgentRunStreamRequest(input_upload_id=upload["upload_id"])`.
@@ -531,7 +532,9 @@ message itself. Requires an account owner or administrator:
 ```python
 refused = client.list_email_source_rejections("source_id", page=1, limit=20)
 for r in refused.data:  # EmailSourceRejectionListResponse
-    print(r.from_address, r.reason, r.authenticated)
+    # from_address is Unset when the mail had no parseable From header.
+    sender = r.from_address if isinstance(r.from_address, str) else None
+    print(sender, r.reason, r.authenticated)
 ```
 
 ### Cloud drives
@@ -614,8 +617,6 @@ client.cancel_source_embedding_migration("source_id")
 ### Content
 
 ```python
-import os
-
 detail = client.get_content_detail("source_connection_content_version")
 embeddings = client.list_content_embeddings("source_connection_content_version")
 client.delete_content("source_connection_content_version")
@@ -639,8 +640,12 @@ response = client.download_content_attachment(
 )  # raw streaming httpx.Response; 403 if withheld, 402 with no credits left
 try:
     # The key comes from a third party (an email or feed file name), so never
-    # use it as a path as is: keep only its final component.
-    with open(os.path.basename(att.key) or att.id, "wb") as f:
+    # use it as a path as is: keep only its final component, splitting on
+    # either slash, and fall back to the id for an empty, "." or ".." name.
+    name = att.key.replace("\\", "/").rsplit("/", 1)[-1]
+    if name in ("", ".", ".."):
+        name = att.id
+    with open(name, "wb") as f:
         for chunk in response.iter_bytes():
             f.write(chunk)
 finally:

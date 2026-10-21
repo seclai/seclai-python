@@ -4568,6 +4568,52 @@ class TestAttachmentsAndEmailSourceRejections:
         ]
 
 
+class TestStreamAndWaitDropsReasoning:
+    _DONE = (
+        b'event: done\ndata: {"run_id": "r1", "status": "completed", '
+        b'"attempts": [], "credits": null, "error_count": 0, "priority": false, '
+        b'"input": null, "output": null}\n\n'
+    )
+
+    def test_sync_drops_include_reasoning(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return httpx.Response(
+                status_code=200,
+                content=self._DONE,
+                headers={"content-type": "text/event-stream"},
+            )
+
+        client = _sync_client(handler)
+        body = AgentRunStreamRequest(input="hi", include_reasoning=True)
+        run = client.run_streaming_agent_and_wait("a1", body)
+        assert run.run_id == "r1"
+        assert seen["body"] == {"input": "hi"}
+        # The caller's dict is left as given.
+        assert body["include_reasoning"] is True
+
+    @pytest.mark.asyncio
+    async def test_async_drops_include_reasoning(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return httpx.Response(
+                status_code=200,
+                content=self._DONE,
+                headers={"content-type": "text/event-stream"},
+            )
+
+        client = _async_client(handler)
+        run = await client.run_streaming_agent_and_wait(
+            "a1", AgentRunStreamRequest(input="hi", include_reasoning=True)
+        )
+        assert run.run_id == "r1"
+        assert seen["body"] == {"input": "hi"}
+
+
 class _BrokenStream(httpx.SyncByteStream):
     def __iter__(self) -> Any:
         raise httpx.ReadError("connection reset")
@@ -4607,6 +4653,7 @@ class TestStreamingDownloadErrors:
             getattr(client, name)(*args)
         assert exc.value.status_code == 502
         assert captured["resp"].is_closed
+        assert isinstance(exc.value.__cause__, httpx.ReadError)
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(("name", "args"), _DOWNLOADS)
@@ -4626,6 +4673,64 @@ class TestStreamingDownloadErrors:
         with pytest.raises(SeclaiAPIStatusError) as exc:
             await getattr(client, name)(*args)
         assert exc.value.status_code == 502
+        assert captured["resp"].is_closed
+        assert isinstance(exc.value.__cause__, httpx.ReadError)
+
+    @pytest.mark.parametrize(
+        "name", ["run_streaming_agent", "run_streaming_agent_and_wait"]
+    )
+    def test_streaming_run_error_body_read_failure_raises_status(
+        self, name: str
+    ) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=502, stream=_BrokenStream())
+            captured["resp"] = resp
+            return resp
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            result = getattr(client, name)("a1", AgentRunStreamRequest(input="hi"))
+            if name == "run_streaming_agent":
+                list(result)
+        assert exc.value.status_code == 502
+        assert exc.value.response_text is None
+        assert isinstance(exc.value.__cause__, httpx.ReadError)
+        assert captured["resp"].is_closed
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "name", ["run_streaming_agent", "run_streaming_agent_and_wait"]
+    )
+    async def test_async_streaming_run_error_body_read_failure_raises_status(
+        self, name: str
+    ) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=502, stream=_AsyncBrokenStream())
+            captured["resp"] = resp
+            return resp
+
+        client = _async_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            if name == "run_streaming_agent":
+                async for _ in client.run_streaming_agent(
+                    "a1", AgentRunStreamRequest(input="hi")
+                ):
+                    pass
+            else:
+                await client.run_streaming_agent_and_wait(
+                    "a1", AgentRunStreamRequest(input="hi")
+                )
+        assert exc.value.status_code == 502
+        assert exc.value.response_text is None
+        assert isinstance(exc.value.__cause__, httpx.ReadError)
         assert captured["resp"].is_closed
 
     @pytest.mark.parametrize(("name", "args"), _DOWNLOADS)

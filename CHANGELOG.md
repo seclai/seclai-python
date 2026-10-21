@@ -13,12 +13,13 @@
 - Add `list_content_attachments()`, `get_content_attachment()`, `list_content_attachment_embeddings()` and `download_content_attachment()` to read the files attached to a content item, with their indexing status. The first three return the generated `ContentAttachmentsListResponse`, `ContentAttachmentDetailResponse` and `ContentEmbeddingsListResponse` models; the download returns a streaming `httpx.Response` the caller closes. `get_content_attachment()` sends `start` and `end` only when given, including `end=0`
 - Add `set_accepted_attachments()` to declare the input attachments an agent trigger accepts, returning `AcceptedAttachmentsResponse`
 - Add `list_email_source_rejections()` to list the mail an email content source refused, and why, returning `EmailSourceRejectionListResponse`
-- Add `include_reasoning`, `input_upload_id`, `input_upload_ids` and `replay_of_run_id` as optional keys of `AgentRunStreamRequest`. `include_reasoning` asks `run_streaming_agent()` for `stream_reasoning` events; `run_streaming_agent_and_wait()` discards them
+- Add `include_reasoning`, `input_upload_id`, `input_upload_ids` and `replay_of_run_id` as optional keys of `AgentRunStreamRequest`. `include_reasoning` asks `run_streaming_agent()` for `stream_reasoning` events; `run_streaming_agent_and_wait()`, which keeps only the `init` and `done` events, removes it from the body before sending
 - Add `ApiVersion` members for `2026-10-05`, `2026-10-13`, `2026-10-16`, `2026-10-18` and `2026-10-19`, so each can be selected without `allow_unknown_api_version`
 
 ### Fixed
 
-- Release the connection and raise `SeclaiAPIStatusError` from `download_agent_run_attachment()` and `download_source_export()` when reading an error response's body fails. The connection leaked, and the caller got the transport error instead of the status
+- Release the connection and raise `SeclaiAPIStatusError` from `download_agent_run_attachment()` and `download_source_export()` when reading an error response's body fails. The connection leaked, and the caller got the transport error instead of the status. The status error has no response text and keeps the transport error as its `__cause__`
+- Raise `SeclaiAPIStatusError` from `run_streaming_agent()` and `run_streaming_agent_and_wait()` when reading an error response's body fails, with the transport error as its `__cause__`. The caller got the transport error, or `SeclaiError` for a read timeout, instead of the status
 - Correct the streaming-download examples of `download_agent_run_attachment()` and `download_source_export()`. They closed the response with `with response:`, which raises `TypeError` because an `httpx.Response` is not a context manager; they now close it in a `finally` block
 
 ## [1.7.2] - 2026-10-05
