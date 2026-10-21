@@ -16,6 +16,13 @@ import pytest
 import seclai
 from seclai import AgentRunStreamRequest, AsyncSeclai, Seclai
 from seclai import versions as seclai_versions
+from seclai._generated.models import (
+    AcceptedAttachmentsResponse,
+    ContentAttachmentDetailResponse,
+    ContentAttachmentsListResponse,
+    ContentEmbeddingsListResponse,
+    EmailSourceRejectionListResponse,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -4251,6 +4258,16 @@ _SYNC_2026_10_19_CALLS: list[
         None,
     ),
     (
+        # 0 is the spec's minimum for both, so it must be sent, not dropped.
+        "get_content_attachment",
+        ("cv1", "att1"),
+        {"start": 0, "end": 0},
+        "GET",
+        "/contents/cv1/attachments/att1",
+        [("start", "0"), ("end", "0")],
+        None,
+    ),
+    (
         "list_content_attachment_embeddings",
         ("cv1", "att1"),
         {"page": 3, "limit": 50},
@@ -4307,7 +4324,91 @@ _SYNC_2026_10_19_CALLS: list[
     ),
 ]
 
-_ENVELOPE_BODY = {"data": [{"id": "x1"}], "pagination": _ENVELOPE_PAGINATION}
+_ATTACHMENT = {
+    "id": "att1",
+    "key": "invoice.pdf",
+    "content_type": "application/pdf",
+    "size_bytes": 1024,
+    "indexed": True,
+    "indexing_status": "completed",
+    "indexing_error": None,
+    "created_at": "2026-10-19T00:00:00Z",
+    "updated_at": "2026-10-19T00:00:00Z",
+    "metadata": {"page_count": 2},
+}
+
+# A schema-valid 200 body for each method, and the generated model it decodes
+# into. Bodies use only fields and values the spec defines.
+_2026_10_19_RESPONSES: dict[str, tuple[dict[str, Any], type[Any]]] = {
+    "list_content_attachments": (
+        {"data": [_ATTACHMENT], "pagination": _ENVELOPE_PAGINATION},
+        ContentAttachmentsListResponse,
+    ),
+    "get_content_attachment": (
+        {
+            **_ATTACHMENT,
+            "file_withheld": None,
+            "text_content": "Invoice 42",
+            "text_content_start": 0,
+            "text_content_end": 10,
+            "text_content_total_length": 10,
+        },
+        ContentAttachmentDetailResponse,
+    ),
+    "list_content_attachment_embeddings": (
+        {
+            "data": [
+                {
+                    "id": "e1",
+                    "text_start": 0,
+                    "text_end": 10,
+                    "text": "Invoice 42",
+                    "vector": [0.1, 0.2],
+                    "batch_size": 1,
+                    "batch_duration": 0.5,
+                }
+            ],
+            "pagination": _ENVELOPE_PAGINATION,
+        },
+        ContentEmbeddingsListResponse,
+    ),
+    "set_accepted_attachments": (
+        {
+            "agent_id": "0b6f2a4e-3c1d-4e5f-8a9b-1c2d3e4f5a6b",
+            "trigger_id": "7d8e9f0a-1b2c-4d3e-9f4a-5b6c7d8e9f0a",
+            "accepted_attachments": [
+                {
+                    "name": "invoice",
+                    "label": None,
+                    "content_types": ["application/pdf"],
+                    "name_pattern": None,
+                    "min": 1,
+                    "max": 1,
+                }
+            ],
+        },
+        AcceptedAttachmentsResponse,
+    ),
+    "list_email_source_rejections": (
+        {
+            "data": [
+                {
+                    "id": "r1",
+                    "created_at": "2026-10-19T00:00:00Z",
+                    "recipient": "inbox@example.com",
+                    "sender": "bounce@mailer.example.net",
+                    "from_address": "alice@example.org",
+                    "sender_ip": "192.0.2.1",
+                    "reason": "sender_not_allowed",
+                    "authenticated": True,
+                    "auth_verdicts": {"spf": "pass", "dmarc": "pass"},
+                }
+            ],
+            "pagination": _ENVELOPE_PAGINATION,
+        },
+        EmailSourceRejectionListResponse,
+    ),
+}
 
 
 class TestAttachmentsAndEmailSourceRejections:
@@ -4326,10 +4427,12 @@ class TestAttachmentsAndEmailSourceRejections:
         body: Any,
     ) -> None:
         seen: dict[str, Any] = {}
-        client = _sync_client(_recording_handler(seen, _ENVELOPE_BODY))
+        response, model = _2026_10_19_RESPONSES[name]
+        client = _sync_client(_recording_handler(seen, response))
         result = getattr(client, name)(*args, **kwargs)
         assert seen == {"method": verb, "path": path, "query": query, "body": body}
-        assert result == _ENVELOPE_BODY
+        assert isinstance(result, model)
+        assert result.to_dict() == response
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -4347,10 +4450,12 @@ class TestAttachmentsAndEmailSourceRejections:
         body: Any,
     ) -> None:
         seen: dict[str, Any] = {}
-        client = _async_client(_recording_handler(seen, _ENVELOPE_BODY))
+        response, model = _2026_10_19_RESPONSES[name]
+        client = _async_client(_recording_handler(seen, response))
         result = await getattr(client, name)(*args, **kwargs)
         assert seen == {"method": verb, "path": path, "query": query, "body": body}
-        assert result == _ENVELOPE_BODY
+        assert isinstance(result, model)
+        assert result.to_dict() == response
 
     def test_download_content_attachment(self) -> None:
         seen: dict[str, Any] = {}
@@ -4461,3 +4566,150 @@ class TestAttachmentsAndEmailSourceRejections:
             ("stream_reasoning", {"text": "hmm"}),
             ("done", {"run_id": "r1"}),
         ]
+
+
+class _BrokenStream(httpx.SyncByteStream):
+    def __iter__(self) -> Any:
+        raise httpx.ReadError("connection reset")
+
+
+class _AsyncBrokenStream(httpx.AsyncByteStream):
+    async def __aiter__(self) -> Any:
+        raise httpx.ReadError("connection reset")
+        yield b""  # pragma: no cover - makes this an async generator
+
+
+# Every streaming download goes through one helper; cover each entry point so
+# none can drift back to its own copy.
+_DOWNLOADS: list[tuple[str, tuple[str, ...]]] = [
+    ("download_content_attachment", ("cv1", "att1")),
+    ("download_agent_run_attachment", ("run1", "att1")),
+    ("download_source_export", ("s1", "exp1")),
+]
+
+
+class TestStreamingDownloadErrors:
+    @pytest.mark.parametrize(("name", "args"), _DOWNLOADS)
+    def test_error_body_read_failure_still_closes_and_raises_status(
+        self, name: str, args: tuple[str, ...]
+    ) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=502, stream=_BrokenStream())
+            captured["resp"] = resp
+            return resp
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            getattr(client, name)(*args)
+        assert exc.value.status_code == 502
+        assert captured["resp"].is_closed
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("name", "args"), _DOWNLOADS)
+    async def test_async_error_body_read_failure_still_closes_and_raises_status(
+        self, name: str, args: tuple[str, ...]
+    ) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=502, stream=_AsyncBrokenStream())
+            captured["resp"] = resp
+            return resp
+
+        client = _async_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            await getattr(client, name)(*args)
+        assert exc.value.status_code == 502
+        assert captured["resp"].is_closed
+
+    @pytest.mark.parametrize(("name", "args"), _DOWNLOADS)
+    def test_error_closes_and_keeps_body_text(
+        self, name: str, args: tuple[str, ...]
+    ) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=402, json={"detail": "no credits"})
+            captured["resp"] = resp
+            return resp
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            getattr(client, name)(*args)
+        assert exc.value.status_code == 402
+        assert "no credits" in (exc.value.response_text or "")
+        assert captured["resp"].is_closed
+
+
+class TestAttachmentModelDecoding:
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            [_ATTACHMENT],  # not an object
+            "oops",  # text body
+            {"data": [{"id": "att1"}], "pagination": _ENVELOPE_PAGINATION},
+        ],
+    )
+    def test_undecodable_body_raises_seclai_error(self, bad: Any) -> None:
+        from seclai import SeclaiError
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            if isinstance(bad, str):
+                return httpx.Response(status_code=200, text=bad)
+            return _json_response(bad)
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiError):
+            client.list_content_attachments("cv1")
+
+    @pytest.mark.asyncio
+    async def test_async_undecodable_body_raises_seclai_error(self) -> None:
+        from seclai import SeclaiError
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            return _json_response({"agent_id": "a1"})
+
+        client = _async_client(handler)
+        with pytest.raises(SeclaiError):
+            await client.set_accepted_attachments("a1", "t1", None)
+
+    def test_typed_fields(self) -> None:
+        response, _ = _2026_10_19_RESPONSES["list_email_source_rejections"]
+        client = _sync_client(lambda req: _json_response(response))
+        refused = client.list_email_source_rejections("s1")
+        assert refused.data[0].from_address == "alice@example.org"
+        assert refused.data[0].authenticated is True
+        assert refused.pagination.total == 1
+
+
+class TestAgentRunStreamRequestOptionalKeys:
+    def test_upload_only_body(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return httpx.Response(
+                status_code=200,
+                content=b'event: done\ndata: {"run_id": "r1"}\n\n',
+                headers={"content-type": "text/event-stream"},
+            )
+
+        client = _sync_client(handler)
+        # input and metadata are optional in the spec, so a run on an upload
+        # needs neither.
+        body = AgentRunStreamRequest(input_upload_id="up1")
+        events = list(client.run_streaming_agent("a1", body))
+        assert seen["body"] == {"input_upload_id": "up1"}
+        assert events == [("done", {"run_id": "r1"})]
+
+    def test_null_metadata_is_accepted(self) -> None:
+        body = AgentRunStreamRequest(input="hi", metadata=None)
+        assert body == {"input": "hi", "metadata": None}

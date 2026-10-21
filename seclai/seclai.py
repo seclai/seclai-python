@@ -62,12 +62,24 @@ from typing import (
 import httpx
 
 from seclai._generated.client import Client as GeneratedClient
+from seclai._generated.models.accepted_attachments_response import (
+    AcceptedAttachmentsResponse,
+)
 from seclai._generated.models.agent_run_list_response import AgentRunListResponse
 from seclai._generated.models.agent_run_request import AgentRunRequest
 from seclai._generated.models.agent_run_response import AgentRunResponse
+from seclai._generated.models.content_attachment_detail_response import (
+    ContentAttachmentDetailResponse,
+)
+from seclai._generated.models.content_attachments_list_response import (
+    ContentAttachmentsListResponse,
+)
 from seclai._generated.models.content_detail_response import ContentDetailResponse
 from seclai._generated.models.content_embeddings_list_response import (
     ContentEmbeddingsListResponse,
+)
+from seclai._generated.models.email_source_rejection_list_response import (
+    EmailSourceRejectionListResponse,
 )
 from seclai._generated.models.file_upload_response import FileUploadResponse
 from seclai._generated.models.http_validation_error import HTTPValidationError
@@ -93,13 +105,18 @@ JSONValue = dict[str, "JSONValue"] | list["JSONValue"] | str | int | float | boo
 class AgentRunStreamRequest(TypedDict):
     """Request body for streaming agent runs.
 
-    This matches the API schema for POST /agents/{agent_id}/runs/stream.
+    This matches the API schema for POST /agents/{agent_id}/runs/stream. Every
+    key is optional, as in the schema: a run on an uploaded file can send only
+    ``input_upload_id``.
     """
 
-    input: str | None
-    metadata: dict[str, JSONValue]
+    input: NotRequired[str | None]
+    metadata: NotRequired[dict[str, JSONValue] | None]
     #: Receive ``stream_reasoning`` events carrying the model's reasoning, for a
-    #: ``streaming_result`` step whose author enabled ``show_reasoning``.
+    #: ``streaming_result`` step whose author enabled ``show_reasoning``. Only
+    #: :meth:`Seclai.run_streaming_agent` yields them;
+    #: :meth:`Seclai.run_streaming_agent_and_wait` discards every event but
+    #: ``init`` and ``done``, so there it only adds traffic.
     include_reasoning: NotRequired[bool]
     input_upload_id: NotRequired[str | None]
     input_upload_ids: NotRequired[list[str] | None]
@@ -307,6 +324,24 @@ def _expect_model(parsed: object, model: type[_ModelT]) -> _ModelT:
             f"Expected {model.__name__} in the response, got {type(parsed).__name__}."
         )
     return parsed
+
+
+def _parse_model(payload: object, model: type[_ModelT]) -> _ModelT:
+    """Decode a JSON response body returned by ``request`` into ``model``.
+
+    A body that is not a JSON object, or does not fit the model, raises
+    `SeclaiError` rather than the ``KeyError``/``TypeError`` the generated
+    ``from_dict`` would, so ``except SeclaiError`` handlers still catch it.
+    """
+    if not isinstance(payload, dict):
+        raise SeclaiError(
+            f"Expected a JSON object for {model.__name__}, got {type(payload).__name__}."
+        )
+    try:
+        # Every generated model has a ``from_dict`` classmethod.
+        return cast(_ModelT, cast(Any, model).from_dict(payload))
+    except (KeyError, TypeError, ValueError, AttributeError) as e:
+        raise SeclaiError(f"Could not decode {model.__name__}: {e!r}") from e
 
 
 class SeclaiError(Exception):
@@ -1037,6 +1072,37 @@ class Seclai(_SeclaiBase):
             return cast(JSONValue, response.json())
         return response.text
 
+    def _stream_get(
+        self, path: str, *, params: Mapping[str, Any] | None = None
+    ) -> httpx.Response:
+        """Send a GET and return the response unread, for the caller to stream.
+
+        On an error status the body is read for the error message and the
+        connection released before raising. A transport error while reading
+        that body still closes the response and raises the status error, with
+        no response text, rather than the transport error.
+        """
+        request = self._client.build_request(
+            "GET",
+            path,
+            params=params,
+            headers=_merge_request_headers(
+                options=self._options,
+                client_headers=self._client.headers,
+                request_headers=None,
+            ),
+        )
+        response = self._client.send(request, stream=True)
+        if response.is_error:
+            try:
+                response.read()
+            except httpx.HTTPError:
+                pass
+            finally:
+                response.close()
+            _raise_for_status(response)
+        return response
+
     def run_agent(self, agent_id: str, body: AgentRunRequest) -> AgentRunResponse:
         """Run an agent.
 
@@ -1099,7 +1165,10 @@ class Seclai(_SeclaiBase):
         """Run an agent via SSE streaming and block until completion.
 
         This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
-        The method returns when an `event: done` message is received.
+        The method returns when an `event: done` message is received. Every event
+        but `init` and `done` is discarded, so `include_reasoning` has no effect
+        here beyond extra traffic; use `run_streaming_agent` to receive
+        `stream_reasoning` events.
 
         Args:
             agent_id: Agent identifier.
@@ -1549,7 +1618,7 @@ class Seclai(_SeclaiBase):
         *,
         page: int | None = None,
         limit: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ContentAttachmentsListResponse:
         """List the files attached to a content item.
 
         An agent's ``write_content_attachment`` step attaches a file, an email
@@ -1565,15 +1634,18 @@ class Seclai(_SeclaiBase):
         Returns:
             The attachments under ``data``, each with its indexing status, and
             ``pagination``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            self.request(
-                "GET",
-                f"/contents/{source_connection_content_version}/attachments",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        payload = self.request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        return _parse_model(payload, ContentAttachmentsListResponse)
 
     def get_content_attachment(
         self,
@@ -1582,28 +1654,37 @@ class Seclai(_SeclaiBase):
         *,
         start: int | None = None,
         end: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ContentAttachmentDetailResponse:
         """Get one file attached to a content item.
 
         Args:
             source_connection_content_version: Content version identifier.
             attachment_id: The ``id`` of an entry in
                 :meth:`list_content_attachments`.
-            start: Start offset of the returned text (default 0).
-            end: End offset of the returned text (default 5000).
+            start: Start offset of the returned text. Omitted, the API
+                uses 0.
+            end: End offset of the returned text. Omitted, the API uses 5000.
+                Any value from 0, the API's minimum, is sent as given, so
+                ``end=0`` asks for the status and metadata without the text.
+                :meth:`get_content_detail` also sends ``end=0``; it differs
+                only in sending its defaults explicitly.
 
         Returns:
             The attachment's indexing status and reason, its metadata, and the
             text it is indexed by. A file that was not indexed has no text.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code,
+                including 402 when the account has no credits left.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            self.request(
-                "GET",
-                f"/contents/{source_connection_content_version}/attachments/{attachment_id}",
-                params=_strip_none({"start": start, "end": end}),
-            ),
+        payload = self.request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}",
+            params=_strip_none({"start": start, "end": end}),
         )
+        return _parse_model(payload, ContentAttachmentDetailResponse)
 
     def list_content_attachment_embeddings(
         self,
@@ -1612,7 +1693,7 @@ class Seclai(_SeclaiBase):
         *,
         page: int | None = None,
         limit: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ContentEmbeddingsListResponse:
         """List the embeddings an attached file is indexed by.
 
         Args:
@@ -1622,16 +1703,22 @@ class Seclai(_SeclaiBase):
             limit: Items per page (1-100, default 20).
 
         Returns:
-            A page of embeddings; empty for a file with no completed index.
+            A page of embeddings, the same model as
+            :meth:`list_content_embeddings`; empty for a file with no completed
+            index.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code,
+                including 402 when the account has no credits left.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            self.request(
-                "GET",
-                f"/contents/{source_connection_content_version}/attachments/{attachment_id}/embeddings",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        payload = self.request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/embeddings",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        return _parse_model(payload, ContentEmbeddingsListResponse)
 
     def download_content_attachment(
         self,
@@ -1654,7 +1741,11 @@ class Seclai(_SeclaiBase):
         content type; anything else as ``application/octet-stream``. A file
         withheld by a governance policy, or still being indexed after arriving
         from outside, answers 403 — the attachment's ``file_withheld`` field
-        says which beforehand.
+        says which beforehand. An account with no credits left gets 402.
+
+        The client's ``timeout`` bounds connecting and each read, not the whole
+        transfer, so a large file is not cut off while bytes keep arriving.
+        Closing the response stops a download early.
 
         Args:
             source_connection_content_version: Content version identifier.
@@ -1664,25 +1755,13 @@ class Seclai(_SeclaiBase):
             A streaming ``httpx.Response``. Must be closed by the caller.
 
         Raises:
-            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiAPIStatusError: If the API returns a non-success status code:
+                403 for a withheld file, 402 when the account has no credits
+                left.
         """
-        request = self._client.build_request(
-            "GET",
-            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/file",
-            headers=_merge_request_headers(
-                options=self._options,
-                client_headers=self._client.headers,
-                request_headers=None,
-            ),
+        return self._stream_get(
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/file"
         )
-        response = self._client.send(request, stream=True)
-        if response.is_error:
-            # Read the body for a useful error message, then release the
-            # connection before raising.
-            response.read()
-            response.close()
-            _raise_for_status(response)
-        return response
 
     def list_sources(
         self,
@@ -2339,6 +2418,16 @@ class Seclai(_SeclaiBase):
     ) -> dict[str, Any]:
         """Upload a file as input for an agent run.
 
+        Only a ``dynamic_input`` agent takes uploads; any other agent answers
+        400. The limit is 200 MB per file.
+
+        From ``Seclai-Version: 2026-10-16`` a file of any type is accepted and
+        is ``ready`` at once, so pass its ``upload_id`` as ``input_upload_id``
+        to a run straight away. Earlier versions accept only a fixed list of
+        extensions and extract each file's text into ``input``: poll
+        :meth:`get_agent_input_upload_status` until ``status`` is ``ready``
+        before running.
+
         Args:
             agent_id: Agent identifier.
             file: File payload (bytes, path, or file-like).
@@ -2438,25 +2527,10 @@ class Seclai(_SeclaiBase):
         Returns:
             A streaming ``httpx.Response``. Must be closed by the caller.
         """
-        request = self._client.build_request(
-            "GET",
+        return self._stream_get(
             f"/v2/agent-runs/{run_id}/attachments/{attachment_id}",
             params=_strip_none({"download_name": download_name}),
-            headers=_merge_request_headers(
-                options=self._options,
-                client_headers=self._client.headers,
-                request_headers=None,
-            ),
         )
-        response = self._client.send(request, stream=True)
-        if response.is_error:
-            # Read the body for a useful error message, then release the
-            # connection before raising — the caller never receives the
-            # streaming response on the error path.
-            response.read()
-            response.close()
-            _raise_for_status(response)
-        return response
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
 
@@ -3125,7 +3199,7 @@ class Seclai(_SeclaiBase):
         agent_id: str,
         trigger_id: str,
         accepted_attachments: list[dict[str, Any]] | None,
-    ) -> dict[str, Any]:
+    ) -> AcceptedAttachmentsResponse:
         """Declare the input attachments a trigger accepts.
 
         Replaces the trigger's declaration. A run's files are each assigned to
@@ -3145,16 +3219,19 @@ class Seclai(_SeclaiBase):
         Returns:
             The trigger's ``accepted_attachments`` with its ``agent_id`` and
             ``trigger_id``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
         """
         body: dict[str, Any] = {"accepted_attachments": accepted_attachments}
-        return cast(
-            dict[str, Any],
-            self.request(
-                "PUT",
-                f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
-                json=body,
-            ),
+        payload = self.request(
+            "PUT",
+            f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
+            json=body,
         )
+        return _parse_model(payload, AcceptedAttachmentsResponse)
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
@@ -3531,7 +3608,7 @@ class Seclai(_SeclaiBase):
         *,
         page: int | None = None,
         limit: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> EmailSourceRejectionListResponse:
         """List mail an email content source refused, newest first.
 
         Each entry says who sent the message and why it was refused, never its
@@ -3548,15 +3625,18 @@ class Seclai(_SeclaiBase):
 
         Returns:
             The refusals under ``data``, and ``pagination``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            self.request(
-                "GET",
-                f"/sources/{source_id}/email-rejections",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        payload = self.request(
+            "GET",
+            f"/sources/{source_id}/email-rejections",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        return _parse_model(payload, EmailSourceRejectionListResponse)
 
     def delete_source(self, source_id: str) -> None:
         """Delete a source.
@@ -3767,24 +3847,7 @@ class Seclai(_SeclaiBase):
         Returns:
             A streaming ``httpx.Response``. Must be closed by the caller.
         """
-        request = self._client.build_request(
-            "GET",
-            f"/sources/{source_id}/exports/{export_id}/download",
-            headers=_merge_request_headers(
-                options=self._options,
-                client_headers=self._client.headers,
-                request_headers=None,
-            ),
-        )
-        response = self._client.send(request, stream=True)
-        if response.is_error:
-            # Read the body for a useful error message, then release the
-            # connection before raising — the caller never receives the
-            # streaming response on the error path.
-            response.read()
-            response.close()
-            _raise_for_status(response)
-        return response
+        return self._stream_get(f"/sources/{source_id}/exports/{export_id}/download")
 
     def estimate_source_export(
         self, source_id: str, body: dict[str, Any]
@@ -5558,6 +5621,37 @@ class AsyncSeclai(_SeclaiBase):
             return cast(JSONValue, response.json())
         return response.text
 
+    async def _stream_get(
+        self, path: str, *, params: Mapping[str, Any] | None = None
+    ) -> httpx.Response:
+        """Send a GET and return the response unread, for the caller to stream.
+
+        On an error status the body is read for the error message and the
+        connection released before raising. A transport error while reading
+        that body still closes the response and raises the status error, with
+        no response text, rather than the transport error.
+        """
+        request = self._client.build_request(
+            "GET",
+            path,
+            params=params,
+            headers=await _merge_request_headers_async(
+                options=self._options,
+                client_headers=self._client.headers,
+                request_headers=None,
+            ),
+        )
+        response = await self._client.send(request, stream=True)
+        if response.is_error:
+            try:
+                await response.aread()
+            except httpx.HTTPError:
+                pass
+            finally:
+                await response.aclose()
+            _raise_for_status(response)
+        return response
+
     async def run_agent(self, agent_id: str, body: AgentRunRequest) -> AgentRunResponse:
         """Run an agent.
 
@@ -5622,7 +5716,10 @@ class AsyncSeclai(_SeclaiBase):
         """Run an agent via SSE streaming and block until completion (async).
 
         This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
-        The method returns when an `event: done` message is received.
+        The method returns when an `event: done` message is received. Every event
+        but `init` and `done` is discarded, so `include_reasoning` has no effect
+        here beyond extra traffic; use `run_streaming_agent` to receive
+        `stream_reasoning` events.
         """
         import json as _json
         import time as _time
@@ -6062,7 +6159,7 @@ class AsyncSeclai(_SeclaiBase):
         *,
         page: int | None = None,
         limit: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ContentAttachmentsListResponse:
         """List the files attached to a content item.
 
         An agent's ``write_content_attachment`` step attaches a file, an email
@@ -6078,15 +6175,18 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The attachments under ``data``, each with its indexing status, and
             ``pagination``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            await self.request(
-                "GET",
-                f"/contents/{source_connection_content_version}/attachments",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        payload = await self.request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        return _parse_model(payload, ContentAttachmentsListResponse)
 
     async def get_content_attachment(
         self,
@@ -6095,28 +6195,37 @@ class AsyncSeclai(_SeclaiBase):
         *,
         start: int | None = None,
         end: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ContentAttachmentDetailResponse:
         """Get one file attached to a content item.
 
         Args:
             source_connection_content_version: Content version identifier.
             attachment_id: The ``id`` of an entry in
                 :meth:`list_content_attachments`.
-            start: Start offset of the returned text (default 0).
-            end: End offset of the returned text (default 5000).
+            start: Start offset of the returned text. Omitted, the API
+                uses 0.
+            end: End offset of the returned text. Omitted, the API uses 5000.
+                Any value from 0, the API's minimum, is sent as given, so
+                ``end=0`` asks for the status and metadata without the text.
+                :meth:`get_content_detail` also sends ``end=0``; it differs
+                only in sending its defaults explicitly.
 
         Returns:
             The attachment's indexing status and reason, its metadata, and the
             text it is indexed by. A file that was not indexed has no text.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code,
+                including 402 when the account has no credits left.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            await self.request(
-                "GET",
-                f"/contents/{source_connection_content_version}/attachments/{attachment_id}",
-                params=_strip_none({"start": start, "end": end}),
-            ),
+        payload = await self.request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}",
+            params=_strip_none({"start": start, "end": end}),
         )
+        return _parse_model(payload, ContentAttachmentDetailResponse)
 
     async def list_content_attachment_embeddings(
         self,
@@ -6125,7 +6234,7 @@ class AsyncSeclai(_SeclaiBase):
         *,
         page: int | None = None,
         limit: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> ContentEmbeddingsListResponse:
         """List the embeddings an attached file is indexed by.
 
         Args:
@@ -6135,16 +6244,22 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page (1-100, default 20).
 
         Returns:
-            A page of embeddings; empty for a file with no completed index.
+            A page of embeddings, the same model as
+            :meth:`list_content_embeddings`; empty for a file with no completed
+            index.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code,
+                including 402 when the account has no credits left.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            await self.request(
-                "GET",
-                f"/contents/{source_connection_content_version}/attachments/{attachment_id}/embeddings",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        payload = await self.request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/embeddings",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        return _parse_model(payload, ContentEmbeddingsListResponse)
 
     async def download_content_attachment(
         self,
@@ -6167,7 +6282,11 @@ class AsyncSeclai(_SeclaiBase):
         content type; anything else as ``application/octet-stream``. A file
         withheld by a governance policy, or still being indexed after arriving
         from outside, answers 403 — the attachment's ``file_withheld`` field
-        says which beforehand.
+        says which beforehand. An account with no credits left gets 402.
+
+        The client's ``timeout`` bounds connecting and each read, not the whole
+        transfer, so a large file is not cut off while bytes keep arriving.
+        Closing the response stops a download early.
 
         Args:
             source_connection_content_version: Content version identifier.
@@ -6177,26 +6296,13 @@ class AsyncSeclai(_SeclaiBase):
             A streaming ``httpx.Response``. Must be closed by the caller.
 
         Raises:
-            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiAPIStatusError: If the API returns a non-success status code:
+                403 for a withheld file, 402 when the account has no credits
+                left.
         """
-        headers = await _merge_request_headers_async(
-            options=self._options,
-            client_headers=self._client.headers,
-            request_headers=None,
+        return await self._stream_get(
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/file"
         )
-        request = self._client.build_request(
-            "GET",
-            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/file",
-            headers=headers,
-        )
-        response = await self._client.send(request, stream=True)
-        if response.is_error:
-            # Read the body for a useful error message, then release the
-            # connection before raising.
-            await response.aread()
-            await response.aclose()
-            _raise_for_status(response)
-        return response
 
     async def list_sources(
         self,
@@ -6860,6 +6966,16 @@ class AsyncSeclai(_SeclaiBase):
     ) -> dict[str, Any]:
         """Upload a file as input for an agent run.
 
+        Only a ``dynamic_input`` agent takes uploads; any other agent answers
+        400. The limit is 200 MB per file.
+
+        From ``Seclai-Version: 2026-10-16`` a file of any type is accepted and
+        is ``ready`` at once, so pass its ``upload_id`` as ``input_upload_id``
+        to a run straight away. Earlier versions accept only a fixed list of
+        extensions and extract each file's text into ``input``: poll
+        :meth:`get_agent_input_upload_status` until ``status`` is ``ready``
+        before running.
+
         Args:
             agent_id: Agent identifier.
             file: File payload (bytes, path, or file-like).
@@ -6964,26 +7080,10 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             A streaming ``httpx.Response``. Must be closed by the caller.
         """
-        headers = await _merge_request_headers_async(
-            options=self._options,
-            client_headers=self._client.headers,
-            request_headers=None,
-        )
-        request = self._client.build_request(
-            "GET",
+        return await self._stream_get(
             f"/v2/agent-runs/{run_id}/attachments/{attachment_id}",
             params=_strip_none({"download_name": download_name}),
-            headers=headers,
         )
-        response = await self._client.send(request, stream=True)
-        if response.is_error:
-            # Read the body for a useful error message, then release the
-            # connection before raising — the caller never receives the
-            # streaming response on the error path.
-            await response.aread()
-            await response.aclose()
-            _raise_for_status(response)
-        return response
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
 
@@ -7655,7 +7755,7 @@ class AsyncSeclai(_SeclaiBase):
         agent_id: str,
         trigger_id: str,
         accepted_attachments: list[dict[str, Any]] | None,
-    ) -> dict[str, Any]:
+    ) -> AcceptedAttachmentsResponse:
         """Declare the input attachments a trigger accepts.
 
         Replaces the trigger's declaration. A run's files are each assigned to
@@ -7675,16 +7775,19 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             The trigger's ``accepted_attachments`` with its ``agent_id`` and
             ``trigger_id``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
         """
         body: dict[str, Any] = {"accepted_attachments": accepted_attachments}
-        return cast(
-            dict[str, Any],
-            await self.request(
-                "PUT",
-                f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
-                json=body,
-            ),
+        payload = await self.request(
+            "PUT",
+            f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
+            json=body,
         )
+        return _parse_model(payload, AcceptedAttachmentsResponse)
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
@@ -8072,7 +8175,7 @@ class AsyncSeclai(_SeclaiBase):
         *,
         page: int | None = None,
         limit: int | None = None,
-    ) -> dict[str, Any]:
+    ) -> EmailSourceRejectionListResponse:
         """List mail an email content source refused, newest first.
 
         Each entry says who sent the message and why it was refused, never its
@@ -8089,15 +8192,18 @@ class AsyncSeclai(_SeclaiBase):
 
         Returns:
             The refusals under ``data``, and ``pagination``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
         """
-        return cast(
-            dict[str, Any],
-            await self.request(
-                "GET",
-                f"/sources/{source_id}/email-rejections",
-                params=_strip_none({"page": page, "limit": limit}),
-            ),
+        payload = await self.request(
+            "GET",
+            f"/sources/{source_id}/email-rejections",
+            params=_strip_none({"page": page, "limit": limit}),
         )
+        return _parse_model(payload, EmailSourceRejectionListResponse)
 
     async def delete_source(self, source_id: str) -> None:
         """Delete a source.
@@ -8314,25 +8420,9 @@ class AsyncSeclai(_SeclaiBase):
         Returns:
             A streaming ``httpx.Response``. Must be closed by the caller.
         """
-        headers = await _merge_request_headers_async(
-            options=self._options,
-            client_headers=self._client.headers,
-            request_headers=None,
+        return await self._stream_get(
+            f"/sources/{source_id}/exports/{export_id}/download"
         )
-        request = self._client.build_request(
-            "GET",
-            f"/sources/{source_id}/exports/{export_id}/download",
-            headers=headers,
-        )
-        response = await self._client.send(request, stream=True)
-        if response.is_error:
-            # Read the body for a useful error message, then release the
-            # connection before raising — the caller never receives the
-            # streaming response on the error path.
-            await response.aread()
-            await response.aclose()
-            _raise_for_status(response)
-        return response
 
     async def estimate_source_export(
         self, source_id: str, body: dict[str, Any]
