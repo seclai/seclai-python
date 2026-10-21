@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.8.0] - 2026-10-21
+
+### Changed
+
+- Sync the bundled OpenAPI spec, adding 6 paths and 10 schemas. The typed models gain the new fields, including `accepted_attachments` on agent create and definition requests and on the attachment-reference contract, `trigger_id` on an agent, `include_reasoning` on a streaming run, `run_on_attachment_mismatch` on an email trigger, the `cloud_drive_*`, `document_images`, `email_allowed_senders`, `feed_attachments` and `email_address` source fields, `held_for_review` on a content status and `skipped_attachments` on a content item
+- Move `LATEST_API_VERSION` to `2026-10-19`
+
+### Added
+
+- Add `list_content_attachments()`, `get_content_attachment()`, `list_content_attachment_embeddings()` and `download_content_attachment()` to read the files attached to a content item, with their indexing status. The download returns a streaming `httpx.Response` the caller closes
+- Add `set_accepted_attachments()` to declare the input attachments an agent trigger accepts
+- Add `list_email_source_rejections()` to list the mail an email content source refused, and why
+- Add `include_reasoning`, `input_upload_id`, `input_upload_ids` and `replay_of_run_id` as optional keys of `AgentRunStreamRequest`. `include_reasoning` asks `run_streaming_agent()` for `stream_reasoning` events
+- Add `ApiVersion` members for `2026-10-05`, `2026-10-13`, `2026-10-16`, `2026-10-18` and `2026-10-19`, so each can be selected without `allow_unknown_api_version`
+
+### Fixed
+
+- Correct the streaming-download examples of `download_agent_run_attachment()` and `download_source_export()`. They closed the response with `with response:`, which raises `TypeError` because an `httpx.Response` is not a context manager; they now close it in a `finally` block
+
 ## [1.7.2] - 2026-10-05
 
 ### Fixed
@@ -217,6 +236,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.8.0]: https://github.com/seclai/seclai-python/releases/tag/1.8.0
 [1.7.2]: https://github.com/seclai/seclai-python/releases/tag/1.7.2
 [1.7.1]: https://github.com/seclai/seclai-python/releases/tag/1.7.1
 [1.7.0]: https://github.com/seclai/seclai-python/releases/tag/1.7.0

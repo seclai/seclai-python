@@ -99,8 +99,8 @@ def sync_detailed(
     Each entry carries the `model_type` to pass as `embedding_model` when creating a source, the
     `dimensions` it supports, and — most importantly for multi-modal indexing — `supported_input_media`:
     the modalities that embedder can actually index. A source only honours a `media_types` entry its
-    embedder lists here; unsupported kinds are dropped at save time with an `embedder_warning`, so check
-    this before choosing an embedder for a knowledge base of images or video.
+    embedder lists here; a kind it does not list is stored and not indexed, so check this before
+    choosing an embedder for a knowledge base of images or video.
 
     Text-only embedders report `supported_input_media` as null. Pricing is reported as `credits` (per
     ~1,000 English words of text) plus `per_modality_rates` for the non-text modalities a multi-modal
@@ -158,8 +158,8 @@ def sync(
     Each entry carries the `model_type` to pass as `embedding_model` when creating a source, the
     `dimensions` it supports, and — most importantly for multi-modal indexing — `supported_input_media`:
     the modalities that embedder can actually index. A source only honours a `media_types` entry its
-    embedder lists here; unsupported kinds are dropped at save time with an `embedder_warning`, so check
-    this before choosing an embedder for a knowledge base of images or video.
+    embedder lists here; a kind it does not list is stored and not indexed, so check this before
+    choosing an embedder for a knowledge base of images or video.
 
     Text-only embedders report `supported_input_media` as null. Pricing is reported as `credits` (per
     ~1,000 English words of text) plus `per_modality_rates` for the non-text modalities a multi-modal
@@ -214,8 +214,8 @@ async def asyncio_detailed(
     Each entry carries the `model_type` to pass as `embedding_model` when creating a source, the
     `dimensions` it supports, and — most importantly for multi-modal indexing — `supported_input_media`:
     the modalities that embedder can actually index. A source only honours a `media_types` entry its
-    embedder lists here; unsupported kinds are dropped at save time with an `embedder_warning`, so check
-    this before choosing an embedder for a knowledge base of images or video.
+    embedder lists here; a kind it does not list is stored and not indexed, so check this before
+    choosing an embedder for a knowledge base of images or video.
 
     Text-only embedders report `supported_input_media` as null. Pricing is reported as `credits` (per
     ~1,000 English words of text) plus `per_modality_rates` for the non-text modalities a multi-modal
@@ -271,8 +271,8 @@ async def asyncio(
     Each entry carries the `model_type` to pass as `embedding_model` when creating a source, the
     `dimensions` it supports, and — most importantly for multi-modal indexing — `supported_input_media`:
     the modalities that embedder can actually index. A source only honours a `media_types` entry its
-    embedder lists here; unsupported kinds are dropped at save time with an `embedder_warning`, so check
-    this before choosing an embedder for a knowledge base of images or video.
+    embedder lists here; a kind it does not list is stored and not indexed, so check this before
+    choosing an embedder for a knowledge base of images or video.
 
     Text-only embedders report `supported_input_media` as null. Pricing is reported as `credits` (per
     ~1,000 English words of text) plus `per_modality_rates` for the non-text modalities a multi-modal

@@ -89,10 +89,16 @@ def sync_detailed(
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `custom_index`.
+    Source types: `rss_feed`, `website`, `custom_index`, `cloud_drive`, `email`.
 
     For RSS and website sources, provide the URL. For custom index sources, the URL is created
     automatically.
+
+    An `email` source takes no URL and requires `email_allowed_senders`; the response's `email_address`
+    is where to send mail.
+
+    A `cloud_drive` source takes no URL and requires `cloud_drive_connection_id`, the id of a drive
+    connected in the app (`GET /cloud-drives` lists them).
 
     For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
     `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as
@@ -135,10 +141,16 @@ def sync(
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `custom_index`.
+    Source types: `rss_feed`, `website`, `custom_index`, `cloud_drive`, `email`.
 
     For RSS and website sources, provide the URL. For custom index sources, the URL is created
     automatically.
+
+    An `email` source takes no URL and requires `email_allowed_senders`; the response's `email_address`
+    is where to send mail.
+
+    A `cloud_drive` source takes no URL and requires `cloud_drive_connection_id`, the id of a drive
+    connected in the app (`GET /cloud-drives` lists them).
 
     For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
     `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as
@@ -176,10 +188,16 @@ async def asyncio_detailed(
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `custom_index`.
+    Source types: `rss_feed`, `website`, `custom_index`, `cloud_drive`, `email`.
 
     For RSS and website sources, provide the URL. For custom index sources, the URL is created
     automatically.
+
+    An `email` source takes no URL and requires `email_allowed_senders`; the response's `email_address`
+    is where to send mail.
+
+    A `cloud_drive` source takes no URL and requires `cloud_drive_connection_id`, the id of a drive
+    connected in the app (`GET /cloud-drives` lists them).
 
     For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
     `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as
@@ -220,10 +238,16 @@ async def asyncio(
 
      Create a new content source.
 
-    Source types: `rss`, `website`, `custom_index`.
+    Source types: `rss_feed`, `website`, `custom_index`, `cloud_drive`, `email`.
 
     For RSS and website sources, provide the URL. For custom index sources, the URL is created
     automatically.
+
+    An `email` source takes no URL and requires `email_allowed_senders`; the response's `email_address`
+    is where to send mail.
+
+    A `cloud_drive` source takes no URL and requires `cloud_drive_connection_id`, the id of a drive
+    connected in the app (`GET /cloud-drives` lists them).
 
     For custom_index sources, you can optionally specify an `index_mode`: `fast_and_cheap` (default),
     `balanced`, `slow_and_thorough`, or `custom`. The legacy `file_uploads` source type is accepted as

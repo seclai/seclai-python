@@ -23,25 +23,24 @@ class AgentRunRequest:
         input_ (None | str | Unset): Input to provide to the agent upon running for agents with dynamic triggers.
         input_upload_id (None | Unset | UUID): ID of a previously uploaded file (via POST /{agent_id}/upload-input) to
             use as the run input for dynamic-input triggers. Mutually exclusive with ``input_upload_ids`` — use that field
-            to attach multiple files. May be combined with ``input``: the prompt text leads and the file's extracted text
-            follows under a ``# {filename}`` heading.
+            to attach multiple files. May be combined with ``input``: the prompt text leads and the file follows under a ``#
+            {filename}`` heading (before ``Seclai-Version: 2026-10-16``, followed by its extracted text).
 
-            **Attachment visibility:** a step only sees the upload when its template references the input — via
-            ``{{input}}`` / ``{{agent.input}}`` / ``{{step.<id>.input|output}}`` (implicit, all attachments) or the
-            ``{{attachments[…]}}`` family (explicit narrowing — e.g. ``{{attachments[0]}}``, ``{{attachments[*.pdf]}}``).
+            **Which steps receive it:** a step that sends or stores files takes the files its ``attachments`` field selects.
+            An LLM step (``prompt_call``, ``extract_data``, ``evaluate_step``) takes the files its ``attachments`` field
+            names, or else the files its plain-text templates reference: ``{{agent.attachments.<name>}}`` for one attachment
+            the trigger declares, or ``{{agent.input}}`` for every upload unless a template also names an agent attachment.
 
-            **Per-batch validation:** every selector the agent's definition declares must be satisfied or the run is
-            rejected with HTTP 400. Exact-name selectors require that filename to be present; indexed selectors require at
-            least N+1 files; glob patterns require at least one matching filename.
-        input_upload_ids (list[UUID] | None | Unset): IDs of multiple previously uploaded files. Each upload's extracted
-            text is concatenated under a heading; each upload's binary is surfaced as a separate ``MediaAttachment`` so
-            multi-modal prompt steps reason over all files at once. Steps narrow visibility via ``{{attachments[…]}}``
-            selectors (by index, filename, or fnmatch glob). The batch must satisfy every selector the agent declares —
-            exact names, indexed references (length must exceed the highest index), and glob patterns (each pattern needs at
-            least one match). Mismatches return HTTP 400 with the unmet requirements listed.  Mutually exclusive with
-            ``input_upload_id`` (two spellings of the same batch), but may be combined with ``input`` — the prompt text
-            leads and the per-file sections follow, so "a photo plus a sentence about it" needs no synthetic text upload.
-            Max 20 uploads per run.
+            **Per-batch validation:** the batch must fit the trigger's ``accepted_attachments`` — every file fits one
+            declared attachment and each attachment gets at least its ``min`` files — or the run is rejected with HTTP 400.
+        input_upload_ids (list[UUID] | None | Unset): IDs of multiple previously uploaded files. Each upload gets a
+            heading in ``input`` (before ``Seclai-Version: 2026-10-16``, followed by its extracted text); each upload
+            reaches steps as a separate file (before ``Seclai-Version: 2026-10-16``, a text upload in the open ``files``
+            attachment is written into ``input`` instead). Steps choose files as described under ``input_upload_id``. The
+            batch must fit the trigger's ``accepted_attachments``; a mismatch returns HTTP 400 listing what does not fit.
+            Mutually exclusive with ``input_upload_id`` (two spellings of the same batch), but may be combined with
+            ``input`` — the prompt text leads and the per-file sections follow, so "a photo plus a sentence about it" needs
+            no synthetic text upload. Max 20 uploads per run.
         metadata (AgentRunRequestMetadataType0 | None | Unset): Metadata to make available for string substitution
             expressions in agent tasks.
         priority (bool | Unset): If true, the agent run will be treated as priority execution. Default: False.
@@ -49,7 +48,7 @@ class AgentRunRequest:
             are re-resolved server-side from the source run (which must belong to this account and agent) — you do not re-
             upload them. Combine with ``input`` to change the text while keeping the files. A fresh upload batch
             (``input_upload_id(s)``) takes precedence and disables replay. Binaries swept by retention fall back to their
-            extracted text.
+            extracted text. Files the trigger's ``accepted_attachments`` no longer accepts are left out.
     """
 
     input_: None | str | Unset = UNSET

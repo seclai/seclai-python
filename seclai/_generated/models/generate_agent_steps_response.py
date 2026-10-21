@@ -30,7 +30,10 @@ class GenerateAgentStepsResponse:
         steps (list[GenerateAgentStepsResponseStepsItem]): Generated agent steps.
         success (bool): Whether steps were successfully generated.
         agent_config (GenerateAgentStepsResponseAgentConfigType0 | None | Unset): Suggested agent-level configuration,
-            if any.
+            if any. For an email_received agent it may carry `email_run_on_attachment_mismatch`, which the caller applies
+            through the trigger's email-config endpoint. For a dynamic_input or email_received agent it may carry
+            `accepted_attachments`, which the caller passes with the steps to `PUT /agents/{agent_id}/definition` so both
+            save together.
         example_prompts (list[ExamplePrompt] | Unset): Example natural-language prompts that demonstrate the
             capabilities of this AI assistant for the given mode.
         intent_assessment (None | str | Unset): How the assistant interpreted the request: 'clear' when steps were

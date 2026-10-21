@@ -96,8 +96,9 @@ def sync_detailed(
     """Configure an EMAIL_RECEIVED trigger
 
      Set the custom alias, sender allowlist, and inbound-handling flags (`ignore_auto_generated`,
-    `require_sender_auth`, `queue_on_quota`) on an agent's EMAIL_RECEIVED trigger, and return its
-    computed email address(es). Omitted fields are left unchanged.
+    `require_sender_auth`, `queue_on_quota`, `run_on_attachment_mismatch`) on an agent's EMAIL_RECEIVED
+    trigger, and return its computed email address(es). `trigger_id` is the one `GET /agents/{agent_id}`
+    returns. Omitted fields are left unchanged.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token; the trigger must belong to an
     agent in the key's account.
@@ -148,8 +149,9 @@ def sync(
     """Configure an EMAIL_RECEIVED trigger
 
      Set the custom alias, sender allowlist, and inbound-handling flags (`ignore_auto_generated`,
-    `require_sender_auth`, `queue_on_quota`) on an agent's EMAIL_RECEIVED trigger, and return its
-    computed email address(es). Omitted fields are left unchanged.
+    `require_sender_auth`, `queue_on_quota`, `run_on_attachment_mismatch`) on an agent's EMAIL_RECEIVED
+    trigger, and return its computed email address(es). `trigger_id` is the one `GET /agents/{agent_id}`
+    returns. Omitted fields are left unchanged.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token; the trigger must belong to an
     agent in the key's account.
@@ -197,8 +199,9 @@ async def asyncio_detailed(
     """Configure an EMAIL_RECEIVED trigger
 
      Set the custom alias, sender allowlist, and inbound-handling flags (`ignore_auto_generated`,
-    `require_sender_auth`, `queue_on_quota`) on an agent's EMAIL_RECEIVED trigger, and return its
-    computed email address(es). Omitted fields are left unchanged.
+    `require_sender_auth`, `queue_on_quota`, `run_on_attachment_mismatch`) on an agent's EMAIL_RECEIVED
+    trigger, and return its computed email address(es). `trigger_id` is the one `GET /agents/{agent_id}`
+    returns. Omitted fields are left unchanged.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token; the trigger must belong to an
     agent in the key's account.
@@ -247,8 +250,9 @@ async def asyncio(
     """Configure an EMAIL_RECEIVED trigger
 
      Set the custom alias, sender allowlist, and inbound-handling flags (`ignore_auto_generated`,
-    `require_sender_auth`, `queue_on_quota`) on an agent's EMAIL_RECEIVED trigger, and return its
-    computed email address(es). Omitted fields are left unchanged.
+    `require_sender_auth`, `queue_on_quota`, `run_on_attachment_mismatch`) on an agent's EMAIL_RECEIVED
+    trigger, and return its computed email address(es). `trigger_id` is the one `GET /agents/{agent_id}`
+    returns. Omitted fields are left unchanged.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token; the trigger must belong to an
     agent in the key's account.

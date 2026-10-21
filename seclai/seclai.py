@@ -47,7 +47,17 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Any, BinaryIO, Literal, Self, TypedDict, TypeVar, cast, overload
+from typing import (
+    Any,
+    BinaryIO,
+    Literal,
+    NotRequired,
+    Self,
+    TypedDict,
+    TypeVar,
+    cast,
+    overload,
+)
 
 import httpx
 
@@ -88,6 +98,12 @@ class AgentRunStreamRequest(TypedDict):
 
     input: str | None
     metadata: dict[str, JSONValue]
+    #: Receive ``stream_reasoning`` events carrying the model's reasoning, for a
+    #: ``streaming_result`` step whose author enabled ``show_reasoning``.
+    include_reasoning: NotRequired[bool]
+    input_upload_id: NotRequired[str | None]
+    input_upload_ids: NotRequired[list[str] | None]
+    replay_of_run_id: NotRequired[str | None]
 
 
 #: Default API base URL. Override via the ``SECLAI_API_URL`` environment variable.
@@ -1527,6 +1543,147 @@ class Seclai(_SeclaiBase):
             )
         return _expect_model(parsed, ContentEmbeddingsListResponse)
 
+    def list_content_attachments(
+        self,
+        source_connection_content_version: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """List the files attached to a content item.
+
+        An agent's ``write_content_attachment`` step attaches a file, an email
+        source attaches the files sent with a message, an RSS source the feed
+        files chosen in its ``feed_attachments``, and a source that indexes
+        media or document images attaches those images and videos.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (default 20).
+
+        Returns:
+            The attachments under ``data``, each with its indexing status, and
+            ``pagination``.
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/contents/{source_connection_content_version}/attachments",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
+
+    def get_content_attachment(
+        self,
+        source_connection_content_version: str,
+        attachment_id: str,
+        *,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> dict[str, Any]:
+        """Get one file attached to a content item.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            attachment_id: The ``id`` of an entry in
+                :meth:`list_content_attachments`.
+            start: Start offset of the returned text (default 0).
+            end: End offset of the returned text (default 5000).
+
+        Returns:
+            The attachment's indexing status and reason, its metadata, and the
+            text it is indexed by. A file that was not indexed has no text.
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/contents/{source_connection_content_version}/attachments/{attachment_id}",
+                params=_strip_none({"start": start, "end": end}),
+            ),
+        )
+
+    def list_content_attachment_embeddings(
+        self,
+        source_connection_content_version: str,
+        attachment_id: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """List the embeddings an attached file is indexed by.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            attachment_id: Attachment identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (1-100, default 20).
+
+        Returns:
+            A page of embeddings; empty for a file with no completed index.
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/contents/{source_connection_content_version}/attachments/{attachment_id}/embeddings",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
+
+    def download_content_attachment(
+        self,
+        source_connection_content_version: str,
+        attachment_id: str,
+    ) -> httpx.Response:
+        """Download the bytes of a file attached to a content item.
+
+        Returns a **streaming** response. The caller is responsible for
+        consuming and closing the response::
+
+            response = client.download_content_attachment("content", "att")
+            try:
+                for chunk in response.iter_bytes():
+                    f.write(chunk)
+            finally:
+                response.close()
+
+        Images, audio, video, PDF and plain text are served with their own
+        content type; anything else as ``application/octet-stream``. A file
+        withheld by a governance policy, or still being indexed after arriving
+        from outside, answers 403 — the attachment's ``file_withheld`` field
+        says which beforehand.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            attachment_id: Attachment identifier.
+
+        Returns:
+            A streaming ``httpx.Response``. Must be closed by the caller.
+
+        Raises:
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+        """
+        request = self._client.build_request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/file",
+            headers=_merge_request_headers(
+                options=self._options,
+                client_headers=self._client.headers,
+                request_headers=None,
+            ),
+        )
+        response = self._client.send(request, stream=True)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising.
+            response.read()
+            response.close()
+            _raise_for_status(response)
+        return response
+
     def list_sources(
         self,
         *,
@@ -2241,7 +2398,8 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
 
         Returns:
-            The agent's attachment-reference contract.
+            The agent's attachment-reference contract, including the
+            ``accepted_attachments`` its trigger declares.
         """
         return cast(
             dict[str, Any],
@@ -2264,9 +2422,11 @@ class Seclai(_SeclaiBase):
         consuming and closing the response::
 
             response = client.download_agent_run_attachment("run", "att")
-            with response:
+            try:
                 for chunk in response.iter_bytes():
                     f.write(chunk)
+            finally:
+                response.close()
 
         Args:
             run_id: Run identifier.
@@ -2944,7 +3104,8 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             trigger_id: Trigger identifier.
             body: Fields to set (alias, allowed_senders, ignore_auto_generated,
-                require_sender_auth, queue_on_quota). Omitted fields are unchanged.
+                require_sender_auth, queue_on_quota, run_on_attachment_mismatch).
+                Omitted fields are unchanged.
 
         Returns:
             The trigger's resolved email address(es) and config.
@@ -2955,6 +3116,42 @@ class Seclai(_SeclaiBase):
             self.request(
                 "PUT",
                 f"/agents/{agent_id}/triggers/{trigger_id}/email-config",
+                json=body,
+            ),
+        )
+
+    def set_accepted_attachments(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        accepted_attachments: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        """Declare the input attachments a trigger accepts.
+
+        Replaces the trigger's declaration. A run's files are each assigned to
+        one declared attachment before any step runs, and steps reference one as
+        ``{{agent.attachments.<name>}}``. Only ``dynamic_input`` and
+        ``email_received`` triggers take files. The API answers 400 when the
+        agent references an attachment the new declaration leaves out.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+            accepted_attachments: The attachments, each with a ``name`` and
+                optional ``label``, ``content_types``, ``name_pattern``, ``min``
+                and ``max``. ``None`` accepts any files, as one attachment named
+                ``files``. Sent as given, so ``None`` is sent as ``null``.
+
+        Returns:
+            The trigger's ``accepted_attachments`` with its ``agent_id`` and
+            ``trigger_id``.
+        """
+        body: dict[str, Any] = {"accepted_attachments": accepted_attachments}
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
                 json=body,
             ),
         )
@@ -3328,6 +3525,39 @@ class Seclai(_SeclaiBase):
             ),
         )
 
+    def list_email_source_rejections(
+        self,
+        source_id: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """List mail an email content source refused, newest first.
+
+        Each entry says who sent the message and why it was refused, never its
+        subject or body. To accept a refused sender, add its ``from_address`` or
+        that address's domain to the source's ``email_allowed_senders`` — which
+        only helps when ``authenticated`` is true. Requires an account owner or
+        administrator; the API answers 404 for a source that is not an email
+        source.
+
+        Args:
+            source_id: Source identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (1-100, default 20).
+
+        Returns:
+            The refusals under ``data``, and ``pagination``.
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                f"/sources/{source_id}/email-rejections",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
+
     def delete_source(self, source_id: str) -> None:
         """Delete a source.
 
@@ -3524,9 +3754,11 @@ class Seclai(_SeclaiBase):
         consuming and closing the response::
 
             response = client.download_source_export("src", "exp")
-            with response:
+            try:
                 for chunk in response.iter_bytes():
                     f.write(chunk)
+            finally:
+                response.close()
 
         Args:
             source_id: Source identifier.
@@ -5824,6 +6056,148 @@ class AsyncSeclai(_SeclaiBase):
             )
         return _expect_model(parsed, ContentEmbeddingsListResponse)
 
+    async def list_content_attachments(
+        self,
+        source_connection_content_version: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """List the files attached to a content item.
+
+        An agent's ``write_content_attachment`` step attaches a file, an email
+        source attaches the files sent with a message, an RSS source the feed
+        files chosen in its ``feed_attachments``, and a source that indexes
+        media or document images attaches those images and videos.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (default 20).
+
+        Returns:
+            The attachments under ``data``, each with its indexing status, and
+            ``pagination``.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/contents/{source_connection_content_version}/attachments",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
+
+    async def get_content_attachment(
+        self,
+        source_connection_content_version: str,
+        attachment_id: str,
+        *,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> dict[str, Any]:
+        """Get one file attached to a content item.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            attachment_id: The ``id`` of an entry in
+                :meth:`list_content_attachments`.
+            start: Start offset of the returned text (default 0).
+            end: End offset of the returned text (default 5000).
+
+        Returns:
+            The attachment's indexing status and reason, its metadata, and the
+            text it is indexed by. A file that was not indexed has no text.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/contents/{source_connection_content_version}/attachments/{attachment_id}",
+                params=_strip_none({"start": start, "end": end}),
+            ),
+        )
+
+    async def list_content_attachment_embeddings(
+        self,
+        source_connection_content_version: str,
+        attachment_id: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """List the embeddings an attached file is indexed by.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            attachment_id: Attachment identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (1-100, default 20).
+
+        Returns:
+            A page of embeddings; empty for a file with no completed index.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/contents/{source_connection_content_version}/attachments/{attachment_id}/embeddings",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
+
+    async def download_content_attachment(
+        self,
+        source_connection_content_version: str,
+        attachment_id: str,
+    ) -> httpx.Response:
+        """Download the bytes of a file attached to a content item.
+
+        Returns a **streaming** response. The caller is responsible for
+        consuming and closing the response::
+
+            response = await client.download_content_attachment("content", "att")
+            try:
+                async for chunk in response.aiter_bytes():
+                    f.write(chunk)
+            finally:
+                await response.aclose()
+
+        Images, audio, video, PDF and plain text are served with their own
+        content type; anything else as ``application/octet-stream``. A file
+        withheld by a governance policy, or still being indexed after arriving
+        from outside, answers 403 — the attachment's ``file_withheld`` field
+        says which beforehand.
+
+        Args:
+            source_connection_content_version: Content version identifier.
+            attachment_id: Attachment identifier.
+
+        Returns:
+            A streaming ``httpx.Response``. Must be closed by the caller.
+
+        Raises:
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+        """
+        headers = await _merge_request_headers_async(
+            options=self._options,
+            client_headers=self._client.headers,
+            request_headers=None,
+        )
+        request = self._client.build_request(
+            "GET",
+            f"/contents/{source_connection_content_version}/attachments/{attachment_id}/file",
+            headers=headers,
+        )
+        response = await self._client.send(request, stream=True)
+        if response.is_error:
+            # Read the body for a useful error message, then release the
+            # connection before raising.
+            await response.aread()
+            await response.aclose()
+            _raise_for_status(response)
+        return response
+
     async def list_sources(
         self,
         *,
@@ -6550,7 +6924,8 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
 
         Returns:
-            The agent's attachment-reference contract.
+            The agent's attachment-reference contract, including the
+            ``accepted_attachments`` its trigger declares.
         """
         return cast(
             dict[str, Any],
@@ -6573,9 +6948,11 @@ class AsyncSeclai(_SeclaiBase):
         consuming and closing the response::
 
             response = await client.download_agent_run_attachment("run", "att")
-            async with response:
+            try:
                 async for chunk in response.aiter_bytes():
                     f.write(chunk)
+            finally:
+                await response.aclose()
 
         Args:
             run_id: Run identifier.
@@ -7257,7 +7634,8 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             trigger_id: Trigger identifier.
             body: Fields to set (alias, allowed_senders, ignore_auto_generated,
-                require_sender_auth, queue_on_quota). Omitted fields are unchanged.
+                require_sender_auth, queue_on_quota, run_on_attachment_mismatch).
+                Omitted fields are unchanged.
 
         Returns:
             The trigger's resolved email address(es) and config.
@@ -7268,6 +7646,42 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "PUT",
                 f"/agents/{agent_id}/triggers/{trigger_id}/email-config",
+                json=body,
+            ),
+        )
+
+    async def set_accepted_attachments(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        accepted_attachments: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        """Declare the input attachments a trigger accepts.
+
+        Replaces the trigger's declaration. A run's files are each assigned to
+        one declared attachment before any step runs, and steps reference one as
+        ``{{agent.attachments.<name>}}``. Only ``dynamic_input`` and
+        ``email_received`` triggers take files. The API answers 400 when the
+        agent references an attachment the new declaration leaves out.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+            accepted_attachments: The attachments, each with a ``name`` and
+                optional ``label``, ``content_types``, ``name_pattern``, ``min``
+                and ``max``. ``None`` accepts any files, as one attachment named
+                ``files``. Sent as given, so ``None`` is sent as ``null``.
+
+        Returns:
+            The trigger's ``accepted_attachments`` with its ``agent_id`` and
+            ``trigger_id``.
+        """
+        body: dict[str, Any] = {"accepted_attachments": accepted_attachments}
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
                 json=body,
             ),
         )
@@ -7652,6 +8066,39 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
+    async def list_email_source_rejections(
+        self,
+        source_id: str,
+        *,
+        page: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        """List mail an email content source refused, newest first.
+
+        Each entry says who sent the message and why it was refused, never its
+        subject or body. To accept a refused sender, add its ``from_address`` or
+        that address's domain to the source's ``email_allowed_senders`` — which
+        only helps when ``authenticated`` is true. Requires an account owner or
+        administrator; the API answers 404 for a source that is not an email
+        source.
+
+        Args:
+            source_id: Source identifier.
+            page: Page number (1-indexed, default 1).
+            limit: Items per page (1-100, default 20).
+
+        Returns:
+            The refusals under ``data``, and ``pagination``.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                f"/sources/{source_id}/email-rejections",
+                params=_strip_none({"page": page, "limit": limit}),
+            ),
+        )
+
     async def delete_source(self, source_id: str) -> None:
         """Delete a source.
 
@@ -7854,9 +8301,11 @@ class AsyncSeclai(_SeclaiBase):
         consuming and closing the response::
 
             response = await client.download_source_export("src", "exp")
-            async with response:
+            try:
                 async for chunk in response.aiter_bytes():
                     f.write(chunk)
+            finally:
+                await response.aclose()
 
         Args:
             source_id: Source identifier.

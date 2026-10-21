@@ -22,21 +22,25 @@ T = TypeVar("T", bound="AgentRunStreamRequest")
 class AgentRunStreamRequest:
     """
     Attributes:
+        include_reasoning (bool | Unset): Receive `stream_reasoning` events carrying the model's reasoning while it
+            thinks. They are sent only for a `streaming_result` step whose author enabled `show_reasoning`, and never when a
+            governance policy redacts that step. Default: False.
         input_ (None | str | Unset): Input to provide to the agent upon running for agents with dynamic triggers.
         input_upload_id (None | Unset | UUID): ID of a previously uploaded file (via POST /{agent_id}/upload-input) to
             use as the run input for dynamic-input triggers. Mutually exclusive with ``input_upload_ids`` — use that field
-            to attach multiple files. May be combined with ``input``. Subject to the same per-batch attachment-selector
-            validation as the non-streaming endpoint.
+            to attach multiple files. May be combined with ``input``. Must fit the trigger's ``accepted_attachments``, as on
+            the non-streaming endpoint.
         input_upload_ids (list[UUID] | None | Unset): IDs of multiple previously uploaded files. See the non-streaming
-            endpoint for full semantics, including per-batch selector validation (exact names, indexed references, and glob
-            patterns must all be satisfied or the run is rejected with HTTP 400) and combining the batch with ``input``
-            prompt text. Max 20.
+            endpoint for full semantics, including fitting the trigger's ``accepted_attachments`` (else HTTP 400) and
+            combining the batch with ``input`` prompt text. Max 20.
         metadata (AgentRunStreamRequestMetadataType0 | None | Unset): Metadata to make available for string substitution
             expressions in agent tasks.
         replay_of_run_id (None | Unset | UUID): Re-run reusing a prior run's uploaded input files (re-resolved server-
             side from the source run, which must belong to this account and agent). A fresh upload batch takes precedence.
+            Files the trigger's ``accepted_attachments`` no longer accepts are left out.
     """
 
+    include_reasoning: bool | Unset = False
     input_: None | str | Unset = UNSET
     input_upload_id: None | Unset | UUID = UNSET
     input_upload_ids: list[UUID] | None | Unset = UNSET
@@ -48,6 +52,8 @@ class AgentRunStreamRequest:
         from ..models.agent_run_stream_request_metadata_type_0 import (
             AgentRunStreamRequestMetadataType0,
         )
+
+        include_reasoning = self.include_reasoning
 
         input_: None | str | Unset
         if isinstance(self.input_, Unset):
@@ -94,6 +100,8 @@ class AgentRunStreamRequest:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
+        if include_reasoning is not UNSET:
+            field_dict["include_reasoning"] = include_reasoning
         if input_ is not UNSET:
             field_dict["input"] = input_
         if input_upload_id is not UNSET:
@@ -114,6 +122,7 @@ class AgentRunStreamRequest:
         )
 
         d = dict(src_dict)
+        include_reasoning = d.pop("include_reasoning", UNSET)
 
         def _parse_input_(data: object) -> None | str | Unset:
             if data is None:
@@ -202,6 +211,7 @@ class AgentRunStreamRequest:
         replay_of_run_id = _parse_replay_of_run_id(d.pop("replay_of_run_id", UNSET))
 
         agent_run_stream_request = cls(
+            include_reasoning=include_reasoning,
             input_=input_,
             input_upload_id=input_upload_id,
             input_upload_ids=input_upload_ids,

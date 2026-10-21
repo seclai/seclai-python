@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ..models.content_detail_response_metadata_type_0_item import (
         ContentDetailResponseMetadataType0Item,
     )
+    from ..models.skipped_attachment_response import SkippedAttachmentResponse
 
 
 T = TypeVar("T", bound="ContentDetailResponse")
@@ -45,17 +46,22 @@ class ContentDetailResponse:
         text_content_total_length (int): Total length of the text content.
         title (None | str): Title of the content.
         extracted_media_capped (bool | Unset): True when extraction stopped with media still unread, so the item
-            references more media than was indexed and media search will not match anything past the cut. Two causes: a web
-            page that ran out of the budget for fetching remote assets, or a container that could not be read to the end (a
-            truncated or hostile archive). An uploaded document that reads cleanly is never capped, however much media it
-            holds — there is no limit on that. Default: False.
-        extracted_media_count (int | None | Unset): Number of embedded images / videos extracted from inside this item
-            and indexed as their own chunks. There is no limit on this — a document contributes as many as it holds. Null
-            when there is no media record for the item: the extraction pass has not run, does not apply to this container,
-            or found nothing. Treat null as 'unknown', never as zero.
+            references more media than was attached and media search will not match anything past the cut. The cause is a
+            web page that ran out of the budget for fetching remote assets or listed more media than is recorded, or a web
+            page or document that could not be read to the end. Default: False.
+        extracted_media_count (int | None | Unset): Number of images / videos in this web page's main content, or of
+            images inside this PDF or Office document, that were attached to the item on this source; a file over the per-
+            file size limit, listed as a failed attachment, is not counted. Null when there is no media record for the item:
+            the extraction pass has not run, does not apply to this container or this source's settings, or found nothing.
+            Treat null as 'unknown', never as zero.
         extracted_media_limit (int | None | Unset): The bound that was reached, when extracted_media_capped is true and
-            the stop was a bound — a number of fetch attempts, or a number of seconds. Null when extraction was not capped,
-            or when it stopped because the container could not be read rather than because a bound fired.
+            the stop was a bound — a number of fetch attempts, of seconds, of bytes, or of media listed. Null when
+            extraction was not capped, or when it stopped because the container could not be read rather than because a
+            bound fired.
+        skipped_attachments (list[SkippedAttachmentResponse] | Unset): Parts of an email delivered to an email content
+            source that were not stored as attachments of this item, each with the reason: displayed_in_body (an image the
+            message body shows, such as a signature logo), over_cap (beyond the per-message attachment limit), no_filename,
+            or undecodable. size_bytes is null for a part that was never decoded. Empty for every other item.
     """
 
     content_duration: int | None
@@ -83,6 +89,7 @@ class ContentDetailResponse:
     extracted_media_capped: bool | Unset = False
     extracted_media_count: int | None | Unset = UNSET
     extracted_media_limit: int | None | Unset = UNSET
+    skipped_attachments: list[SkippedAttachmentResponse] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -160,6 +167,13 @@ class ContentDetailResponse:
         else:
             extracted_media_limit = self.extracted_media_limit
 
+        skipped_attachments: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.skipped_attachments, Unset):
+            skipped_attachments = []
+            for skipped_attachments_item_data in self.skipped_attachments:
+                skipped_attachments_item = skipped_attachments_item_data.to_dict()
+                skipped_attachments.append(skipped_attachments_item)
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -194,6 +208,8 @@ class ContentDetailResponse:
             field_dict["extracted_media_count"] = extracted_media_count
         if extracted_media_limit is not UNSET:
             field_dict["extracted_media_limit"] = extracted_media_limit
+        if skipped_attachments is not UNSET:
+            field_dict["skipped_attachments"] = skipped_attachments
 
         return field_dict
 
@@ -202,6 +218,7 @@ class ContentDetailResponse:
         from ..models.content_detail_response_metadata_type_0_item import (
             ContentDetailResponseMetadataType0Item,
         )
+        from ..models.skipped_attachment_response import SkippedAttachmentResponse
 
         d = dict(src_dict)
 
@@ -341,6 +358,17 @@ class ContentDetailResponse:
             d.pop("extracted_media_limit", UNSET)
         )
 
+        _skipped_attachments = d.pop("skipped_attachments", UNSET)
+        skipped_attachments: list[SkippedAttachmentResponse] | Unset = UNSET
+        if _skipped_attachments is not UNSET:
+            skipped_attachments = []
+            for skipped_attachments_item_data in _skipped_attachments:
+                skipped_attachments_item = SkippedAttachmentResponse.from_dict(
+                    skipped_attachments_item_data
+                )
+
+                skipped_attachments.append(skipped_attachments_item)
+
         content_detail_response = cls(
             content_duration=content_duration,
             content_duration_display=content_duration_display,
@@ -367,6 +395,7 @@ class ContentDetailResponse:
             extracted_media_capped=extracted_media_capped,
             extracted_media_count=extracted_media_count,
             extracted_media_limit=extracted_media_limit,
+            skipped_attachments=skipped_attachments,
         )
 
         content_detail_response.additional_properties = d

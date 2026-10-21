@@ -238,6 +238,11 @@ client decodes:
 | `2026-09-28` | Agent-definition writes use the current file-list grammar: an omitted `attachments` keeps the stored list and `[]` means no files |
 | `2026-09-30` | A run's and a step's `output`, and a step's `input`, are the text rather than a JSON manifest; files are in `attachments` on every version |
 | `2026-10-03` | A new LLM step written without `attachments` takes its parent's files, and a new retrieval step's matched media are its files |
+| `2026-10-05` | A content item held for review by an Enforce governance policy reports `completed` (with `held_for_review: true`) rather than `failed` |
+| `2026-10-13` | A source's `media_types` refuses an unknown kind, or any kind on a source other than a website or RSS feed, with a 400 |
+| `2026-10-16` | `upload_agent_input()` accepts a file of any type and it is `ready` at once; each upload reaches steps as a separate file and `input` carries only a heading for it |
+| `2026-10-18` | A source's `document_images` defaults to true on a text-only embedder as well |
+| `2026-10-19` | `polling_max_items` is refused with a 400 on any source other than an RSS feed |
 
 ## Resources
 
@@ -339,6 +344,10 @@ for event_type, data in client.run_streaming_agent(
     print(event_type, data)
 ```
 
+Set `include_reasoning=True` in the request to also receive `stream_reasoning`
+events with the model's reasoning, for a `streaming_result` step whose author
+enabled `show_reasoning`.
+
 Async:
 
 ```python
@@ -369,7 +378,19 @@ result = client.run_agent_and_poll(
 # Discover which files (if any) the agent expects before staging uploads
 refs = client.get_agent_attachment_references("agent_id")
 # refs["requires_uploads"] -> bool; refs["agent"] lists the exact_names /
-# indexes_max / patterns a run-time upload batch must satisfy.
+# indexes_max / patterns a run-time upload batch must satisfy, and
+# refs["accepted_attachments"] the attachments the trigger declares.
+
+# Declare the attachments a trigger accepts; steps reference each one as
+# {{agent.attachments.<name>}}. None accepts any files as one attachment, "files".
+client.set_accepted_attachments(
+    "agent_id",
+    "trigger_id",
+    [
+        {"name": "invoice", "content_types": ["application/pdf"], "min": 1, "max": 1},
+        {"name": "photos", "content_types": ["image/*"], "name_pattern": "*.jpg"},
+    ],
+)
 
 upload = client.upload_agent_input("agent_id", file=b"data", file_name="input.pdf")
 status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
@@ -381,9 +402,11 @@ status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
 # Download a file emitted by a step in an agent run. attachment_id is the
 # URL-safe-base64 storage_key surfaced in run output manifests / webhooks.
 response = client.download_agent_run_attachment("run_id", "attachment_id")  # raw httpx.Response
-with response:
+try:
     for chunk in response.iter_bytes():
         ...  # write to disk
+finally:
+    response.close()
 ```
 
 ### Agent AI assistant
@@ -485,6 +508,15 @@ batch = client.list_source_contents(
 one = client.get_source_content_status("source_id", "cv_1")
 ```
 
+Mail an email source refused, newest first — who sent it and why, never the
+message itself. Requires an account owner or administrator:
+
+```python
+refused = client.list_email_source_rejections("source_id", page=1, limit=20)
+for r in refused["data"]:
+    print(r["from_address"], r["reason"], r["authenticated"])
+```
+
 ### Cloud drives
 
 ```python
@@ -568,6 +600,23 @@ client.cancel_source_embedding_migration("source_id")
 detail = client.get_content_detail("source_connection_content_version")
 embeddings = client.list_content_embeddings("source_connection_content_version")
 client.delete_content("source_connection_content_version")
+
+# Files attached to a content item: email attachments, feed files, page media
+# and the images inside documents, each with its indexing status
+attachments = client.list_content_attachments("source_connection_content_version")
+att_id = attachments["data"][0]["id"]
+att = client.get_content_attachment("source_connection_content_version", att_id)
+att_embeddings = client.list_content_attachment_embeddings(
+    "source_connection_content_version", att_id
+)
+response = client.download_content_attachment(
+    "source_connection_content_version", att_id
+)  # raw streaming httpx.Response
+try:
+    for chunk in response.iter_bytes():
+        ...  # write to disk
+finally:
+    response.close()
 ```
 
 ### Solutions
@@ -648,6 +697,7 @@ config = client.set_email_trigger_config(
         "ignore_auto_generated": True,   # drop auto-replies to prevent loops
         "require_sender_auth": True,     # require SPF or DMARC
         "queue_on_quota": False,         # park over-rate mail instead of failing
+        "run_on_attachment_mismatch": False,  # run even if attachments don't fit
     },
 )
 print(config["email_addresses"])

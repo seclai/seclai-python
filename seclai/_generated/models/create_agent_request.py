@@ -9,6 +9,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.accepted_attachment_slot import AcceptedAttachmentSlot
     from ..models.create_agent_request_agent_definition_type_0 import (
         CreateAgentRequestAgentDefinitionType0,
     )
@@ -25,6 +26,10 @@ class CreateAgentRequest:
     """
     Attributes:
         name (str): Name for the new agent.
+        accepted_attachments (list[AcceptedAttachmentSlot] | None | Unset): The input attachments the trigger accepts.
+            Omitted, the ``agent_definition`` trigger's declaration is kept when the export carries one and both trigger
+            types take files; otherwise a dynamic_input or email_received trigger accepts any files (one attachment named
+            ``files``), and any other trigger none.
         agent_definition (CreateAgentRequestAgentDefinitionType0 | None | Unset): Optional payload in the same format
             produced by GET /agents/{id}/export. When provided, replaces any template-derived workflow and pre-fills
             metadata/trigger fields the request does not specify explicitly. Validation errors include line/column
@@ -41,6 +46,7 @@ class CreateAgentRequest:
     """
 
     name: str
+    accepted_attachments: list[AcceptedAttachmentSlot] | None | Unset = UNSET
     agent_definition: CreateAgentRequestAgentDefinitionType0 | None | Unset = UNSET
     agent_template: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
@@ -57,6 +63,20 @@ class CreateAgentRequest:
         )
 
         name = self.name
+
+        accepted_attachments: list[dict[str, Any]] | None | Unset
+        if isinstance(self.accepted_attachments, Unset):
+            accepted_attachments = UNSET
+        elif isinstance(self.accepted_attachments, list):
+            accepted_attachments = []
+            for accepted_attachments_type_0_item_data in self.accepted_attachments:
+                accepted_attachments_type_0_item = (
+                    accepted_attachments_type_0_item_data.to_dict()
+                )
+                accepted_attachments.append(accepted_attachments_type_0_item)
+
+        else:
+            accepted_attachments = self.accepted_attachments
 
         agent_definition: dict[str, Any] | None | Unset
         if isinstance(self.agent_definition, Unset):
@@ -95,6 +115,8 @@ class CreateAgentRequest:
                 "name": name,
             }
         )
+        if accepted_attachments is not UNSET:
+            field_dict["accepted_attachments"] = accepted_attachments
         if agent_definition is not UNSET:
             field_dict["agent_definition"] = agent_definition
         if agent_template is not UNSET:
@@ -110,6 +132,7 @@ class CreateAgentRequest:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.accepted_attachment_slot import AcceptedAttachmentSlot
         from ..models.create_agent_request_agent_definition_type_0 import (
             CreateAgentRequestAgentDefinitionType0,
         )
@@ -119,6 +142,36 @@ class CreateAgentRequest:
 
         d = dict(src_dict)
         name = d.pop("name")
+
+        def _parse_accepted_attachments(
+            data: object,
+        ) -> list[AcceptedAttachmentSlot] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                accepted_attachments_type_0 = []
+                _accepted_attachments_type_0 = data
+                for (
+                    accepted_attachments_type_0_item_data
+                ) in _accepted_attachments_type_0:
+                    accepted_attachments_type_0_item = AcceptedAttachmentSlot.from_dict(
+                        accepted_attachments_type_0_item_data
+                    )
+
+                    accepted_attachments_type_0.append(accepted_attachments_type_0_item)
+
+                return accepted_attachments_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[AcceptedAttachmentSlot] | None | Unset, data)
+
+        accepted_attachments = _parse_accepted_attachments(
+            d.pop("accepted_attachments", UNSET)
+        )
 
         def _parse_agent_definition(
             data: object,
@@ -182,6 +235,7 @@ class CreateAgentRequest:
 
         create_agent_request = cls(
             name=name,
+            accepted_attachments=accepted_attachments,
             agent_definition=agent_definition,
             agent_template=agent_template,
             description=description,

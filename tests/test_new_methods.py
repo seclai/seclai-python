@@ -4197,3 +4197,267 @@ class TestPaginateShapes:
             async for item in client.paginate("GET", "/agents/a1/evaluation-criteria")
         ]
         assert items == [{"id": "ec1"}]
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-19: content attachments, accepted attachments, email-source refusals
+# ---------------------------------------------------------------------------
+
+_SLOTS = [
+    {"name": "invoice", "content_types": ["application/pdf"], "min": 1, "max": 1},
+    {"name": "photos", "content_types": ["image/*"], "name_pattern": "*.jpg"},
+]
+
+# (method, args, kwargs, verb, path, query, body). One table drives the sync and
+# async tests, so the two classes cannot be asserted against different
+# expectations.
+_SYNC_2026_10_19_CALLS: list[
+    tuple[str, tuple[Any, ...], dict[str, Any], str, str, list[tuple[str, str]], Any]
+] = [
+    (
+        "list_content_attachments",
+        ("cv1",),
+        {"page": 2, "limit": 5},
+        "GET",
+        "/contents/cv1/attachments",
+        [("page", "2"), ("limit", "5")],
+        None,
+    ),
+    (
+        "list_content_attachments",
+        ("cv1",),
+        {},
+        "GET",
+        "/contents/cv1/attachments",
+        [],
+        None,
+    ),
+    (
+        "get_content_attachment",
+        ("cv1", "att1"),
+        {"start": 100, "end": 200},
+        "GET",
+        "/contents/cv1/attachments/att1",
+        [("start", "100"), ("end", "200")],
+        None,
+    ),
+    (
+        "get_content_attachment",
+        ("cv1", "att1"),
+        {},
+        "GET",
+        "/contents/cv1/attachments/att1",
+        [],
+        None,
+    ),
+    (
+        "list_content_attachment_embeddings",
+        ("cv1", "att1"),
+        {"page": 3, "limit": 50},
+        "GET",
+        "/contents/cv1/attachments/att1/embeddings",
+        [("page", "3"), ("limit", "50")],
+        None,
+    ),
+    (
+        "list_content_attachment_embeddings",
+        ("cv1", "att1"),
+        {},
+        "GET",
+        "/contents/cv1/attachments/att1/embeddings",
+        [],
+        None,
+    ),
+    (
+        "set_accepted_attachments",
+        ("a1", "t1", _SLOTS),
+        {},
+        "PUT",
+        "/agents/a1/triggers/t1/accepted-attachments",
+        [],
+        {"accepted_attachments": _SLOTS},
+    ),
+    (
+        # None means "accept any files" and must reach the API as an explicit null.
+        "set_accepted_attachments",
+        ("a1", "t1", None),
+        {},
+        "PUT",
+        "/agents/a1/triggers/t1/accepted-attachments",
+        [],
+        {"accepted_attachments": None},
+    ),
+    (
+        "list_email_source_rejections",
+        ("s1",),
+        {"page": 2, "limit": 100},
+        "GET",
+        "/sources/s1/email-rejections",
+        [("page", "2"), ("limit", "100")],
+        None,
+    ),
+    (
+        "list_email_source_rejections",
+        ("s1",),
+        {},
+        "GET",
+        "/sources/s1/email-rejections",
+        [],
+        None,
+    ),
+]
+
+_ENVELOPE_BODY = {"data": [{"id": "x1"}], "pagination": _ENVELOPE_PAGINATION}
+
+
+class TestAttachmentsAndEmailSourceRejections:
+    @pytest.mark.parametrize(
+        ("name", "args", "kwargs", "verb", "path", "query", "body"),
+        _SYNC_2026_10_19_CALLS,
+    )
+    def test_request(
+        self,
+        name: str,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        verb: str,
+        path: str,
+        query: list[tuple[str, str]],
+        body: Any,
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _sync_client(_recording_handler(seen, _ENVELOPE_BODY))
+        result = getattr(client, name)(*args, **kwargs)
+        assert seen == {"method": verb, "path": path, "query": query, "body": body}
+        assert result == _ENVELOPE_BODY
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("name", "args", "kwargs", "verb", "path", "query", "body"),
+        _SYNC_2026_10_19_CALLS,
+    )
+    async def test_request_async(
+        self,
+        name: str,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+        verb: str,
+        path: str,
+        query: list[tuple[str, str]],
+        body: Any,
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _async_client(_recording_handler(seen, _ENVELOPE_BODY))
+        result = await getattr(client, name)(*args, **kwargs)
+        assert seen == {"method": verb, "path": path, "query": query, "body": body}
+        assert result == _ENVELOPE_BODY
+
+    def test_download_content_attachment(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["query"] = list(req.url.params.multi_items())
+            return httpx.Response(
+                status_code=200,
+                content=b"%PDF-bytes",
+                headers={"content-type": "application/pdf"},
+            )
+
+        client = _sync_client(handler)
+        resp = client.download_content_attachment("cv1", "att1")
+        assert seen == {
+            "method": "GET",
+            "path": "/contents/cv1/attachments/att1/file",
+            "query": [],
+        }
+        try:
+            assert resp.read() == b"%PDF-bytes"
+        finally:
+            resp.close()
+        assert resp.headers["content-type"] == "application/pdf"
+
+    def test_download_content_attachment_withheld_closes_stream(self) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=403, json={"detail": "withheld"})
+            captured["resp"] = resp
+            return resp
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            client.download_content_attachment("cv1", "att1")
+        assert exc.value.status_code == 403
+        assert "withheld" in (exc.value.response_text or "")
+        assert captured["resp"].is_closed
+
+    @pytest.mark.asyncio
+    async def test_async_download_content_attachment(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            return httpx.Response(status_code=200, content=b"img")
+
+        client = _async_client(handler)
+        resp = await client.download_content_attachment("cv1", "att1")
+        assert seen == {
+            "method": "GET",
+            "path": "/contents/cv1/attachments/att1/file",
+        }
+        await resp.aread()
+        assert resp.content == b"img"
+        await resp.aclose()
+
+    @pytest.mark.asyncio
+    async def test_async_download_content_attachment_error_closes_stream(
+        self,
+    ) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        captured: dict[str, httpx.Response] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            resp = httpx.Response(status_code=404, content=b"not found")
+            captured["resp"] = resp
+            return resp
+
+        client = _async_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            await client.download_content_attachment("cv1", "missing")
+        assert exc.value.status_code == 404
+        assert captured["resp"].is_closed
+
+    def test_stream_request_sends_include_reasoning(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return httpx.Response(
+                status_code=200,
+                content=b'event: stream_reasoning\ndata: {"text": "hmm"}\n\n'
+                b'event: done\ndata: {"run_id": "r1"}\n\n',
+                headers={"content-type": "text/event-stream"},
+            )
+
+        client = _sync_client(handler)
+        events = list(
+            client.run_streaming_agent(
+                "a1",
+                AgentRunStreamRequest(input="hi", metadata={}, include_reasoning=True),
+            )
+        )
+        assert seen["body"] == {
+            "input": "hi",
+            "metadata": {},
+            "include_reasoning": True,
+        }
+        assert events == [
+            ("stream_reasoning", {"text": "hmm"}),
+            ("done", {"run_id": "r1"}),
+        ]

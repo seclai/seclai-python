@@ -34,6 +34,9 @@ class SetEmailTriggerConfigRequest:
             require_sender_auth (bool | None | Unset): When true (default for new triggers), the envelope sender must pass
                 SPF or DMARC even on an open inbox (no allowlist); unauthenticated, spoofable mail is rejected. Set false to
                 accept fully unauthenticated mail on an open inbox.
+            run_on_attachment_mismatch (bool | None | Unset): When true (default false), an email whose attachments don't
+                fit what the agent expects still runs: files the agent can't take are left out and the problems are listed in
+                the `email_attachment_issues` run metadata. When false, the run fails.
     """
 
     alias: None | str | Unset = UNSET
@@ -41,6 +44,7 @@ class SetEmailTriggerConfigRequest:
     ignore_auto_generated: bool | None | Unset = UNSET
     queue_on_quota: bool | None | Unset = UNSET
     require_sender_auth: bool | None | Unset = UNSET
+    run_on_attachment_mismatch: bool | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -77,6 +81,12 @@ class SetEmailTriggerConfigRequest:
         else:
             require_sender_auth = self.require_sender_auth
 
+        run_on_attachment_mismatch: bool | None | Unset
+        if isinstance(self.run_on_attachment_mismatch, Unset):
+            run_on_attachment_mismatch = UNSET
+        else:
+            run_on_attachment_mismatch = self.run_on_attachment_mismatch
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -90,6 +100,8 @@ class SetEmailTriggerConfigRequest:
             field_dict["queue_on_quota"] = queue_on_quota
         if require_sender_auth is not UNSET:
             field_dict["require_sender_auth"] = require_sender_auth
+        if run_on_attachment_mismatch is not UNSET:
+            field_dict["run_on_attachment_mismatch"] = run_on_attachment_mismatch
 
         return field_dict
 
@@ -154,12 +166,24 @@ class SetEmailTriggerConfigRequest:
             d.pop("require_sender_auth", UNSET)
         )
 
+        def _parse_run_on_attachment_mismatch(data: object) -> bool | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(bool | None | Unset, data)
+
+        run_on_attachment_mismatch = _parse_run_on_attachment_mismatch(
+            d.pop("run_on_attachment_mismatch", UNSET)
+        )
+
         set_email_trigger_config_request = cls(
             alias=alias,
             allowed_senders=allowed_senders,
             ignore_auto_generated=ignore_auto_generated,
             queue_on_quota=queue_on_quota,
             require_sender_auth=require_sender_auth,
+            run_on_attachment_mismatch=run_on_attachment_mismatch,
         )
 
         set_email_trigger_config_request.additional_properties = d

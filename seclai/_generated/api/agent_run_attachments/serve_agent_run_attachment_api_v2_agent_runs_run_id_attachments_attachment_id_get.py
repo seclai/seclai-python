@@ -98,9 +98,9 @@ def sync_detailed(
 ) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
     """Download an agent-run attachment
 
-     Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
-    storage key, which webhook and email links carry.
+     Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
+    ``attachment_id`` is the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-
+    safe-base64-encoded storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -155,9 +155,9 @@ def sync(
 ) -> File | HTTPValidationError | ServiceUnavailableError | None:
     """Download an agent-run attachment
 
-     Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
-    storage key, which webhook and email links carry.
+     Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
+    ``attachment_id`` is the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-
+    safe-base64-encoded storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -207,9 +207,9 @@ async def asyncio_detailed(
 ) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
     """Download an agent-run attachment
 
-     Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
-    storage key, which webhook and email links carry.
+     Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
+    ``attachment_id`` is the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-
+    safe-base64-encoded storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -262,9 +262,9 @@ async def asyncio(
 ) -> File | HTTPValidationError | ServiceUnavailableError | None:
     """Download an agent-run attachment
 
-     Streams the bytes of an attachment emitted by a step in the given agent run.  ``attachment_id`` is
-    the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-safe-base64-encoded
-    storage key, which webhook and email links carry.
+     Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
+    ``attachment_id`` is the ``id`` of an entry in the run's or a step's ``attachments``, or the URL-
+    safe-base64-encoded storage key, which webhook and email links carry.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.

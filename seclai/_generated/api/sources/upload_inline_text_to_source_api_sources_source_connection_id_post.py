@@ -118,6 +118,8 @@ def sync_detailed(
     a whole batch, to follow each item through to `completed` or `failed`.
     - On those status endpoints `source_connection_content_version_id` stays `null` until the item
     finishes indexing; that is the id `GET /contents/{id}` takes.
+    - An item that reports `held_for_review: true` was blocked by an Enforce governance policy. It is
+    not in the source and its id stays `null` unless a reviewer releases it, so stop polling.
 
     Args:
         source_connection_id (UUID):
@@ -189,6 +191,8 @@ def sync(
     a whole batch, to follow each item through to `completed` or `failed`.
     - On those status endpoints `source_connection_content_version_id` stays `null` until the item
     finishes indexing; that is the id `GET /contents/{id}` takes.
+    - An item that reports `held_for_review: true` was blocked by an Enforce governance policy. It is
+    not in the source and its id stays `null` unless a reviewer releases it, so stop polling.
 
     Args:
         source_connection_id (UUID):
@@ -255,6 +259,8 @@ async def asyncio_detailed(
     a whole batch, to follow each item through to `completed` or `failed`.
     - On those status endpoints `source_connection_content_version_id` stays `null` until the item
     finishes indexing; that is the id `GET /contents/{id}` takes.
+    - An item that reports `held_for_review: true` was blocked by an Enforce governance policy. It is
+    not in the source and its id stays `null` unless a reviewer releases it, so stop polling.
 
     Args:
         source_connection_id (UUID):
@@ -324,6 +330,8 @@ async def asyncio(
     a whole batch, to follow each item through to `completed` or `failed`.
     - On those status endpoints `source_connection_content_version_id` stays `null` until the item
     finishes indexing; that is the id `GET /contents/{id}` takes.
+    - An item that reports `held_for_review: true` was blocked by an Enforce governance policy. It is
+    not in the source and its id stays `null` unless a reviewer releases it, so stop polling.
 
     Args:
         source_connection_id (UUID):
