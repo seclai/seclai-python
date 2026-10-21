@@ -4607,11 +4607,12 @@ class TestStreamAndWaitDropsReasoning:
             )
 
         client = _async_client(handler)
-        run = await client.run_streaming_agent_and_wait(
-            "a1", AgentRunStreamRequest(input="hi", include_reasoning=True)
-        )
+        body = AgentRunStreamRequest(input="hi", include_reasoning=True)
+        run = await client.run_streaming_agent_and_wait("a1", body)
         assert run.run_id == "r1"
         assert seen["body"] == {"input": "hi"}
+        # The caller's dict is left as given.
+        assert body["include_reasoning"] is True
 
 
 class _BrokenStream(httpx.SyncByteStream):

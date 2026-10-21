@@ -532,7 +532,6 @@ message itself. Requires an account owner or administrator:
 ```python
 refused = client.list_email_source_rejections("source_id", page=1, limit=20)
 for r in refused.data:  # EmailSourceRejectionListResponse
-    # from_address is Unset when the mail had no parseable From header.
     sender = r.from_address if isinstance(r.from_address, str) else None
     print(sender, r.reason, r.authenticated)
 ```
@@ -639,13 +638,7 @@ response = client.download_content_attachment(
     "source_connection_content_version", att.id
 )  # raw streaming httpx.Response; 403 if withheld, 402 with no credits left
 try:
-    # The key comes from a third party (an email or feed file name), so never
-    # use it as a path as is: keep only its final component, splitting on
-    # either slash, and fall back to the id for an empty, "." or ".." name.
-    name = att.key.replace("\\", "/").rsplit("/", 1)[-1]
-    if name in ("", ".", ".."):
-        name = att.id
-    with open(name, "wb") as f:
+    with open(f"{att.id}.bin", "wb") as f:
         for chunk in response.iter_bytes():
             f.write(chunk)
 finally:

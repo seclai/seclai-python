@@ -337,12 +337,6 @@ def _parse_model(payload: object, model: type[_ModelT]) -> _ModelT:
     A body that is not a JSON object, or does not fit the model, raises
     `SeclaiError` rather than the ``KeyError``/``TypeError`` the generated
     ``from_dict`` would, so ``except SeclaiError`` handlers still catch it.
-
-    The methods that call this send through ``request`` rather than a generated
-    ``sync_detailed``: that route applies only an explicitly passed client
-    timeout (kept so existing calls on it are not cut off at 30 seconds), and
-    its ``_parse_response`` calls ``from_dict`` unguarded, so a bad 200 body
-    there raises ``KeyError``/``TypeError`` before ``_expect_model`` runs.
     """
     if not isinstance(payload, dict):
         raise SeclaiError(
