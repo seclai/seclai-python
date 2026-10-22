@@ -90,12 +90,11 @@ def sync_detailed(
 ]:
     """Get agent attachment-reference contract
 
-     Return the static attachment-reference contract for an agent — what files the agent's definition
-    expects on a run.
+     Return the input attachments the agent's dynamic_input trigger declares — the files a run may carry.
 
     Call this BEFORE staging uploads so you know whether the agent accepts files at all
-    (``requires_uploads``), and which specific filenames/indexes/patterns the templates reference.
-    Mismatched batches are rejected at run time with HTTP 400.
+    (``requires_uploads``), and which attachments its trigger declares (``accepted_attachments``).
+    Batches that do not fit them are rejected at run time with HTTP 400.
 
     Args:
         agent_id (str):
@@ -137,12 +136,11 @@ def sync(
 ):
     """Get agent attachment-reference contract
 
-     Return the static attachment-reference contract for an agent — what files the agent's definition
-    expects on a run.
+     Return the input attachments the agent's dynamic_input trigger declares — the files a run may carry.
 
     Call this BEFORE staging uploads so you know whether the agent accepts files at all
-    (``requires_uploads``), and which specific filenames/indexes/patterns the templates reference.
-    Mismatched batches are rejected at run time with HTTP 400.
+    (``requires_uploads``), and which attachments its trigger declares (``accepted_attachments``).
+    Batches that do not fit them are rejected at run time with HTTP 400.
 
     Args:
         agent_id (str):
@@ -176,12 +174,11 @@ async def asyncio_detailed(
 ]:
     """Get agent attachment-reference contract
 
-     Return the static attachment-reference contract for an agent — what files the agent's definition
-    expects on a run.
+     Return the input attachments the agent's dynamic_input trigger declares — the files a run may carry.
 
     Call this BEFORE staging uploads so you know whether the agent accepts files at all
-    (``requires_uploads``), and which specific filenames/indexes/patterns the templates reference.
-    Mismatched batches are rejected at run time with HTTP 400.
+    (``requires_uploads``), and which attachments its trigger declares (``accepted_attachments``).
+    Batches that do not fit them are rejected at run time with HTTP 400.
 
     Args:
         agent_id (str):
@@ -221,12 +218,11 @@ async def asyncio(
 ):
     """Get agent attachment-reference contract
 
-     Return the static attachment-reference contract for an agent — what files the agent's definition
-    expects on a run.
+     Return the input attachments the agent's dynamic_input trigger declares — the files a run may carry.
 
     Call this BEFORE staging uploads so you know whether the agent accepts files at all
-    (``requires_uploads``), and which specific filenames/indexes/patterns the templates reference.
-    Mismatched batches are rejected at run time with HTTP 400.
+    (``requires_uploads``), and which attachments its trigger declares (``accepted_attachments``).
+    Batches that do not fit them are rejected at run time with HTTP 400.
 
     Args:
         agent_id (str):

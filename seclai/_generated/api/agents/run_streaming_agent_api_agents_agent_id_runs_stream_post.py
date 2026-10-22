@@ -111,6 +111,9 @@ def sync_detailed(
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
     - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
     tokens (with a `token` field) and a `stream_end` event signals completion.
+    - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
+    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    Reasoning is never part of `output`.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -188,6 +191,9 @@ def sync(
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
     - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
     tokens (with a `token` field) and a `stream_end` event signals completion.
+    - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
+    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    Reasoning is never part of `output`.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -256,6 +262,9 @@ async def asyncio_detailed(
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
     - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
     tokens (with a `token` field) and a `stream_end` event signals completion.
+    - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
+    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    Reasoning is never part of `output`.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -331,6 +340,9 @@ async def asyncio(
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
     - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
     tokens (with a `token` field) and a `stream_end` event signals completion.
+    - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
+    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    Reasoning is never part of `output`.
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 

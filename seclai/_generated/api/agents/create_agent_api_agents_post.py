@@ -113,7 +113,8 @@ def sync_detailed(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
+    `trigger_id` this response returns.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
@@ -178,7 +179,8 @@ def sync(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
+    `trigger_id` this response returns.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
@@ -237,7 +239,8 @@ async def asyncio_detailed(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
+    `trigger_id` this response returns.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
@@ -300,7 +303,8 @@ async def asyncio(
     - `schedule`: triggered on a schedule
     - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
-    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`.
+    the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
+    `trigger_id` this response returns.
 
     Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
     `content_change_notifier`, `scheduled_report`, `webhook_pipeline`

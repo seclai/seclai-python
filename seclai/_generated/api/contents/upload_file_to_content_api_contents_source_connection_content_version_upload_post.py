@@ -103,22 +103,31 @@ def sync_detailed(
     before it is stored).
 
     **Supported MIME types:**
+    - `application/atom+xml`
     - `application/epub+zip`
     - `application/json`
     - `application/pdf`
+    - `application/rss+xml`
+    - `application/rtf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
     - `application/vnd.ms-powerpoint`
     - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
     - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
     - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/x-ipynb+json`
+    - `application/xhtml+xml`
     - `application/xml`
     - `application/zip`
+    - `audio/aac`
+    - `audio/amr`
     - `audio/flac`
     - `audio/mp4`
     - `audio/mpeg`
     - `audio/ogg`
+    - `audio/opus`
     - `audio/wav`
+    - `audio/webm`
     - `image/bmp`
     - `image/gif`
     - `image/jpeg`
@@ -126,14 +135,43 @@ def sync_detailed(
     - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
+    - `message/rfc822`
+    - `text/calendar`
     - `text/csv`
     - `text/html`
+    - `text/javascript`
     - `text/markdown`
     - `text/plain`
+    - `text/tab-separated-values`
+    - `text/vcard`
+    - `text/vtt`
+    - `text/x-c`
+    - `text/x-c++`
+    - `text/x-csharp`
+    - `text/x-go`
+    - `text/x-ini`
+    - `text/x-java`
+    - `text/x-log`
     - `text/x-markdown`
+    - `text/x-php`
+    - `text/x-python`
+    - `text/x-ruby`
+    - `text/x-rust`
+    - `text/x-shellscript`
+    - `text/x-sql`
+    - `text/x-subrip`
+    - `text/x-tex`
+    - `text/x-toml`
+    - `text/x-typescript`
     - `text/xml`
+    - `text/yaml`
+    - `video/3gpp`
+    - `video/mp2t`
     - `video/mp4`
+    - `video/mpeg`
     - `video/quicktime`
+    - `video/webm`
+    - `video/x-matroska`
     - `video/x-msvideo`
 
     Notes:
@@ -202,22 +240,31 @@ def sync(
     before it is stored).
 
     **Supported MIME types:**
+    - `application/atom+xml`
     - `application/epub+zip`
     - `application/json`
     - `application/pdf`
+    - `application/rss+xml`
+    - `application/rtf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
     - `application/vnd.ms-powerpoint`
     - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
     - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
     - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/x-ipynb+json`
+    - `application/xhtml+xml`
     - `application/xml`
     - `application/zip`
+    - `audio/aac`
+    - `audio/amr`
     - `audio/flac`
     - `audio/mp4`
     - `audio/mpeg`
     - `audio/ogg`
+    - `audio/opus`
     - `audio/wav`
+    - `audio/webm`
     - `image/bmp`
     - `image/gif`
     - `image/jpeg`
@@ -225,14 +272,43 @@ def sync(
     - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
+    - `message/rfc822`
+    - `text/calendar`
     - `text/csv`
     - `text/html`
+    - `text/javascript`
     - `text/markdown`
     - `text/plain`
+    - `text/tab-separated-values`
+    - `text/vcard`
+    - `text/vtt`
+    - `text/x-c`
+    - `text/x-c++`
+    - `text/x-csharp`
+    - `text/x-go`
+    - `text/x-ini`
+    - `text/x-java`
+    - `text/x-log`
     - `text/x-markdown`
+    - `text/x-php`
+    - `text/x-python`
+    - `text/x-ruby`
+    - `text/x-rust`
+    - `text/x-shellscript`
+    - `text/x-sql`
+    - `text/x-subrip`
+    - `text/x-tex`
+    - `text/x-toml`
+    - `text/x-typescript`
     - `text/xml`
+    - `text/yaml`
+    - `video/3gpp`
+    - `video/mp2t`
     - `video/mp4`
+    - `video/mpeg`
     - `video/quicktime`
+    - `video/webm`
+    - `video/x-matroska`
     - `video/x-msvideo`
 
     Notes:
@@ -296,22 +372,31 @@ async def asyncio_detailed(
     before it is stored).
 
     **Supported MIME types:**
+    - `application/atom+xml`
     - `application/epub+zip`
     - `application/json`
     - `application/pdf`
+    - `application/rss+xml`
+    - `application/rtf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
     - `application/vnd.ms-powerpoint`
     - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
     - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
     - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/x-ipynb+json`
+    - `application/xhtml+xml`
     - `application/xml`
     - `application/zip`
+    - `audio/aac`
+    - `audio/amr`
     - `audio/flac`
     - `audio/mp4`
     - `audio/mpeg`
     - `audio/ogg`
+    - `audio/opus`
     - `audio/wav`
+    - `audio/webm`
     - `image/bmp`
     - `image/gif`
     - `image/jpeg`
@@ -319,14 +404,43 @@ async def asyncio_detailed(
     - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
+    - `message/rfc822`
+    - `text/calendar`
     - `text/csv`
     - `text/html`
+    - `text/javascript`
     - `text/markdown`
     - `text/plain`
+    - `text/tab-separated-values`
+    - `text/vcard`
+    - `text/vtt`
+    - `text/x-c`
+    - `text/x-c++`
+    - `text/x-csharp`
+    - `text/x-go`
+    - `text/x-ini`
+    - `text/x-java`
+    - `text/x-log`
     - `text/x-markdown`
+    - `text/x-php`
+    - `text/x-python`
+    - `text/x-ruby`
+    - `text/x-rust`
+    - `text/x-shellscript`
+    - `text/x-sql`
+    - `text/x-subrip`
+    - `text/x-tex`
+    - `text/x-toml`
+    - `text/x-typescript`
     - `text/xml`
+    - `text/yaml`
+    - `video/3gpp`
+    - `video/mp2t`
     - `video/mp4`
+    - `video/mpeg`
     - `video/quicktime`
+    - `video/webm`
+    - `video/x-matroska`
     - `video/x-msvideo`
 
     Notes:
@@ -393,22 +507,31 @@ async def asyncio(
     before it is stored).
 
     **Supported MIME types:**
+    - `application/atom+xml`
     - `application/epub+zip`
     - `application/json`
     - `application/pdf`
+    - `application/rss+xml`
+    - `application/rtf`
     - `application/vnd.ms-excel`
     - `application/vnd.ms-outlook`
     - `application/vnd.ms-powerpoint`
     - `application/vnd.openxmlformats-officedocument.presentationml.presentation`
     - `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
     - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+    - `application/x-ipynb+json`
+    - `application/xhtml+xml`
     - `application/xml`
     - `application/zip`
+    - `audio/aac`
+    - `audio/amr`
     - `audio/flac`
     - `audio/mp4`
     - `audio/mpeg`
     - `audio/ogg`
+    - `audio/opus`
     - `audio/wav`
+    - `audio/webm`
     - `image/bmp`
     - `image/gif`
     - `image/jpeg`
@@ -416,14 +539,43 @@ async def asyncio(
     - `image/svg+xml`
     - `image/tiff`
     - `image/webp`
+    - `message/rfc822`
+    - `text/calendar`
     - `text/csv`
     - `text/html`
+    - `text/javascript`
     - `text/markdown`
     - `text/plain`
+    - `text/tab-separated-values`
+    - `text/vcard`
+    - `text/vtt`
+    - `text/x-c`
+    - `text/x-c++`
+    - `text/x-csharp`
+    - `text/x-go`
+    - `text/x-ini`
+    - `text/x-java`
+    - `text/x-log`
     - `text/x-markdown`
+    - `text/x-php`
+    - `text/x-python`
+    - `text/x-ruby`
+    - `text/x-rust`
+    - `text/x-shellscript`
+    - `text/x-sql`
+    - `text/x-subrip`
+    - `text/x-tex`
+    - `text/x-toml`
+    - `text/x-typescript`
     - `text/xml`
+    - `text/yaml`
+    - `video/3gpp`
+    - `video/mp2t`
     - `video/mp4`
+    - `video/mpeg`
     - `video/quicktime`
+    - `video/webm`
+    - `video/x-matroska`
     - `video/x-msvideo`
 
     Notes:

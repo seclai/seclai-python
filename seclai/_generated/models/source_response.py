@@ -26,7 +26,7 @@ class SourceResponse:
         next_poll_at (None | str): Timestamp for the next scheduled poll.
         polling (None | str): Polling configuration for the source connection.
         polling_action (None | str): Polling action for the source connection.
-        polling_max_items (int | None): Maximum items to poll for the source connection.
+        polling_max_items (int | None): The most new feed items a scheduled poll takes. Read for RSS feeds only.
         pulled_at (None | str): Timestamp when content was last pulled.
         retention (int | None): Retention period for the source connection.
         source_type (str): Type of the source connection.
@@ -39,16 +39,37 @@ class SourceResponse:
         chunk_regex_separators (bool | None | Unset): Indicates if chunk separators are regex patterns.
         chunk_separators (None | str | Unset): Chunk separators used for content processing.
         chunk_size (int | None | Unset): Chunk size for content processing.
+        cloud_drive_connection_id (None | str | Unset): For a cloud_drive source: the id of the connected drive it
+            indexes. Null for every other source type.
+        cloud_drive_content_types (None | str | Unset): For a cloud_drive source: the comma-separated MIME types a file
+            must have to be indexed. Null when there is no filter.
+        cloud_drive_folder_path (None | str | Unset): For a cloud_drive source: the folder it indexes. Null when it
+            indexes the connected drive's own folder.
+        cloud_drive_max_file_mb (int | None | Unset): For a cloud_drive source: the size in megabytes above which a file
+            is skipped. Null when the source sets no limit of its own.
+        cloud_drive_path_pattern (None | str | Unset): For a cloud_drive source: the glob a file's path must match to be
+            indexed. Null when there is none.
         content_count (int | Unset): Number of content items associated with the source connection. Default: 0.
         dimensions (int | None | Unset): Dimensions of the embedding model.
+        document_images (bool | Unset): Whether the images inside PDF, DOCX, PPTX and XLSX files are attached to the
+            item and indexed; on a source that follows no web pages and has a text-only embedder, by the text in each image.
+            Applies to documents added after it changes. On a website or RSS source it reports whether `media_types` holds
+            'images', and the images are attached only when the source's embedder indexes images. Default: True.
+        email_address (None | str | Unset): For an email source: the address to send mail to. Null for every other
+            source type.
+        email_allowed_senders (list[str] | None | Unset): For an email source: the addresses and domains whose mail is
+            stored. Null for every other source type.
         embedding_model (None | str | Unset): Embedding model used for the source connection.
         embedding_model_type (None | str | Unset): Type of the embedding model.
+        feed_attachments (list[str] | Unset): Kinds of file listed beside a feed item's content that an RSS source
+            attaches to the item and indexes (subset of ['enclosures', 'item_image', 'media_rss']).
         free_retention_days (int | None | Unset): Number of days content is stored for free before billing applies.
         has_historical_data (bool | Unset): Indicates if the source connection has historical data. Default: False.
         index_mode (None | SourceIndexMode | Unset): Index mode for custom_index sources: fast_and_cheap, balanced,
             slow_and_thorough, or custom.
-        media_types (list[str] | Unset): Media kinds extracted from indexed content and embedded as multi-modal KB
-            chunks (subset of ['images', 'video']). Empty = text-only.
+        media_types (list[str] | Unset): Media kinds in a web page's main content that are attached to the page's item
+            and indexed (subset of ['images', 'video']). On a website or RSS source 'images' also covers the images inside
+            PDF, DOCX, PPTX and XLSX files.
         readonly (bool | Unset): Indicates if the source connection is read-only. Default: False.
         system_managed (bool | Unset): Indicates if this source is automatically managed by the system (e.g., agent
             traces). Default: False.
@@ -75,10 +96,19 @@ class SourceResponse:
     chunk_regex_separators: bool | None | Unset = UNSET
     chunk_separators: None | str | Unset = UNSET
     chunk_size: int | None | Unset = UNSET
+    cloud_drive_connection_id: None | str | Unset = UNSET
+    cloud_drive_content_types: None | str | Unset = UNSET
+    cloud_drive_folder_path: None | str | Unset = UNSET
+    cloud_drive_max_file_mb: int | None | Unset = UNSET
+    cloud_drive_path_pattern: None | str | Unset = UNSET
     content_count: int | Unset = 0
     dimensions: int | None | Unset = UNSET
+    document_images: bool | Unset = True
+    email_address: None | str | Unset = UNSET
+    email_allowed_senders: list[str] | None | Unset = UNSET
     embedding_model: None | str | Unset = UNSET
     embedding_model_type: None | str | Unset = UNSET
+    feed_attachments: list[str] | Unset = UNSET
     free_retention_days: int | None | Unset = UNSET
     has_historical_data: bool | Unset = False
     index_mode: None | SourceIndexMode | Unset = UNSET
@@ -165,6 +195,36 @@ class SourceResponse:
         else:
             chunk_size = self.chunk_size
 
+        cloud_drive_connection_id: None | str | Unset
+        if isinstance(self.cloud_drive_connection_id, Unset):
+            cloud_drive_connection_id = UNSET
+        else:
+            cloud_drive_connection_id = self.cloud_drive_connection_id
+
+        cloud_drive_content_types: None | str | Unset
+        if isinstance(self.cloud_drive_content_types, Unset):
+            cloud_drive_content_types = UNSET
+        else:
+            cloud_drive_content_types = self.cloud_drive_content_types
+
+        cloud_drive_folder_path: None | str | Unset
+        if isinstance(self.cloud_drive_folder_path, Unset):
+            cloud_drive_folder_path = UNSET
+        else:
+            cloud_drive_folder_path = self.cloud_drive_folder_path
+
+        cloud_drive_max_file_mb: int | None | Unset
+        if isinstance(self.cloud_drive_max_file_mb, Unset):
+            cloud_drive_max_file_mb = UNSET
+        else:
+            cloud_drive_max_file_mb = self.cloud_drive_max_file_mb
+
+        cloud_drive_path_pattern: None | str | Unset
+        if isinstance(self.cloud_drive_path_pattern, Unset):
+            cloud_drive_path_pattern = UNSET
+        else:
+            cloud_drive_path_pattern = self.cloud_drive_path_pattern
+
         content_count = self.content_count
 
         dimensions: int | None | Unset
@@ -172,6 +232,23 @@ class SourceResponse:
             dimensions = UNSET
         else:
             dimensions = self.dimensions
+
+        document_images = self.document_images
+
+        email_address: None | str | Unset
+        if isinstance(self.email_address, Unset):
+            email_address = UNSET
+        else:
+            email_address = self.email_address
+
+        email_allowed_senders: list[str] | None | Unset
+        if isinstance(self.email_allowed_senders, Unset):
+            email_allowed_senders = UNSET
+        elif isinstance(self.email_allowed_senders, list):
+            email_allowed_senders = self.email_allowed_senders
+
+        else:
+            email_allowed_senders = self.email_allowed_senders
 
         embedding_model: None | str | Unset
         if isinstance(self.embedding_model, Unset):
@@ -184,6 +261,10 @@ class SourceResponse:
             embedding_model_type = UNSET
         else:
             embedding_model_type = self.embedding_model_type
+
+        feed_attachments: list[str] | Unset = UNSET
+        if not isinstance(self.feed_attachments, Unset):
+            feed_attachments = self.feed_attachments
 
         free_retention_days: int | None | Unset
         if isinstance(self.free_retention_days, Unset):
@@ -243,14 +324,32 @@ class SourceResponse:
             field_dict["chunk_separators"] = chunk_separators
         if chunk_size is not UNSET:
             field_dict["chunk_size"] = chunk_size
+        if cloud_drive_connection_id is not UNSET:
+            field_dict["cloud_drive_connection_id"] = cloud_drive_connection_id
+        if cloud_drive_content_types is not UNSET:
+            field_dict["cloud_drive_content_types"] = cloud_drive_content_types
+        if cloud_drive_folder_path is not UNSET:
+            field_dict["cloud_drive_folder_path"] = cloud_drive_folder_path
+        if cloud_drive_max_file_mb is not UNSET:
+            field_dict["cloud_drive_max_file_mb"] = cloud_drive_max_file_mb
+        if cloud_drive_path_pattern is not UNSET:
+            field_dict["cloud_drive_path_pattern"] = cloud_drive_path_pattern
         if content_count is not UNSET:
             field_dict["content_count"] = content_count
         if dimensions is not UNSET:
             field_dict["dimensions"] = dimensions
+        if document_images is not UNSET:
+            field_dict["document_images"] = document_images
+        if email_address is not UNSET:
+            field_dict["email_address"] = email_address
+        if email_allowed_senders is not UNSET:
+            field_dict["email_allowed_senders"] = email_allowed_senders
         if embedding_model is not UNSET:
             field_dict["embedding_model"] = embedding_model
         if embedding_model_type is not UNSET:
             field_dict["embedding_model_type"] = embedding_model_type
+        if feed_attachments is not UNSET:
+            field_dict["feed_attachments"] = feed_attachments
         if free_retention_days is not UNSET:
             field_dict["free_retention_days"] = free_retention_days
         if has_historical_data is not UNSET:
@@ -401,6 +500,61 @@ class SourceResponse:
 
         chunk_size = _parse_chunk_size(d.pop("chunk_size", UNSET))
 
+        def _parse_cloud_drive_connection_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        cloud_drive_connection_id = _parse_cloud_drive_connection_id(
+            d.pop("cloud_drive_connection_id", UNSET)
+        )
+
+        def _parse_cloud_drive_content_types(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        cloud_drive_content_types = _parse_cloud_drive_content_types(
+            d.pop("cloud_drive_content_types", UNSET)
+        )
+
+        def _parse_cloud_drive_folder_path(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        cloud_drive_folder_path = _parse_cloud_drive_folder_path(
+            d.pop("cloud_drive_folder_path", UNSET)
+        )
+
+        def _parse_cloud_drive_max_file_mb(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        cloud_drive_max_file_mb = _parse_cloud_drive_max_file_mb(
+            d.pop("cloud_drive_max_file_mb", UNSET)
+        )
+
+        def _parse_cloud_drive_path_pattern(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        cloud_drive_path_pattern = _parse_cloud_drive_path_pattern(
+            d.pop("cloud_drive_path_pattern", UNSET)
+        )
+
         content_count = d.pop("content_count", UNSET)
 
         def _parse_dimensions(data: object) -> int | None | Unset:
@@ -411,6 +565,36 @@ class SourceResponse:
             return cast(int | None | Unset, data)
 
         dimensions = _parse_dimensions(d.pop("dimensions", UNSET))
+
+        document_images = d.pop("document_images", UNSET)
+
+        def _parse_email_address(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        email_address = _parse_email_address(d.pop("email_address", UNSET))
+
+        def _parse_email_allowed_senders(data: object) -> list[str] | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, list):
+                    raise TypeError()
+                email_allowed_senders_type_0 = cast(list[str], data)
+
+                return email_allowed_senders_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(list[str] | None | Unset, data)
+
+        email_allowed_senders = _parse_email_allowed_senders(
+            d.pop("email_allowed_senders", UNSET)
+        )
 
         def _parse_embedding_model(data: object) -> None | str | Unset:
             if data is None:
@@ -431,6 +615,8 @@ class SourceResponse:
         embedding_model_type = _parse_embedding_model_type(
             d.pop("embedding_model_type", UNSET)
         )
+
+        feed_attachments = cast(list[str], d.pop("feed_attachments", UNSET))
 
         def _parse_free_retention_days(data: object) -> int | None | Unset:
             if data is None:
@@ -490,10 +676,19 @@ class SourceResponse:
             chunk_regex_separators=chunk_regex_separators,
             chunk_separators=chunk_separators,
             chunk_size=chunk_size,
+            cloud_drive_connection_id=cloud_drive_connection_id,
+            cloud_drive_content_types=cloud_drive_content_types,
+            cloud_drive_folder_path=cloud_drive_folder_path,
+            cloud_drive_max_file_mb=cloud_drive_max_file_mb,
+            cloud_drive_path_pattern=cloud_drive_path_pattern,
             content_count=content_count,
             dimensions=dimensions,
+            document_images=document_images,
+            email_address=email_address,
+            email_allowed_senders=email_allowed_senders,
             embedding_model=embedding_model,
             embedding_model_type=embedding_model_type,
+            feed_attachments=feed_attachments,
             free_retention_days=free_retention_days,
             has_historical_data=has_historical_data,
             index_mode=index_mode,

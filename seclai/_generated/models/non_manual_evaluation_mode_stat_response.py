@@ -14,6 +14,7 @@ class NonManualEvaluationModeStatResponse:
     """Per-mode rollup for evaluation activity.
 
     Attributes:
+        error (int): Results whose evaluator returned no verdict.
         failed (int):
         failure_rate (float):
         flagged (int):
@@ -23,6 +24,7 @@ class NonManualEvaluationModeStatResponse:
         total (int):
     """
 
+    error: int
     failed: int
     failure_rate: float
     flagged: int
@@ -33,6 +35,8 @@ class NonManualEvaluationModeStatResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        error = self.error
+
         failed = self.failed
 
         failure_rate = self.failure_rate
@@ -51,6 +55,7 @@ class NonManualEvaluationModeStatResponse:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "error": error,
                 "failed": failed,
                 "failure_rate": failure_rate,
                 "flagged": flagged,
@@ -66,6 +71,8 @@ class NonManualEvaluationModeStatResponse:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+        error = d.pop("error")
+
         failed = d.pop("failed")
 
         failure_rate = d.pop("failure_rate")
@@ -81,6 +88,7 @@ class NonManualEvaluationModeStatResponse:
         total = d.pop("total")
 
         non_manual_evaluation_mode_stat_response = cls(
+            error=error,
             failed=failed,
             failure_rate=failure_rate,
             flagged=flagged,

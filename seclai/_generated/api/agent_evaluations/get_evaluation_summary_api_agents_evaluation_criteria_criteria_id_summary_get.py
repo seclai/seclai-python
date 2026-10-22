@@ -94,6 +94,8 @@ def sync_detailed(
 
     Returns total, passed, failed, error, and flagged counts alongside the
     average score, giving a quick overview of how the criteria is performing.
+    With ``2026-10-21`` or later, ``average_score`` averages only passed and failed
+    results; earlier versions average every stored score, ``error`` included.
 
     Args:
         criteria_id (str):
@@ -139,6 +141,8 @@ def sync(
 
     Returns total, passed, failed, error, and flagged counts alongside the
     average score, giving a quick overview of how the criteria is performing.
+    With ``2026-10-21`` or later, ``average_score`` averages only passed and failed
+    results; earlier versions average every stored score, ``error`` included.
 
     Args:
         criteria_id (str):
@@ -176,6 +180,8 @@ async def asyncio_detailed(
 
     Returns total, passed, failed, error, and flagged counts alongside the
     average score, giving a quick overview of how the criteria is performing.
+    With ``2026-10-21`` or later, ``average_score`` averages only passed and failed
+    results; earlier versions average every stored score, ``error`` included.
 
     Args:
         criteria_id (str):
@@ -219,6 +225,8 @@ async def asyncio(
 
     Returns total, passed, failed, error, and flagged counts alongside the
     average score, giving a quick overview of how the criteria is performing.
+    With ``2026-10-21`` or later, ``average_score`` averages only passed and failed
+    results; earlier versions average every stored score, ``error`` included.
 
     Args:
         criteria_id (str):

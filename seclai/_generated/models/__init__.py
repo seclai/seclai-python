@@ -1,5 +1,7 @@
 """Contains all the data models used in inputs/outputs"""
 
+from .accepted_attachment_slot import AcceptedAttachmentSlot
+from .accepted_attachments_response import AcceptedAttachmentsResponse
 from .add_comment_request import AddCommentRequest
 from .add_conversation_turn_request import AddConversationTurnRequest
 from .add_conversation_turn_request_actions_taken_type_0 import (
@@ -108,6 +110,13 @@ from .compaction_scheduled_response import CompactionScheduledResponse
 from .compaction_test_response_model import CompactionTestResponseModel
 from .compatible_run_list_response import CompatibleRunListResponse
 from .compatible_run_response import CompatibleRunResponse
+from .content_attachment_detail_response import ContentAttachmentDetailResponse
+from .content_attachment_detail_response_metadata import (
+    ContentAttachmentDetailResponseMetadata,
+)
+from .content_attachment_response import ContentAttachmentResponse
+from .content_attachment_response_metadata import ContentAttachmentResponseMetadata
+from .content_attachments_list_response import ContentAttachmentsListResponse
 from .content_detail_response import ContentDetailResponse
 from .content_detail_response_metadata_type_0_item import (
     ContentDetailResponseMetadataType0Item,
@@ -151,6 +160,11 @@ from .docs_search_result_response import DocsSearchResultResponse
 from .effort_options_response import EffortOptionsResponse
 from .email_domain_response import EmailDomainResponse
 from .email_domains_list_response import EmailDomainsListResponse
+from .email_source_rejection_list_response import EmailSourceRejectionListResponse
+from .email_source_rejection_response import EmailSourceRejectionResponse
+from .email_source_rejection_response_auth_verdicts import (
+    EmailSourceRejectionResponseAuthVerdicts,
+)
 from .email_trigger_config_response import EmailTriggerConfigResponse
 from .embedding_modality_rate_response import EmbeddingModalityRateResponse
 from .embedding_model_list_response import EmbeddingModelListResponse
@@ -327,8 +341,11 @@ from .send_test_email_response import SendTestEmailResponse
 from .service_unavailable_error import ServiceUnavailableError
 from .service_unavailable_error_error import ServiceUnavailableErrorError
 from .service_unavailable_error_error_code import ServiceUnavailableErrorErrorCode
+from .set_accepted_attachments_request import SetAcceptedAttachmentsRequest
 from .set_auto_block_mode_request import SetAutoBlockModeRequest
 from .set_email_trigger_config_request import SetEmailTriggerConfigRequest
+from .skipped_attachment_reason import SkippedAttachmentReason
+from .skipped_attachment_response import SkippedAttachmentResponse
 from .solution_agent_response import SolutionAgentResponse
 from .solution_conversation_response import SolutionConversationResponse
 from .solution_conversation_response_actions_taken_type_0 import (
@@ -392,6 +409,8 @@ from .variant_category_response import VariantCategoryResponse
 from .variant_option_response import VariantOptionResponse
 
 __all__ = (
+    "AcceptedAttachmentSlot",
+    "AcceptedAttachmentsResponse",
     "AddCommentRequest",
     "AddConversationTurnRequest",
     "AddConversationTurnRequestActionsTakenType0",
@@ -474,6 +493,11 @@ __all__ = (
     "CompactionTestResponseModel",
     "CompatibleRunListResponse",
     "CompatibleRunResponse",
+    "ContentAttachmentDetailResponse",
+    "ContentAttachmentDetailResponseMetadata",
+    "ContentAttachmentResponse",
+    "ContentAttachmentResponseMetadata",
+    "ContentAttachmentsListResponse",
     "ContentDetailResponse",
     "ContentDetailResponseMetadataType0Item",
     "ContentEmbeddingResponse",
@@ -505,6 +529,9 @@ __all__ = (
     "EffortOptionsResponse",
     "EmailDomainResponse",
     "EmailDomainsListResponse",
+    "EmailSourceRejectionListResponse",
+    "EmailSourceRejectionResponse",
+    "EmailSourceRejectionResponseAuthVerdicts",
     "EmailTriggerConfigResponse",
     "EmbeddingModalityRateResponse",
     "EmbeddingModelListResponse",
@@ -625,8 +652,11 @@ __all__ = (
     "ServiceUnavailableError",
     "ServiceUnavailableErrorError",
     "ServiceUnavailableErrorErrorCode",
+    "SetAcceptedAttachmentsRequest",
     "SetAutoBlockModeRequest",
     "SetEmailTriggerConfigRequest",
+    "SkippedAttachmentReason",
+    "SkippedAttachmentResponse",
     "SolutionAgentResponse",
     "SolutionConversationResponse",
     "SolutionConversationResponseActionsTakenType0",

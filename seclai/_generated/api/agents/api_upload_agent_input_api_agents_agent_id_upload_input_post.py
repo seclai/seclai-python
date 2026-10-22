@@ -85,25 +85,24 @@ def sync_detailed(
 ]:
     """Upload file input
 
-     Upload a file to use as input for a `dynamic_input` agent run.
-
-    Supports the same file types as content source uploads: text, PDF, DOCX, audio, video, images, etc.
-    Text and document files are processed synchronously; audio/video are submitted for asynchronous
-    transcription.
+     Upload a file to use as input for a `dynamic_input` agent run. Any other agent rejects the upload
+    with HTTP 400.
 
     **Size limit:** 200 MB per file.
 
-    **Supported extensions:** txt, html, md, csv, xml, json, pdf, msg, docx, doc, pptx, ppt, xlsx, xls,
-    zip, epub, png, jpg, gif, bmp, tiff, webp, mp3, wav, m4a, flac, ogg, mp4, mov, avi.
+    From `Seclai-Version: 2026-10-16` a file of any type is accepted and is `ready` at once: pass
+    `input_upload_id` to `POST /agents/{agent_id}/runs`. Each step receives the file itself when its
+    model reads that type, and otherwise its text (OCR, extraction or transcript), made once for the
+    steps that need it; a type nothing reads or converts is passed on as a file only. `input` carries a
+    `# filename` heading per file.
 
-    After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
-    then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
+    Earlier versions accept only these extensions: avi, bmp, csv, docx, epub, flac, gif, html, jpg,
+    json, m4a, markdown, md, mov, mp3, mp4, msg, ogg, pdf, png, ppt, pptx, svg, tiff, txt, wav, webp,
+    xls, xlsx, xml, zip. They write each file's text into `input`, so poll `GET
+    /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready` before running.
 
-    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
-    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
-    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
-    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
-    agent-trace retention (the agent-traces source's retention period; free default 7 days).
+    The agent-input-binary janitor sweeps originals once they pass your account's agent-trace retention
+    (the agent-traces source's retention period; free default 7 days).
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -144,25 +143,24 @@ def sync(
 ) -> HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse | None:
     """Upload file input
 
-     Upload a file to use as input for a `dynamic_input` agent run.
-
-    Supports the same file types as content source uploads: text, PDF, DOCX, audio, video, images, etc.
-    Text and document files are processed synchronously; audio/video are submitted for asynchronous
-    transcription.
+     Upload a file to use as input for a `dynamic_input` agent run. Any other agent rejects the upload
+    with HTTP 400.
 
     **Size limit:** 200 MB per file.
 
-    **Supported extensions:** txt, html, md, csv, xml, json, pdf, msg, docx, doc, pptx, ppt, xlsx, xls,
-    zip, epub, png, jpg, gif, bmp, tiff, webp, mp3, wav, m4a, flac, ogg, mp4, mov, avi.
+    From `Seclai-Version: 2026-10-16` a file of any type is accepted and is `ready` at once: pass
+    `input_upload_id` to `POST /agents/{agent_id}/runs`. Each step receives the file itself when its
+    model reads that type, and otherwise its text (OCR, extraction or transcript), made once for the
+    steps that need it; a type nothing reads or converts is passed on as a file only. `input` carries a
+    `# filename` heading per file.
 
-    After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
-    then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
+    Earlier versions accept only these extensions: avi, bmp, csv, docx, epub, flac, gif, html, jpg,
+    json, m4a, markdown, md, mov, mp3, mp4, msg, ogg, pdf, png, ppt, pptx, svg, tiff, txt, wav, webp,
+    xls, xlsx, xml, zip. They write each file's text into `input`, so poll `GET
+    /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready` before running.
 
-    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
-    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
-    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
-    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
-    agent-trace retention (the agent-traces source's retention period; free default 7 days).
+    The agent-input-binary janitor sweeps originals once they pass your account's agent-trace retention
+    (the agent-traces source's retention period; free default 7 days).
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -200,25 +198,24 @@ async def asyncio_detailed(
 ]:
     """Upload file input
 
-     Upload a file to use as input for a `dynamic_input` agent run.
-
-    Supports the same file types as content source uploads: text, PDF, DOCX, audio, video, images, etc.
-    Text and document files are processed synchronously; audio/video are submitted for asynchronous
-    transcription.
+     Upload a file to use as input for a `dynamic_input` agent run. Any other agent rejects the upload
+    with HTTP 400.
 
     **Size limit:** 200 MB per file.
 
-    **Supported extensions:** txt, html, md, csv, xml, json, pdf, msg, docx, doc, pptx, ppt, xlsx, xls,
-    zip, epub, png, jpg, gif, bmp, tiff, webp, mp3, wav, m4a, flac, ogg, mp4, mov, avi.
+    From `Seclai-Version: 2026-10-16` a file of any type is accepted and is `ready` at once: pass
+    `input_upload_id` to `POST /agents/{agent_id}/runs`. Each step receives the file itself when its
+    model reads that type, and otherwise its text (OCR, extraction or transcript), made once for the
+    steps that need it; a type nothing reads or converts is passed on as a file only. `input` carries a
+    `# filename` heading per file.
 
-    After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
-    then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
+    Earlier versions accept only these extensions: avi, bmp, csv, docx, epub, flac, gif, html, jpg,
+    json, m4a, markdown, md, mov, mp3, mp4, msg, ogg, pdf, png, ppt, pptx, svg, tiff, txt, wav, webp,
+    xls, xlsx, xml, zip. They write each file's text into `input`, so poll `GET
+    /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready` before running.
 
-    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
-    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
-    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
-    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
-    agent-trace retention (the agent-traces source's retention period; free default 7 days).
+    The agent-input-binary janitor sweeps originals once they pass your account's agent-trace retention
+    (the agent-traces source's retention period; free default 7 days).
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -257,25 +254,24 @@ async def asyncio(
 ) -> HTTPValidationError | ServiceUnavailableError | UploadAgentInputApiResponse | None:
     """Upload file input
 
-     Upload a file to use as input for a `dynamic_input` agent run.
-
-    Supports the same file types as content source uploads: text, PDF, DOCX, audio, video, images, etc.
-    Text and document files are processed synchronously; audio/video are submitted for asynchronous
-    transcription.
+     Upload a file to use as input for a `dynamic_input` agent run. Any other agent rejects the upload
+    with HTTP 400.
 
     **Size limit:** 200 MB per file.
 
-    **Supported extensions:** txt, html, md, csv, xml, json, pdf, msg, docx, doc, pptx, ppt, xlsx, xls,
-    zip, epub, png, jpg, gif, bmp, tiff, webp, mp3, wav, m4a, flac, ogg, mp4, mov, avi.
+    From `Seclai-Version: 2026-10-16` a file of any type is accepted and is `ready` at once: pass
+    `input_upload_id` to `POST /agents/{agent_id}/runs`. Each step receives the file itself when its
+    model reads that type, and otherwise its text (OCR, extraction or transcript), made once for the
+    steps that need it; a type nothing reads or converts is passed on as a file only. `input` carries a
+    `# filename` heading per file.
 
-    After uploading, poll `GET /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready`,
-    then pass `input_upload_id` to `POST /agents/{agent_id}/runs`.
+    Earlier versions accept only these extensions: avi, bmp, csv, docx, epub, flac, gif, html, jpg,
+    json, m4a, markdown, md, mov, mp3, mp4, msg, ogg, pdf, png, ppt, pptx, svg, tiff, txt, wav, webp,
+    xls, xlsx, xml, zip. They write each file's text into `input`, so poll `GET
+    /agents/{agent_id}/input-uploads/{upload_id}` until `status` is `ready` before running.
 
-    **Multi-modal routing:** non-text uploads (image, audio, video, PDF) are surfaced natively to multi-
-    modal-capable prompt steps; text-only models fall back to the OCR / transcript text counterpart.
-    Audio originals are preserved past transcription so audio-capable models (Gemini 2.5/3, GPT-5 audio)
-    read them directly; the agent-input-binary janitor sweeps originals once they pass your account's
-    agent-trace retention (the agent-traces source's retention period; free default 7 days).
+    The agent-input-binary janitor sweeps originals once they pass your account's agent-trace retention
+    (the agent-traces source's retention period; free default 7 days).
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's

@@ -95,6 +95,10 @@ def sync_detailed(
     /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
     endpoint per item.
 
+    An item held for review by an Enforce governance policy reports `held_for_review: true`. With
+    `Seclai-Version: 2026-10-05` or later its `content_status` is `completed`; earlier versions report
+    `failed` with the hold as the `error`.
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
     account.
@@ -144,6 +148,10 @@ def sync(
     /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
     endpoint per item.
 
+    An item held for review by an Enforce governance policy reports `held_for_review: true`. With
+    `Seclai-Version: 2026-10-05` or later its `content_status` is `completed`; earlier versions report
+    `failed` with the hold as the `error`.
+
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
     account.
@@ -189,6 +197,10 @@ async def asyncio_detailed(
     Use this to follow one uploaded file through indexing. To follow many at once, use `GET
     /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
     endpoint per item.
+
+    An item held for review by an Enforce governance policy reports `held_for_review: true`. With
+    `Seclai-Version: 2026-10-05` or later its `content_status` is `completed`; earlier versions report
+    `failed` with the hold as the `error`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your
@@ -236,6 +248,10 @@ async def asyncio(
     Use this to follow one uploaded file through indexing. To follow many at once, use `GET
     /sources/{id}/contents` with repeated `content_version_id` parameters instead of polling this
     endpoint per item.
+
+    An item held for review by an Enforce governance policy reports `held_for_review: true`. With
+    `Seclai-Version: 2026-10-05` or later its `content_status` is `completed`; earlier versions report
+    `failed` with the hold as the `error`.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access content belonging to your

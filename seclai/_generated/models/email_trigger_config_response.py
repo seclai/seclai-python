@@ -26,6 +26,7 @@ class EmailTriggerConfigResponse:
         email_ignore_auto_generated (bool | Unset):  Default: True.
         email_queue_on_quota (bool | Unset):  Default: False.
         email_require_sender_auth (bool | Unset):  Default: True.
+        email_run_on_attachment_mismatch (bool | Unset):  Default: False.
     """
 
     agent_id: UUID
@@ -37,6 +38,7 @@ class EmailTriggerConfigResponse:
     email_ignore_auto_generated: bool | Unset = True
     email_queue_on_quota: bool | Unset = False
     email_require_sender_auth: bool | Unset = True
+    email_run_on_attachment_mismatch: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -71,6 +73,8 @@ class EmailTriggerConfigResponse:
 
         email_require_sender_auth = self.email_require_sender_auth
 
+        email_run_on_attachment_mismatch = self.email_run_on_attachment_mismatch
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -92,6 +96,10 @@ class EmailTriggerConfigResponse:
             field_dict["email_queue_on_quota"] = email_queue_on_quota
         if email_require_sender_auth is not UNSET:
             field_dict["email_require_sender_auth"] = email_require_sender_auth
+        if email_run_on_attachment_mismatch is not UNSET:
+            field_dict["email_run_on_attachment_mismatch"] = (
+                email_run_on_attachment_mismatch
+            )
 
         return field_dict
 
@@ -140,6 +148,10 @@ class EmailTriggerConfigResponse:
 
         email_require_sender_auth = d.pop("email_require_sender_auth", UNSET)
 
+        email_run_on_attachment_mismatch = d.pop(
+            "email_run_on_attachment_mismatch", UNSET
+        )
+
         email_trigger_config_response = cls(
             agent_id=agent_id,
             trigger_id=trigger_id,
@@ -150,6 +162,7 @@ class EmailTriggerConfigResponse:
             email_ignore_auto_generated=email_ignore_auto_generated,
             email_queue_on_quota=email_queue_on_quota,
             email_require_sender_auth=email_require_sender_auth,
+            email_run_on_attachment_mismatch=email_run_on_attachment_mismatch,
         )
 
         email_trigger_config_response.additional_properties = d

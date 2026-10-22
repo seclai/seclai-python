@@ -238,6 +238,25 @@ client decodes:
 | `2026-09-28` | Agent-definition writes use the current file-list grammar: an omitted `attachments` keeps the stored list and `[]` means no files |
 | `2026-09-30` | A run's and a step's `output`, and a step's `input`, are the text rather than a JSON manifest; files are in `attachments` on every version |
 | `2026-10-03` | A new LLM step written without `attachments` takes its parent's files, and a new retrieval step's matched media are its files |
+| `2026-10-05` | A content item held for review by an Enforce governance policy reports `completed` (with `held_for_review: true`) rather than `failed` |
+| `2026-10-13` | `create_source()` and `update_source()` refuse a `media_types` with an unknown kind, or any kind on a source other than a website or RSS feed, with a 400 |
+| `2026-10-16` | `upload_agent_input()` accepts a file of any type and it is `ready` at once; each upload reaches steps as a separate file and `input` carries only a heading for it |
+| `2026-10-18` | A source's `document_images` defaults to true on a text-only embedder as well |
+| `2026-10-19` | `create_source()` refuses `polling_max_items` with a 400 on any source other than an RSS feed |
+| `2026-10-21` | An evaluation result whose evaluator returned no verdict (`error`) is left out of `failed` and of the pass and failure rates in `get_non_manual_evaluation_summary()`; `get_evaluation_criteria_summary()`'s `average_score` averages only passed and failed results; `test_draft_evaluation()` returns `score` and `passed` as `None` for an `error` result instead of 0.5 and `False` |
+
+Moving to a later version can still change a value your code branches on, or
+reject a request that used to work. From `2026-10-05`, a content item held for
+review reports `content_status` `completed` rather than `failed`, so code that
+reads `failed` from `get_source_content_status()` or `list_source_contents()` to
+find held items stops seeing them: check `held_for_review` instead. (The
+`status` filter already matched held items under `completed` on every version.)
+`2026-10-13` and `2026-10-19` turn source bodies that were accepted before into
+400s. From `2026-10-21`, code that reads `passed` from `test_draft_evaluation()`
+as a bool, or does arithmetic on its `score`, gets `None` when `status` is
+`error`, and `get_non_manual_evaluation_summary()`'s `failed` no longer counts
+those results: read its `error` count. Passing
+`api_version=LATEST_API_VERSION` opts into all of these at once.
 
 ## Resources
 
@@ -339,6 +358,15 @@ for event_type, data in client.run_streaming_agent(
     print(event_type, data)
 ```
 
+Set `include_reasoning=True` in the request to also receive `stream_reasoning`
+events with the model's reasoning, for a `streaming_result` step whose author
+enabled `show_reasoning`. `run_streaming_agent_and_wait()` keeps only the
+`init` and `done` events, so it removes `include_reasoning` from the body
+before sending.
+
+Every key of `AgentRunStreamRequest` is optional, so a run on an uploaded file
+can send just `AgentRunStreamRequest(input_upload_id=upload["upload_id"])`.
+
 Async:
 
 ```python
@@ -369,9 +397,24 @@ result = client.run_agent_and_poll(
 # Discover which files (if any) the agent expects before staging uploads
 refs = client.get_agent_attachment_references("agent_id")
 # refs["requires_uploads"] -> bool; refs["agent"] lists the exact_names /
-# indexes_max / patterns a run-time upload batch must satisfy.
+# indexes_max / patterns a run-time upload batch must satisfy, and
+# refs["accepted_attachments"] the attachments the trigger declares.
 
+# Declare the attachments a trigger accepts; steps reference each one as
+# {{agent.attachments.<name>}}. None accepts any files as one attachment, "files".
+client.set_accepted_attachments(
+    "agent_id",
+    "trigger_id",
+    [
+        {"name": "invoice", "content_types": ["application/pdf"], "min": 1, "max": 1},
+        {"name": "photos", "content_types": ["image/*"], "name_pattern": "*.jpg"},
+    ],
+)
+
+# Only a dynamic_input agent takes uploads; any other agent answers 400.
 upload = client.upload_agent_input("agent_id", file=b"data", file_name="input.pdf")
+# From api_version 2026-10-16 an upload of any type is ready at once. Before
+# that, only listed types are accepted: poll until status is "ready".
 status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
 ```
 
@@ -381,9 +424,11 @@ status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
 # Download a file emitted by a step in an agent run. attachment_id is the
 # URL-safe-base64 storage_key surfaced in run output manifests / webhooks.
 response = client.download_agent_run_attachment("run_id", "attachment_id")  # raw httpx.Response
-with response:
+try:
     for chunk in response.iter_bytes():
         ...  # write to disk
+finally:
+    response.close()
 ```
 
 ### Agent AI assistant
@@ -410,8 +455,9 @@ detail = client.get_evaluation_criteria("criteria_id")
 client.update_evaluation_criteria("criteria_id", {"name": "updated"})
 client.delete_evaluation_criteria("criteria_id")
 
-# Test a draft
-client.test_draft_evaluation("agent_id", {"criteria": {}, "run_id": "run_id"})
+# Test a draft. "status" is "error" when the evaluator returned no verdict;
+# from api_version 2026-10-21 its "score" and "passed" are then None.
+draft = client.test_draft_evaluation("agent_id", {"criteria": {}, "run_id": "run_id"})
 
 # Results & summaries
 results = client.list_evaluation_results("criteria_id")
@@ -483,6 +529,16 @@ batch = client.list_source_contents(
     "source_id", content_version_ids=["cv_1", "cv_2"]
 )
 one = client.get_source_content_status("source_id", "cv_1")
+```
+
+Mail an email source refused, newest first — who sent it and why, never the
+message itself. Requires an account owner or administrator:
+
+```python
+refused = client.list_email_source_rejections("source_id", page=1, limit=20)
+for r in refused.data:  # EmailSourceRejectionListResponse
+    sender = r.from_address if isinstance(r.from_address, str) else None
+    print(sender, r.reason, r.authenticated)
 ```
 
 ### Cloud drives
@@ -568,6 +624,30 @@ client.cancel_source_embedding_migration("source_id")
 detail = client.get_content_detail("source_connection_content_version")
 embeddings = client.list_content_embeddings("source_connection_content_version")
 client.delete_content("source_connection_content_version")
+
+# Files attached to a content item: email attachments, feed files, page media
+# and the images inside documents, each with its indexing status. These return
+# the generated models (ContentAttachmentsListResponse and so on).
+attachments = client.list_content_attachments("source_connection_content_version")
+for item in attachments.data:
+    print(item.key, item.content_type, item.indexing_status)
+att = attachments.data[0]
+att_detail = client.get_content_attachment(
+    "source_connection_content_version", att.id
+)
+print(att_detail.text_content)  # None for a file that was not indexed
+att_embeddings = client.list_content_attachment_embeddings(
+    "source_connection_content_version", att.id
+)
+response = client.download_content_attachment(
+    "source_connection_content_version", att.id
+)  # raw streaming httpx.Response; 403 if withheld, 402 with no credits left
+try:
+    with open(f"{att.id}.bin", "wb") as f:
+        for chunk in response.iter_bytes():
+            f.write(chunk)
+finally:
+    response.close()
 ```
 
 ### Solutions
@@ -648,6 +728,7 @@ config = client.set_email_trigger_config(
         "ignore_auto_generated": True,   # drop auto-replies to prevent loops
         "require_sender_auth": True,     # require SPF or DMARC
         "queue_on_quota": False,         # park over-rate mail instead of failing
+        "run_on_attachment_mismatch": False,  # True runs even if attachments don't fit
     },
 )
 print(config["email_addresses"])

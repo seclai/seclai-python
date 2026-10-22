@@ -43,17 +43,21 @@ class SourceContentStatusResponse:
             sweep to drain. The re-embedding is not charged to your account: nothing you did caused it, so Seclai absorbs
             the cost. Never true for an item that is simply still indexing; content_status covers that. Default: False.
         extracted_media_capped (bool | Unset): True when extraction stopped with media still unread, so the item
-            references more media than was indexed and media search will not match anything past the cut. Two causes: a web
-            page that ran out of the budget for fetching remote assets, or a container that could not be read to the end (a
-            truncated or hostile archive). An uploaded document that reads cleanly is never capped, however much media it
-            holds — there is no limit on that. Default: False.
-        extracted_media_count (int | None | Unset): Number of embedded images / videos extracted from inside this item
-            and indexed as their own chunks. There is no limit on this — a document contributes as many as it holds. Null
-            when there is no media record for the item: the extraction pass has not run, does not apply to this container,
-            or found nothing. Treat null as 'unknown', never as zero.
+            references more media than was attached and media search will not match anything past the cut. The cause is a
+            web page that ran out of the budget for fetching remote assets or listed more media than is recorded, or a web
+            page or document that could not be read to the end. Default: False.
+        extracted_media_count (int | None | Unset): Number of images / videos in this web page's main content, or of
+            images inside this PDF or Office document, that were attached to the item on this source; a file over the per-
+            file size limit, listed as a failed attachment, is not counted. Null when there is no media record for the item:
+            the extraction pass has not run, does not apply to this container or this source's settings, or found nothing.
+            Treat null as 'unknown', never as zero.
         extracted_media_limit (int | None | Unset): The bound that was reached, when extracted_media_capped is true and
-            the stop was a bound — a number of fetch attempts, or a number of seconds. Null when extraction was not capped,
-            or when it stopped because the container could not be read rather than because a bound fired.
+            the stop was a bound — a number of fetch attempts, of seconds, of bytes, or of media listed. Null when
+            extraction was not capped, or when it stopped because the container could not be read rather than because a
+            bound fired.
+        held_for_review (bool | Unset): An ENFORCE governance policy blocked this item at import. It is held for review
+            and is not retrievable: resolving its blocking evaluations releases it into the source, and it is purged when
+            the hold window ends. Default: False.
     """
 
     content_status: str
@@ -73,6 +77,7 @@ class SourceContentStatusResponse:
     extracted_media_capped: bool | Unset = False
     extracted_media_count: int | None | Unset = UNSET
     extracted_media_limit: int | None | Unset = UNSET
+    held_for_review: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -127,6 +132,8 @@ class SourceContentStatusResponse:
         else:
             extracted_media_limit = self.extracted_media_limit
 
+        held_for_review = self.held_for_review
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -154,6 +161,8 @@ class SourceContentStatusResponse:
             field_dict["extracted_media_count"] = extracted_media_count
         if extracted_media_limit is not UNSET:
             field_dict["extracted_media_limit"] = extracted_media_limit
+        if held_for_review is not UNSET:
+            field_dict["held_for_review"] = held_for_review
 
         return field_dict
 
@@ -261,6 +270,8 @@ class SourceContentStatusResponse:
             d.pop("extracted_media_limit", UNSET)
         )
 
+        held_for_review = d.pop("held_for_review", UNSET)
+
         source_content_status_response = cls(
             content_status=content_status,
             content_token_count=content_token_count,
@@ -279,6 +290,7 @@ class SourceContentStatusResponse:
             extracted_media_capped=extracted_media_capped,
             extracted_media_count=extracted_media_count,
             extracted_media_limit=extracted_media_limit,
+            held_for_review=held_for_review,
         )
 
         source_content_status_response.additional_properties = d

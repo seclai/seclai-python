@@ -83,7 +83,11 @@ def sync_detailed(
 
      Cancel a running or pending model playground experiment.
 
-    Signals running model calls to abort and marks the experiment as canceled.
+    Marks the experiment as canceled. An experiment that has not started never runs. One that is running
+    starts no further model calls, and records each model it did not call with the error `Canceled`. A
+    model call or evaluation already in progress is not interrupted by the cancel: it continues and is
+    billed, and its result is recorded on the canceled experiment. Canceling may therefore not shorten
+    the run or reduce its cost.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's
@@ -126,7 +130,11 @@ def sync(
 
      Cancel a running or pending model playground experiment.
 
-    Signals running model calls to abort and marks the experiment as canceled.
+    Marks the experiment as canceled. An experiment that has not started never runs. One that is running
+    starts no further model calls, and records each model it did not call with the error `Canceled`. A
+    model call or evaluation already in progress is not interrupted by the cancel: it continues and is
+    billed, and its result is recorded on the canceled experiment. Canceling may therefore not shorten
+    the run or reduce its cost.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's
@@ -164,7 +172,11 @@ async def asyncio_detailed(
 
      Cancel a running or pending model playground experiment.
 
-    Signals running model calls to abort and marks the experiment as canceled.
+    Marks the experiment as canceled. An experiment that has not started never runs. One that is running
+    starts no further model calls, and records each model it did not call with the error `Canceled`. A
+    model call or evaluation already in progress is not interrupted by the cancel: it continues and is
+    billed, and its result is recorded on the canceled experiment. Canceling may therefore not shorten
+    the run or reduce its cost.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's
@@ -205,7 +217,11 @@ async def asyncio(
 
      Cancel a running or pending model playground experiment.
 
-    Signals running model calls to abort and marks the experiment as canceled.
+    Marks the experiment as canceled. An experiment that has not started never runs. One that is running
+    starts no further model calls, and records each model it did not call with the error `Canceled`. A
+    model call or evaluation already in progress is not interrupted by the cancel: it continues and is
+    billed, and its result is recorded on the canceled experiment. Canceling may therefore not shorten
+    the run or reduce its cost.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. The experiment must belong to the caller's

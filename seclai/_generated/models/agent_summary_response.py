@@ -46,6 +46,8 @@ class AgentSummaryResponse:
         retry_on_failure (bool | Unset): Whether to retry on evaluation failure. Default: True.
         sampling_config (AgentSummaryResponseSamplingConfigType0 | None | Unset): Sampling configuration for
             sample_and_flag mode.
+        trigger_id (None | str | Unset): ID of the agent's trigger, for the `/agents/{agent_id}/triggers/{trigger_id}/…`
+            endpoints such as `accepted-attachments` and `email-config`.
         trigger_type (None | str | Unset): Trigger type for the agent.
     """
 
@@ -66,6 +68,7 @@ class AgentSummaryResponse:
     prompt_model_auto_upgrade_strategy: str | Unset = "none"
     retry_on_failure: bool | Unset = True
     sampling_config: AgentSummaryResponseSamplingConfigType0 | None | Unset = UNSET
+    trigger_id: None | str | Unset = UNSET
     trigger_type: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -148,6 +151,12 @@ class AgentSummaryResponse:
         else:
             sampling_config = self.sampling_config
 
+        trigger_id: None | str | Unset
+        if isinstance(self.trigger_id, Unset):
+            trigger_id = UNSET
+        else:
+            trigger_id = self.trigger_id
+
         trigger_type: None | str | Unset
         if isinstance(self.trigger_type, Unset):
             trigger_type = UNSET
@@ -195,6 +204,8 @@ class AgentSummaryResponse:
             field_dict["retry_on_failure"] = retry_on_failure
         if sampling_config is not UNSET:
             field_dict["sampling_config"] = sampling_config
+        if trigger_id is not UNSET:
+            field_dict["trigger_id"] = trigger_id
         if trigger_type is not UNSET:
             field_dict["trigger_type"] = trigger_type
 
@@ -338,6 +349,15 @@ class AgentSummaryResponse:
 
         sampling_config = _parse_sampling_config(d.pop("sampling_config", UNSET))
 
+        def _parse_trigger_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        trigger_id = _parse_trigger_id(d.pop("trigger_id", UNSET))
+
         def _parse_trigger_type(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -365,6 +385,7 @@ class AgentSummaryResponse:
             prompt_model_auto_upgrade_strategy=prompt_model_auto_upgrade_strategy,
             retry_on_failure=retry_on_failure,
             sampling_config=sampling_config,
+            trigger_id=trigger_id,
             trigger_type=trigger_type,
         )
 

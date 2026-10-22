@@ -150,6 +150,11 @@ def sync_detailed(
     the id `GET /contents/{id}` takes.
     - `content_status` reaches `completed` on success and `failed` on error, with the reason in `error`.
     The intermediate values are `pending`, `fetching`, `transcribing`, `scanning`, and `indexing`.
+    - An item an Enforce governance policy blocked at import is held for review: `held_for_review` is
+    `true` and `source_connection_content_version_id` stays `null` until a reviewer releases it. With
+    `Seclai-Version: 2026-10-05` or later it reports `completed`; earlier versions report it as `failed`
+    with the hold as the `error`. The `status` filter matches the item under `completed` on every
+    version.
 
     Parameters:
     - Pagination: `page` and `limit`.
@@ -239,6 +244,11 @@ def sync(
     the id `GET /contents/{id}` takes.
     - `content_status` reaches `completed` on success and `failed` on error, with the reason in `error`.
     The intermediate values are `pending`, `fetching`, `transcribing`, `scanning`, and `indexing`.
+    - An item an Enforce governance policy blocked at import is held for review: `held_for_review` is
+    `true` and `source_connection_content_version_id` stays `null` until a reviewer releases it. With
+    `Seclai-Version: 2026-10-05` or later it reports `completed`; earlier versions report it as `failed`
+    with the hold as the `error`. The `status` filter matches the item under `completed` on every
+    version.
 
     Parameters:
     - Pagination: `page` and `limit`.
@@ -320,6 +330,11 @@ async def asyncio_detailed(
     the id `GET /contents/{id}` takes.
     - `content_status` reaches `completed` on success and `failed` on error, with the reason in `error`.
     The intermediate values are `pending`, `fetching`, `transcribing`, `scanning`, and `indexing`.
+    - An item an Enforce governance policy blocked at import is held for review: `held_for_review` is
+    `true` and `source_connection_content_version_id` stays `null` until a reviewer releases it. With
+    `Seclai-Version: 2026-10-05` or later it reports `completed`; earlier versions report it as `failed`
+    with the hold as the `error`. The `status` filter matches the item under `completed` on every
+    version.
 
     Parameters:
     - Pagination: `page` and `limit`.
@@ -407,6 +422,11 @@ async def asyncio(
     the id `GET /contents/{id}` takes.
     - `content_status` reaches `completed` on success and `failed` on error, with the reason in `error`.
     The intermediate values are `pending`, `fetching`, `transcribing`, `scanning`, and `indexing`.
+    - An item an Enforce governance policy blocked at import is held for review: `held_for_review` is
+    `true` and `source_connection_content_version_id` stays `null` until a reviewer releases it. With
+    `Seclai-Version: 2026-10-05` or later it reports `completed`; earlier versions report it as `failed`
+    with the hold as the `error`. The `status` filter matches the item under `completed` on every
+    version.
 
     Parameters:
     - Pagination: `page` and `limit`.

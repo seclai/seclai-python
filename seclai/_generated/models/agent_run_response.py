@@ -34,7 +34,7 @@ class AgentRunResponse:
         input_ (None | str): Input provided to the agent for this run.
         output (None | str): The run's output text; its files are in `attachments`.  Below `Seclai-Version: 2026-09-30`
             an output that has files is instead the manifest JSON `{schema, text, attachments: [{storage_key, mime, name,
-            label, bytes}]}`; `bytes` is absent on runs made before that version shipped.
+            label, bytes}]}`; `bytes` can be `null` on runs made before that version shipped.
         priority (bool): Indicates if the run was treated as a priority execution.
         run_id (str): Unique identifier for the agent run.
         status (PendingProcessingCompletedFailedStatus):
@@ -61,7 +61,8 @@ class AgentRunResponse:
             requested.
         trace_purged_at (datetime.datetime | None | Unset): When this run's trace content was deleted under the
             account's agent-trace retention window.  Non-null means `input`, `output` and every step's and tool call's I/O
-            are null **by design** and will never be available again — the run aged out, it did not fail.  Branch on this
+            are null **by design** and will never be available again — the run aged out, it did not fail.  A tool call's
+            `error` may be null as well, so a failed tool call can report its status without a message.  Branch on this
             rather than on a null `output`: a run that genuinely produced nothing looks identical.  Status, timing and
             credits remain accurate.
         wait_ms (int | None | Unset): Cumulative milliseconds the run was parked on standard-mode wait steps.

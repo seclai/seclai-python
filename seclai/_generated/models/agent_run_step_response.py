@@ -41,8 +41,8 @@ class AgentRunStepResponse:
             produced none, for steps run before files were listed here, and once the run's trace is purged.
         tool_calls (list[AgentRunToolCallResponse] | Unset): LLM tool calls made during this step (prompt_call steps
             only), ordered by execution. Empty for steps that invoked no tools.
-        warnings (list[str] | None | Unset): Authoring problems the step ran into, whether or not it then failed, such
-            as a file name selector that matched none of its source's files.
+        warnings (list[str] | None | Unset): Problems the step ran into, whether or not it then failed, such as a file
+            name selector that matched none of its source's files, or a model that returned no answer.
     """
 
     agent_step_id: str

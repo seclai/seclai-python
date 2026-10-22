@@ -124,7 +124,7 @@ def sync_detailed(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
-    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
@@ -197,7 +197,7 @@ def sync(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
-    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
@@ -264,7 +264,7 @@ async def asyncio_detailed(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
-    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
@@ -335,7 +335,7 @@ async def asyncio(
     - `input`: text input for agents with a `dynamic_input` trigger.
     - `input_upload_id` / `input_upload_ids`: reference one or more files previously uploaded via `POST
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
-    text leads, each file's extracted text follows); only the two upload fields are mutually exclusive
+    text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but

@@ -1,0 +1,312 @@
+from http import HTTPStatus
+from typing import Any
+from urllib.parse import quote
+from uuid import UUID
+
+import httpx
+
+from ... import errors
+from ...client import AuthenticatedClient, Client
+from ...models.content_attachments_list_response import ContentAttachmentsListResponse
+from ...models.http_validation_error import HTTPValidationError
+from ...models.service_unavailable_error import ServiceUnavailableError
+from ...types import UNSET, Response, Unset
+
+
+def _get_kwargs(
+    source_connection_content_version: str,
+    *,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_account_id, Unset):
+        headers["X-Account-Id"] = x_account_id
+
+    if not isinstance(seclai_version, Unset):
+        headers["Seclai-Version"] = seclai_version
+
+    params: dict[str, Any] = {}
+
+    params["page"] = page
+
+    params["limit"] = limit
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
+    _kwargs: dict[str, Any] = {
+        "method": "get",
+        "url": "/contents/{source_connection_content_version}/attachments".format(
+            source_connection_content_version=quote(
+                str(source_connection_content_version), safe=""
+            ),
+        ),
+        "params": params,
+    }
+
+    _kwargs["headers"] = headers
+    return _kwargs
+
+
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> (
+    ContentAttachmentsListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
+    if response.status_code == 200:
+        response_200 = ContentAttachmentsListResponse.from_dict(response.json())
+
+        return response_200
+
+    if response.status_code == 422:
+        response_422 = HTTPValidationError.from_dict(response.json())
+
+        return response_422
+
+    if response.status_code == 503:
+        response_503 = ServiceUnavailableError.from_dict(response.json())
+
+        return response_503
+
+    if client.raise_on_unexpected_status:
+        raise errors.UnexpectedStatus(response.status_code, response.content)
+    else:
+        return None
+
+
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[
+    ContentAttachmentsListResponse | HTTPValidationError | ServiceUnavailableError
+]:
+    return Response(
+        status_code=HTTPStatus(response.status_code),
+        content=response.content,
+        headers=response.headers,
+        parsed=_parse_response(client=client, response=response),
+    )
+
+
+def sync_detailed(
+    source_connection_content_version: str,
+    *,
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> Response[
+    ContentAttachmentsListResponse | HTTPValidationError | ServiceUnavailableError
+]:
+    """List content attachments
+
+     List the files attached to a content item, with pagination.
+
+    An agent's `write_content_attachment` step attaches a file, and an email content source attaches the
+    files sent with a message. An RSS source attaches the kinds of feed file chosen in its
+    `feed_attachments`. The images and video in a web page's main content are attached on a source with
+    media indexing on. The images inside a PDF, DOCX, PPTX or XLSX item or attachment are attached too,
+    on a source that indexes document images. Each entry says whether the file is indexed for search
+    and, when indexing failed, why.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access attachments of content
+    belonging to your account.
+
+    Args:
+        source_connection_content_version (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[ContentAttachmentsListResponse | HTTPValidationError | ServiceUnavailableError]
+    """
+
+    kwargs = _get_kwargs(
+        source_connection_content_version=source_connection_content_version,
+        page=page,
+        limit=limit,
+        x_account_id=x_account_id,
+        seclai_version=seclai_version,
+    )
+
+    response = client.get_httpx_client().request(
+        **kwargs,
+    )
+
+    return _build_response(client=client, response=response)
+
+
+def sync(
+    source_connection_content_version: str,
+    *,
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> (
+    ContentAttachmentsListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
+    """List content attachments
+
+     List the files attached to a content item, with pagination.
+
+    An agent's `write_content_attachment` step attaches a file, and an email content source attaches the
+    files sent with a message. An RSS source attaches the kinds of feed file chosen in its
+    `feed_attachments`. The images and video in a web page's main content are attached on a source with
+    media indexing on. The images inside a PDF, DOCX, PPTX or XLSX item or attachment are attached too,
+    on a source that indexes document images. Each entry says whether the file is indexed for search
+    and, when indexing failed, why.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access attachments of content
+    belonging to your account.
+
+    Args:
+        source_connection_content_version (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        ContentAttachmentsListResponse | HTTPValidationError | ServiceUnavailableError
+    """
+
+    return sync_detailed(
+        source_connection_content_version=source_connection_content_version,
+        client=client,
+        page=page,
+        limit=limit,
+        x_account_id=x_account_id,
+        seclai_version=seclai_version,
+    ).parsed
+
+
+async def asyncio_detailed(
+    source_connection_content_version: str,
+    *,
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> Response[
+    ContentAttachmentsListResponse | HTTPValidationError | ServiceUnavailableError
+]:
+    """List content attachments
+
+     List the files attached to a content item, with pagination.
+
+    An agent's `write_content_attachment` step attaches a file, and an email content source attaches the
+    files sent with a message. An RSS source attaches the kinds of feed file chosen in its
+    `feed_attachments`. The images and video in a web page's main content are attached on a source with
+    media indexing on. The images inside a PDF, DOCX, PPTX or XLSX item or attachment are attached too,
+    on a source that indexes document images. Each entry says whether the file is indexed for search
+    and, when indexing failed, why.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access attachments of content
+    belonging to your account.
+
+    Args:
+        source_connection_content_version (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[ContentAttachmentsListResponse | HTTPValidationError | ServiceUnavailableError]
+    """
+
+    kwargs = _get_kwargs(
+        source_connection_content_version=source_connection_content_version,
+        page=page,
+        limit=limit,
+        x_account_id=x_account_id,
+        seclai_version=seclai_version,
+    )
+
+    response = await client.get_async_httpx_client().request(**kwargs)
+
+    return _build_response(client=client, response=response)
+
+
+async def asyncio(
+    source_connection_content_version: str,
+    *,
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    limit: int | Unset = 20,
+    x_account_id: UUID | Unset = UNSET,
+    seclai_version: str | Unset = UNSET,
+) -> (
+    ContentAttachmentsListResponse
+    | HTTPValidationError
+    | ServiceUnavailableError
+    | None
+):
+    """List content attachments
+
+     List the files attached to a content item, with pagination.
+
+    An agent's `write_content_attachment` step attaches a file, and an email content source attaches the
+    files sent with a message. An RSS source attaches the kinds of feed file chosen in its
+    `feed_attachments`. The images and video in a web page's main content are attached on a source with
+    media indexing on. The images inside a PDF, DOCX, PPTX or XLSX item or attachment are attached too,
+    on a source that indexes document images. Each entry says whether the file is indexed for search
+    and, when indexing failed, why.
+
+    Auth & scoping:
+    - Requires `X-API-Key` header or OAuth Bearer token. You can only access attachments of content
+    belonging to your account.
+
+    Args:
+        source_connection_content_version (str):
+        page (int | Unset):  Default: 1.
+        limit (int | Unset):  Default: 20.
+        x_account_id (UUID | Unset):
+        seclai_version (str | Unset):
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        ContentAttachmentsListResponse | HTTPValidationError | ServiceUnavailableError
+    """
+
+    return (
+        await asyncio_detailed(
+            source_connection_content_version=source_connection_content_version,
+            client=client,
+            page=page,
+            limit=limit,
+            x_account_id=x_account_id,
+            seclai_version=seclai_version,
+        )
+    ).parsed
