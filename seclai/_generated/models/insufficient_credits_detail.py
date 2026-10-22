@@ -11,23 +11,23 @@ T = TypeVar("T", bound="InsufficientCreditsDetail")
 
 @_attrs_define
 class InsufficientCreditsDetail:
-    """``detail`` body for a 402 ``insufficient_credits`` response.
+    """``error`` body of a 402 ``insufficient_credits`` response.
 
     Attributes:
         account_id (str): UUID of the account that ran out of credits.
-        error (Literal['insufficient_credits']): Stable machine-readable error code.
+        code (Literal['insufficient_credits']): Stable machine-readable error code.
         message (str): Human-readable explanation.
     """
 
     account_id: str
-    error: Literal["insufficient_credits"]
+    code: Literal["insufficient_credits"]
     message: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         account_id = self.account_id
 
-        error = self.error
+        code = self.code
 
         message = self.message
 
@@ -36,7 +36,7 @@ class InsufficientCreditsDetail:
         field_dict.update(
             {
                 "account_id": account_id,
-                "error": error,
+                "code": code,
                 "message": message,
             }
         )
@@ -48,17 +48,17 @@ class InsufficientCreditsDetail:
         d = dict(src_dict)
         account_id = d.pop("account_id")
 
-        error = cast(Literal["insufficient_credits"], d.pop("error"))
-        if error != "insufficient_credits":
+        code = cast(Literal["insufficient_credits"], d.pop("code"))
+        if code != "insufficient_credits":
             raise ValueError(
-                f"error must match const 'insufficient_credits', got '{error}'"
+                f"code must match const 'insufficient_credits', got '{code}'"
             )
 
         message = d.pop("message")
 
         insufficient_credits_detail = cls(
             account_id=account_id,
-            error=error,
+            code=code,
             message=message,
         )
 

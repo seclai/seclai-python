@@ -243,6 +243,7 @@ client decodes:
 | `2026-10-16` | `upload_agent_input()` accepts a file of any type and it is `ready` at once; each upload reaches steps as a separate file and `input` carries only a heading for it |
 | `2026-10-18` | A source's `document_images` defaults to true on a text-only embedder as well |
 | `2026-10-19` | `create_source()` refuses `polling_max_items` with a 400 on any source other than an RSS feed |
+| `2026-10-21` | An evaluation result whose evaluator returned no verdict (`error`) is left out of `failed` and of the pass and failure rates in `get_non_manual_evaluation_summary()`; `get_evaluation_criteria_summary()`'s `average_score` averages only passed and failed results; `test_draft_evaluation()` returns `score` and `passed` as `None` for an `error` result instead of 0.5 and `False` |
 
 Moving to a later version can still change a value your code branches on, or
 reject a request that used to work. From `2026-10-05`, a content item held for
@@ -251,7 +252,10 @@ reads `failed` from `get_source_content_status()` or `list_source_contents()` to
 find held items stops seeing them: check `held_for_review` instead. (The
 `status` filter already matched held items under `completed` on every version.)
 `2026-10-13` and `2026-10-19` turn source bodies that were accepted before into
-400s. Passing
+400s. From `2026-10-21`, code that reads `passed` from `test_draft_evaluation()`
+as a bool, or does arithmetic on its `score`, gets `None` when `status` is
+`error`, and `get_non_manual_evaluation_summary()`'s `failed` no longer counts
+those results: read its `error` count. Passing
 `api_version=LATEST_API_VERSION` opts into all of these at once.
 
 ## Resources
@@ -451,8 +455,9 @@ detail = client.get_evaluation_criteria("criteria_id")
 client.update_evaluation_criteria("criteria_id", {"name": "updated"})
 client.delete_evaluation_criteria("criteria_id")
 
-# Test a draft
-client.test_draft_evaluation("agent_id", {"criteria": {}, "run_id": "run_id"})
+# Test a draft. "status" is "error" when the evaluator returned no verdict;
+# from api_version 2026-10-21 its "score" and "passed" are then None.
+draft = client.test_draft_evaluation("agent_id", {"criteria": {}, "run_id": "run_id"})
 
 # Results & summaries
 results = client.list_evaluation_results("criteria_id")

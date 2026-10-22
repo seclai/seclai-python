@@ -6,6 +6,8 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.evaluation_status import EvaluationStatus
+
 T = TypeVar("T", bound="TestDraftEvaluationResponse")
 
 
@@ -17,11 +19,13 @@ class TestDraftEvaluationResponse:
         explanation (None | str):
         passed (bool):
         score (float):
+        status (EvaluationStatus): Result status of a single evaluation run.
     """
 
     explanation: None | str
     passed: bool
     score: float
+    status: EvaluationStatus
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -32,6 +36,8 @@ class TestDraftEvaluationResponse:
 
         score = self.score
 
+        status = self.status.value
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -39,6 +45,7 @@ class TestDraftEvaluationResponse:
                 "explanation": explanation,
                 "passed": passed,
                 "score": score,
+                "status": status,
             }
         )
 
@@ -59,10 +66,13 @@ class TestDraftEvaluationResponse:
 
         score = d.pop("score")
 
+        status = EvaluationStatus(d.pop("status"))
+
         test_draft_evaluation_response = cls(
             explanation=explanation,
             passed=passed,
             score=score,
+            status=status,
         )
 
         test_draft_evaluation_response.additional_properties = d

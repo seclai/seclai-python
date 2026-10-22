@@ -2907,7 +2907,9 @@ class Seclai(_SeclaiBase):
             body: Draft evaluation criteria and test run.
 
         Returns:
-            Test evaluation result.
+            Test evaluation result. ``status`` is ``"error"`` when the evaluator
+            returned no verdict; from ``2026-10-21`` ``score`` and ``passed`` are
+            then ``None``, and earlier versions return ``0.5`` and ``False``.
         """
         return cast(
             dict[str, Any],
@@ -3030,7 +3032,8 @@ class Seclai(_SeclaiBase):
             Summary of automated evaluation results — for ``agent_id`` when the
             client has opted in, account-wide otherwise. The two are
             indistinguishable in the payload, so check the client's
-            ``api_version`` rather than the response.
+            ``api_version`` rather than the response. From ``2026-10-21``,
+            ``failed`` and the rates leave out results counted in ``error``.
         """
         return cast(
             dict[str, Any],
@@ -7450,7 +7453,9 @@ class AsyncSeclai(_SeclaiBase):
             body: Draft evaluation criteria and test run.
 
         Returns:
-            Test evaluation result.
+            Test evaluation result. ``status`` is ``"error"`` when the evaluator
+            returned no verdict; from ``2026-10-21`` ``score`` and ``passed`` are
+            then ``None``, and earlier versions return ``0.5`` and ``False``.
         """
         return cast(
             dict[str, Any],
@@ -7573,7 +7578,8 @@ class AsyncSeclai(_SeclaiBase):
             Summary of automated evaluation results — for ``agent_id`` when the
             client has opted in, account-wide otherwise. The two are
             indistinguishable in the payload, so check the client's
-            ``api_version`` rather than the response.
+            ``api_version`` rather than the response. From ``2026-10-21``,
+            ``failed`` and the rates leave out results counted in ``error``.
         """
         return cast(
             dict[str, Any],

@@ -17,21 +17,23 @@ T = TypeVar("T", bound="InsufficientCreditsResponse")
 class InsufficientCreditsResponse:
     """402 envelope returned when the account has exhausted its credits.
 
-    Attributes:
-        detail (InsufficientCreditsDetail): ``detail`` body for a 402 ``insufficient_credits`` response.
+    The wire shape ``http_exception_handler`` and ``insufficient_credits_exception_handler`` send.
+
+        Attributes:
+            error (InsufficientCreditsDetail): ``error`` body of a 402 ``insufficient_credits`` response.
     """
 
-    detail: InsufficientCreditsDetail
+    error: InsufficientCreditsDetail
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        detail = self.detail.to_dict()
+        error = self.error.to_dict()
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "detail": detail,
+                "error": error,
             }
         )
 
@@ -42,10 +44,10 @@ class InsufficientCreditsResponse:
         from ..models.insufficient_credits_detail import InsufficientCreditsDetail
 
         d = dict(src_dict)
-        detail = InsufficientCreditsDetail.from_dict(d.pop("detail"))
+        error = InsufficientCreditsDetail.from_dict(d.pop("error"))
 
         insufficient_credits_response = cls(
-            detail=detail,
+            error=error,
         )
 
         insufficient_credits_response.additional_properties = d

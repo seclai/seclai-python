@@ -21,7 +21,8 @@ class EvaluationResultSummaryResponse:
         flagged (int):
         passed (int):
         total (int):
-        average_score (float | None | Unset): Mean score across all evaluated results, or null if none.
+        average_score (float | None | Unset): Mean score of the final passed and failed results, or null if none. On
+            /api before Seclai-Version 2026-10-21 it averages every final result's stored score, `error` included.
     """
 
     error: int

@@ -21,6 +21,7 @@ class NonManualEvaluationSummaryResponse:
 
     Attributes:
         by_mode (list[NonManualEvaluationModeStatResponse]):
+        error (int): Results whose evaluator returned no verdict.
         failed (int):
         failure_rate (float):
         flagged (int):
@@ -30,6 +31,7 @@ class NonManualEvaluationSummaryResponse:
     """
 
     by_mode: list[NonManualEvaluationModeStatResponse]
+    error: int
     failed: int
     failure_rate: float
     flagged: int
@@ -43,6 +45,8 @@ class NonManualEvaluationSummaryResponse:
         for by_mode_item_data in self.by_mode:
             by_mode_item = by_mode_item_data.to_dict()
             by_mode.append(by_mode_item)
+
+        error = self.error
 
         failed = self.failed
 
@@ -61,6 +65,7 @@ class NonManualEvaluationSummaryResponse:
         field_dict.update(
             {
                 "by_mode": by_mode,
+                "error": error,
                 "failed": failed,
                 "failure_rate": failure_rate,
                 "flagged": flagged,
@@ -88,6 +93,8 @@ class NonManualEvaluationSummaryResponse:
 
             by_mode.append(by_mode_item)
 
+        error = d.pop("error")
+
         failed = d.pop("failed")
 
         failure_rate = d.pop("failure_rate")
@@ -102,6 +109,7 @@ class NonManualEvaluationSummaryResponse:
 
         non_manual_evaluation_summary_response = cls(
             by_mode=by_mode,
+            error=error,
             failed=failed,
             failure_rate=failure_rate,
             flagged=flagged,

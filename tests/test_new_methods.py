@@ -22,6 +22,12 @@ from seclai._generated.models import (
     ContentAttachmentsListResponse,
     ContentEmbeddingsListResponse,
     EmailSourceRejectionListResponse,
+    EvaluationStatus,
+    InsufficientCreditsResponse,
+    NonManualEvaluationSummaryResponse,
+)
+from seclai._generated.models import (
+    TestDraftEvaluationResponse as DraftEvaluationResponse,
 )
 
 # ---------------------------------------------------------------------------
@@ -4819,3 +4825,90 @@ class TestAgentRunStreamRequestOptionalKeys:
     def test_null_metadata_is_accepted(self) -> None:
         body = AgentRunStreamRequest(input="hi", metadata=None)
         assert body == {"input": "hi", "metadata": None}
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-21: evaluation `error` results, the 402 body's wire shape
+# ---------------------------------------------------------------------------
+
+_INSUFFICIENT_CREDITS_402 = {
+    "error": {
+        "code": "insufficient_credits",
+        "message": "Out of credits.",
+        "account_id": "acct-1",
+    }
+}
+
+
+class TestLatestApiVersion20261021:
+    def test_latest_is_2026_10_21(self) -> None:
+        assert (
+            seclai_versions.LATEST_API_VERSION is seclai_versions.ApiVersion.V2026_10_21
+        )
+
+    def test_latest_is_sent_as_the_header(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["version"] = req.headers.get("seclai-version")
+            return _json_response({"data": []})
+
+        client = _sync_client(handler, api_version=seclai_versions.LATEST_API_VERSION)
+        client.list_agents()
+        assert seen["version"] == "2026-10-21"
+
+
+class TestInsufficientCredits402:
+    def test_generated_model_reads_the_wire_shape(self) -> None:
+        parsed = InsufficientCreditsResponse.from_dict(_INSUFFICIENT_CREDITS_402)
+        assert parsed.error.code == "insufficient_credits"
+        assert parsed.error.account_id == "acct-1"
+        assert parsed.to_dict() == _INSUFFICIENT_CREDITS_402
+
+
+_TEST_DRAFT_ERROR = {
+    "status": "error",
+    "score": None,
+    "passed": None,
+    "explanation": "The evaluator returned no verdict.",
+}
+
+
+class TestTestDraftErrorVerdict:
+    def test_generated_model_decodes_null_score_and_passed(self) -> None:
+        # The spec types score and passed as non-null, the legacy shape;
+        # 2026-10-21 sends null for an error result.
+        parsed = DraftEvaluationResponse.from_dict(_TEST_DRAFT_ERROR)
+        assert parsed.status is EvaluationStatus.ERROR
+        assert parsed.score is None
+        assert parsed.passed is None
+
+
+_NON_MANUAL_SUMMARY = {
+    "total": 10,
+    "passed": 6,
+    "failed": 2,
+    "error": 2,
+    "flagged": 1,
+    "pass_rate": 0.75,
+    "failure_rate": 0.25,
+    "by_mode": [
+        {
+            "mode": "eval_and_retry",
+            "total": 10,
+            "passed": 6,
+            "failed": 2,
+            "error": 2,
+            "flagged": 1,
+            "pass_rate": 0.75,
+            "failure_rate": 0.25,
+        }
+    ],
+}
+
+
+class TestNonManualSummaryErrorCount:
+    def test_generated_model_reads_error_counts(self) -> None:
+        parsed = NonManualEvaluationSummaryResponse.from_dict(_NON_MANUAL_SUMMARY)
+        assert parsed.error == 2
+        assert parsed.by_mode[0].error == 2

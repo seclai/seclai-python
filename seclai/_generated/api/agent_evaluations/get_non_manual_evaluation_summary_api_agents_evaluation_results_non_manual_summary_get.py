@@ -128,6 +128,11 @@ def sync_detailed(
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
 
+    With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
+    verdict) are left out of ``failed``, and the rates are over passed and
+    failed results. Earlier versions count them in ``failed`` and rate over
+    every result. ``error`` is returned on every version.
+
     The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
     (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline
     always receive the account-wide rollup; ``agent_id`` is ignored for them so
@@ -188,6 +193,11 @@ def sync(
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
 
+    With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
+    verdict) are left out of ``failed``, and the rates are over passed and
+    failed results. Earlier versions count them in ``failed`` and rate over
+    every result. ``error`` is returned on every version.
+
     The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
     (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline
     always receive the account-wide rollup; ``agent_id`` is ignored for them so
@@ -239,6 +249,11 @@ async def asyncio_detailed(
 
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
+
+    With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
+    verdict) are left out of ``failed``, and the rates are over passed and
+    failed results. Earlier versions count them in ``failed`` and rate over
+    every result. ``error`` is returned on every version.
 
     The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
     (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline
@@ -297,6 +312,11 @@ async def asyncio(
 
     Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
     sample_and_flag).
+
+    With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
+    verdict) are left out of ``failed``, and the rates are over passed and
+    failed results. Earlier versions count them in ``failed`` and rate over
+    every result. ``error`` is returned on every version.
 
     The ``agent_id`` scoping parameter is part of the ``2026-07-27`` changeset
     (opt in via the ``Seclai-Version`` header). Clients on the legacy baseline

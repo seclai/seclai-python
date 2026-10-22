@@ -98,6 +98,10 @@ def sync_detailed(
     configurations while editing criteria.  The evaluation is a billed LLM
     call; only its result goes unrecorded.
 
+    ``status`` is ``error`` when the evaluator returned no verdict. With
+    ``Seclai-Version: 2026-10-21`` or later, ``score`` and ``passed`` are then
+    ``null``; earlier versions return ``score`` 0.5 and ``passed`` false.
+
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
@@ -146,6 +150,10 @@ def sync(
     configurations while editing criteria.  The evaluation is a billed LLM
     call; only its result goes unrecorded.
 
+    ``status`` is ``error`` when the evaluator returned no verdict. With
+    ``Seclai-Version: 2026-10-21`` or later, ``score`` and ``passed`` are then
+    ``null``; earlier versions return ``score`` 0.5 and ``passed`` false.
+
     Args:
         agent_id (str):
         x_account_id (UUID | Unset):
@@ -190,6 +198,10 @@ async def asyncio_detailed(
     Use this to interactively test evaluation prompts and expectation
     configurations while editing criteria.  The evaluation is a billed LLM
     call; only its result goes unrecorded.
+
+    ``status`` is ``error`` when the evaluator returned no verdict. With
+    ``Seclai-Version: 2026-10-21`` or later, ``score`` and ``passed`` are then
+    ``null``; earlier versions return ``score`` 0.5 and ``passed`` false.
 
     Args:
         agent_id (str):
@@ -236,6 +248,10 @@ async def asyncio(
     Use this to interactively test evaluation prompts and expectation
     configurations while editing criteria.  The evaluation is a billed LLM
     call; only its result goes unrecorded.
+
+    ``status`` is ``error`` when the evaluator returned no verdict. With
+    ``Seclai-Version: 2026-10-21`` or later, ``score`` and ``passed`` are then
+    ``null``; earlier versions return ``score`` 0.5 and ``passed`` false.
 
     Args:
         agent_id (str):
