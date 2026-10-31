@@ -9,6 +9,9 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
+    from ..models.agent_summary_response_created_resources_type_0 import (
+        AgentSummaryResponseCreatedResourcesType0,
+    )
     from ..models.agent_summary_response_sampling_config_type_0 import (
         AgentSummaryResponseSamplingConfigType0,
     )
@@ -27,6 +30,8 @@ class AgentSummaryResponse:
         id (str): Unique agent identifier.
         name (str): Agent name.
         updated_at (str): ISO 8601 last-updated timestamp.
+        created_resources (AgentSummaryResponseCreatedResourcesType0 | None | Unset): On a create from an
+            `agent_template`: {slot: resource_id} for each resource `create_missing_resources` created.
         default_evaluation_tier (None | str | Unset): Default evaluation tier: fast, balanced, or thorough.
         disabled (bool | Unset): Whether the agent is paused (disabled). Default: False.
         disabled_at (None | str | Unset): ISO 8601 timestamp the agent was paused.
@@ -36,7 +41,12 @@ class AgentSummaryResponse:
         import_warnings (list[ImportSkipResponse] | None | Unset): One entry per item dropped or substituted during
             import. Present only on endpoints that accept agent_definition; null on non-import calls; [] when the import had
             no skips.
+        max_credits_per_period (float | None | Unset): Credit limit per billing period; null when none.
+        max_credits_per_run (float | None | Unset): Credit limit per run; null when none.
         max_retries (int | Unset): Max retries for eval_and_retry mode. Default: 3.
+        max_runs_per_day (int | None | Unset): Runs per day limit; null when none.
+        max_runs_per_hour (int | None | Unset): Runs per hour limit; null when none.
+        max_runs_total (int | None | Unset): Limit on runs in total; null when none.
         prompt_model_auto_rollback_enabled (bool | Unset): Whether automatic rollback is enabled for upgraded models.
             Default: False.
         prompt_model_auto_rollback_triggers (list[str] | None | Unset): Failure signals that trigger rollback. Defaults
@@ -46,6 +56,8 @@ class AgentSummaryResponse:
         retry_on_failure (bool | Unset): Whether to retry on evaluation failure. Default: True.
         sampling_config (AgentSummaryResponseSamplingConfigType0 | None | Unset): Sampling configuration for
             sample_and_flag mode.
+        solution_id (None | str | Unset): On a create from an `agent_template` that created resources: the solution
+            grouping the agent with them.
         trigger_id (None | str | Unset): ID of the agent's trigger, for the `/agents/{agent_id}/triggers/{trigger_id}/…`
             endpoints such as `accepted-attachments` and `email-config`.
         trigger_type (None | str | Unset): Trigger type for the agent.
@@ -56,23 +68,33 @@ class AgentSummaryResponse:
     id: str
     name: str
     updated_at: str
+    created_resources: AgentSummaryResponseCreatedResourcesType0 | None | Unset = UNSET
     default_evaluation_tier: None | str | Unset = UNSET
     disabled: bool | Unset = False
     disabled_at: None | str | Unset = UNSET
     disabled_reason: None | str | Unset = UNSET
     evaluation_mode: str | Unset = "eval_and_retry"
     import_warnings: list[ImportSkipResponse] | None | Unset = UNSET
+    max_credits_per_period: float | None | Unset = UNSET
+    max_credits_per_run: float | None | Unset = UNSET
     max_retries: int | Unset = 3
+    max_runs_per_day: int | None | Unset = UNSET
+    max_runs_per_hour: int | None | Unset = UNSET
+    max_runs_total: int | None | Unset = UNSET
     prompt_model_auto_rollback_enabled: bool | Unset = False
     prompt_model_auto_rollback_triggers: list[str] | None | Unset = UNSET
     prompt_model_auto_upgrade_strategy: str | Unset = "none"
     retry_on_failure: bool | Unset = True
     sampling_config: AgentSummaryResponseSamplingConfigType0 | None | Unset = UNSET
+    solution_id: None | str | Unset = UNSET
     trigger_id: None | str | Unset = UNSET
     trigger_type: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        from ..models.agent_summary_response_created_resources_type_0 import (
+            AgentSummaryResponseCreatedResourcesType0,
+        )
         from ..models.agent_summary_response_sampling_config_type_0 import (
             AgentSummaryResponseSamplingConfigType0,
         )
@@ -87,6 +109,16 @@ class AgentSummaryResponse:
         name = self.name
 
         updated_at = self.updated_at
+
+        created_resources: dict[str, Any] | None | Unset
+        if isinstance(self.created_resources, Unset):
+            created_resources = UNSET
+        elif isinstance(
+            self.created_resources, AgentSummaryResponseCreatedResourcesType0
+        ):
+            created_resources = self.created_resources.to_dict()
+        else:
+            created_resources = self.created_resources
 
         default_evaluation_tier: None | str | Unset
         if isinstance(self.default_evaluation_tier, Unset):
@@ -122,7 +154,37 @@ class AgentSummaryResponse:
         else:
             import_warnings = self.import_warnings
 
+        max_credits_per_period: float | None | Unset
+        if isinstance(self.max_credits_per_period, Unset):
+            max_credits_per_period = UNSET
+        else:
+            max_credits_per_period = self.max_credits_per_period
+
+        max_credits_per_run: float | None | Unset
+        if isinstance(self.max_credits_per_run, Unset):
+            max_credits_per_run = UNSET
+        else:
+            max_credits_per_run = self.max_credits_per_run
+
         max_retries = self.max_retries
+
+        max_runs_per_day: int | None | Unset
+        if isinstance(self.max_runs_per_day, Unset):
+            max_runs_per_day = UNSET
+        else:
+            max_runs_per_day = self.max_runs_per_day
+
+        max_runs_per_hour: int | None | Unset
+        if isinstance(self.max_runs_per_hour, Unset):
+            max_runs_per_hour = UNSET
+        else:
+            max_runs_per_hour = self.max_runs_per_hour
+
+        max_runs_total: int | None | Unset
+        if isinstance(self.max_runs_total, Unset):
+            max_runs_total = UNSET
+        else:
+            max_runs_total = self.max_runs_total
 
         prompt_model_auto_rollback_enabled = self.prompt_model_auto_rollback_enabled
 
@@ -151,6 +213,12 @@ class AgentSummaryResponse:
         else:
             sampling_config = self.sampling_config
 
+        solution_id: None | str | Unset
+        if isinstance(self.solution_id, Unset):
+            solution_id = UNSET
+        else:
+            solution_id = self.solution_id
+
         trigger_id: None | str | Unset
         if isinstance(self.trigger_id, Unset):
             trigger_id = UNSET
@@ -174,6 +242,8 @@ class AgentSummaryResponse:
                 "updated_at": updated_at,
             }
         )
+        if created_resources is not UNSET:
+            field_dict["created_resources"] = created_resources
         if default_evaluation_tier is not UNSET:
             field_dict["default_evaluation_tier"] = default_evaluation_tier
         if disabled is not UNSET:
@@ -186,8 +256,18 @@ class AgentSummaryResponse:
             field_dict["evaluation_mode"] = evaluation_mode
         if import_warnings is not UNSET:
             field_dict["import_warnings"] = import_warnings
+        if max_credits_per_period is not UNSET:
+            field_dict["max_credits_per_period"] = max_credits_per_period
+        if max_credits_per_run is not UNSET:
+            field_dict["max_credits_per_run"] = max_credits_per_run
         if max_retries is not UNSET:
             field_dict["max_retries"] = max_retries
+        if max_runs_per_day is not UNSET:
+            field_dict["max_runs_per_day"] = max_runs_per_day
+        if max_runs_per_hour is not UNSET:
+            field_dict["max_runs_per_hour"] = max_runs_per_hour
+        if max_runs_total is not UNSET:
+            field_dict["max_runs_total"] = max_runs_total
         if prompt_model_auto_rollback_enabled is not UNSET:
             field_dict["prompt_model_auto_rollback_enabled"] = (
                 prompt_model_auto_rollback_enabled
@@ -204,6 +284,8 @@ class AgentSummaryResponse:
             field_dict["retry_on_failure"] = retry_on_failure
         if sampling_config is not UNSET:
             field_dict["sampling_config"] = sampling_config
+        if solution_id is not UNSET:
+            field_dict["solution_id"] = solution_id
         if trigger_id is not UNSET:
             field_dict["trigger_id"] = trigger_id
         if trigger_type is not UNSET:
@@ -213,6 +295,9 @@ class AgentSummaryResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.agent_summary_response_created_resources_type_0 import (
+            AgentSummaryResponseCreatedResourcesType0,
+        )
         from ..models.agent_summary_response_sampling_config_type_0 import (
             AgentSummaryResponseSamplingConfigType0,
         )
@@ -233,6 +318,27 @@ class AgentSummaryResponse:
         name = d.pop("name")
 
         updated_at = d.pop("updated_at")
+
+        def _parse_created_resources(
+            data: object,
+        ) -> AgentSummaryResponseCreatedResourcesType0 | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                created_resources_type_0 = (
+                    AgentSummaryResponseCreatedResourcesType0.from_dict(data)
+                )
+
+                return created_resources_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(AgentSummaryResponseCreatedResourcesType0 | None | Unset, data)
+
+        created_resources = _parse_created_resources(d.pop("created_resources", UNSET))
 
         def _parse_default_evaluation_tier(data: object) -> None | str | Unset:
             if data is None:
@@ -293,7 +399,56 @@ class AgentSummaryResponse:
 
         import_warnings = _parse_import_warnings(d.pop("import_warnings", UNSET))
 
+        def _parse_max_credits_per_period(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        max_credits_per_period = _parse_max_credits_per_period(
+            d.pop("max_credits_per_period", UNSET)
+        )
+
+        def _parse_max_credits_per_run(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        max_credits_per_run = _parse_max_credits_per_run(
+            d.pop("max_credits_per_run", UNSET)
+        )
+
         max_retries = d.pop("max_retries", UNSET)
+
+        def _parse_max_runs_per_day(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        max_runs_per_day = _parse_max_runs_per_day(d.pop("max_runs_per_day", UNSET))
+
+        def _parse_max_runs_per_hour(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        max_runs_per_hour = _parse_max_runs_per_hour(d.pop("max_runs_per_hour", UNSET))
+
+        def _parse_max_runs_total(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        max_runs_total = _parse_max_runs_total(d.pop("max_runs_total", UNSET))
 
         prompt_model_auto_rollback_enabled = d.pop(
             "prompt_model_auto_rollback_enabled", UNSET
@@ -349,6 +504,15 @@ class AgentSummaryResponse:
 
         sampling_config = _parse_sampling_config(d.pop("sampling_config", UNSET))
 
+        def _parse_solution_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        solution_id = _parse_solution_id(d.pop("solution_id", UNSET))
+
         def _parse_trigger_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -373,18 +537,25 @@ class AgentSummaryResponse:
             id=id,
             name=name,
             updated_at=updated_at,
+            created_resources=created_resources,
             default_evaluation_tier=default_evaluation_tier,
             disabled=disabled,
             disabled_at=disabled_at,
             disabled_reason=disabled_reason,
             evaluation_mode=evaluation_mode,
             import_warnings=import_warnings,
+            max_credits_per_period=max_credits_per_period,
+            max_credits_per_run=max_credits_per_run,
             max_retries=max_retries,
+            max_runs_per_day=max_runs_per_day,
+            max_runs_per_hour=max_runs_per_hour,
+            max_runs_total=max_runs_total,
             prompt_model_auto_rollback_enabled=prompt_model_auto_rollback_enabled,
             prompt_model_auto_rollback_triggers=prompt_model_auto_rollback_triggers,
             prompt_model_auto_upgrade_strategy=prompt_model_auto_upgrade_strategy,
             retry_on_failure=retry_on_failure,
             sampling_config=sampling_config,
+            solution_id=solution_id,
             trigger_id=trigger_id,
             trigger_type=trigger_type,
         )

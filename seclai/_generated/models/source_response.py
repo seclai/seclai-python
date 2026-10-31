@@ -8,6 +8,8 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.source_index_mode import SourceIndexMode
+from ..models.spend_cap_action import SpendCapAction
+from ..models.spend_cap_delete_order import SpendCapDeleteOrder
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="SourceResponse")
@@ -67,10 +69,16 @@ class SourceResponse:
         has_historical_data (bool | Unset): Indicates if the source connection has historical data. Default: False.
         index_mode (None | SourceIndexMode | Unset): Index mode for custom_index sources: fast_and_cheap, balanced,
             slow_and_thorough, or custom.
+        max_credits_per_period (float | None | Unset): The source's spend limit: credits it may commit per billing
+            period. Null when it has none.
         media_types (list[str] | Unset): Media kinds in a web page's main content that are attached to the page's item
             and indexed (subset of ['images', 'video']). On a website or RSS source 'images' also covers the images inside
             PDF, DOCX, PPTX and XLSX files.
         readonly (bool | Unset): Indicates if the source connection is read-only. Default: False.
+        spend_cap_action (SpendCapAction | Unset):
+        spend_cap_delete_order (SpendCapDeleteOrder | Unset): Which entries a DELETE cap removes first.
+        spend_cap_reached (bool | Unset): True while the spend limit refuses uploads and email to this source. Default:
+            False.
         system_managed (bool | Unset): Indicates if this source is automatically managed by the system (e.g., agent
             traces). Default: False.
     """
@@ -112,8 +120,12 @@ class SourceResponse:
     free_retention_days: int | None | Unset = UNSET
     has_historical_data: bool | Unset = False
     index_mode: None | SourceIndexMode | Unset = UNSET
+    max_credits_per_period: float | None | Unset = UNSET
     media_types: list[str] | Unset = UNSET
     readonly: bool | Unset = False
+    spend_cap_action: SpendCapAction | Unset = UNSET
+    spend_cap_delete_order: SpendCapDeleteOrder | Unset = UNSET
+    spend_cap_reached: bool | Unset = False
     system_managed: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -282,11 +294,27 @@ class SourceResponse:
         else:
             index_mode = self.index_mode
 
+        max_credits_per_period: float | None | Unset
+        if isinstance(self.max_credits_per_period, Unset):
+            max_credits_per_period = UNSET
+        else:
+            max_credits_per_period = self.max_credits_per_period
+
         media_types: list[str] | Unset = UNSET
         if not isinstance(self.media_types, Unset):
             media_types = self.media_types
 
         readonly = self.readonly
+
+        spend_cap_action: str | Unset = UNSET
+        if not isinstance(self.spend_cap_action, Unset):
+            spend_cap_action = self.spend_cap_action.value
+
+        spend_cap_delete_order: str | Unset = UNSET
+        if not isinstance(self.spend_cap_delete_order, Unset):
+            spend_cap_delete_order = self.spend_cap_delete_order.value
+
+        spend_cap_reached = self.spend_cap_reached
 
         system_managed = self.system_managed
 
@@ -356,10 +384,18 @@ class SourceResponse:
             field_dict["has_historical_data"] = has_historical_data
         if index_mode is not UNSET:
             field_dict["index_mode"] = index_mode
+        if max_credits_per_period is not UNSET:
+            field_dict["max_credits_per_period"] = max_credits_per_period
         if media_types is not UNSET:
             field_dict["media_types"] = media_types
         if readonly is not UNSET:
             field_dict["readonly"] = readonly
+        if spend_cap_action is not UNSET:
+            field_dict["spend_cap_action"] = spend_cap_action
+        if spend_cap_delete_order is not UNSET:
+            field_dict["spend_cap_delete_order"] = spend_cap_delete_order
+        if spend_cap_reached is not UNSET:
+            field_dict["spend_cap_reached"] = spend_cap_reached
         if system_managed is not UNSET:
             field_dict["system_managed"] = system_managed
 
@@ -648,9 +684,36 @@ class SourceResponse:
 
         index_mode = _parse_index_mode(d.pop("index_mode", UNSET))
 
+        def _parse_max_credits_per_period(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        max_credits_per_period = _parse_max_credits_per_period(
+            d.pop("max_credits_per_period", UNSET)
+        )
+
         media_types = cast(list[str], d.pop("media_types", UNSET))
 
         readonly = d.pop("readonly", UNSET)
+
+        _spend_cap_action = d.pop("spend_cap_action", UNSET)
+        spend_cap_action: SpendCapAction | Unset
+        if isinstance(_spend_cap_action, Unset):
+            spend_cap_action = UNSET
+        else:
+            spend_cap_action = SpendCapAction(_spend_cap_action)
+
+        _spend_cap_delete_order = d.pop("spend_cap_delete_order", UNSET)
+        spend_cap_delete_order: SpendCapDeleteOrder | Unset
+        if isinstance(_spend_cap_delete_order, Unset):
+            spend_cap_delete_order = UNSET
+        else:
+            spend_cap_delete_order = SpendCapDeleteOrder(_spend_cap_delete_order)
+
+        spend_cap_reached = d.pop("spend_cap_reached", UNSET)
 
         system_managed = d.pop("system_managed", UNSET)
 
@@ -692,8 +755,12 @@ class SourceResponse:
             free_retention_days=free_retention_days,
             has_historical_data=has_historical_data,
             index_mode=index_mode,
+            max_credits_per_period=max_credits_per_period,
             media_types=media_types,
             readonly=readonly,
+            spend_cap_action=spend_cap_action,
+            spend_cap_delete_order=spend_cap_delete_order,
+            spend_cap_reached=spend_cap_reached,
             system_managed=system_managed,
         )
 

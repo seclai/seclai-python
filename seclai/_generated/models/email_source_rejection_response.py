@@ -28,9 +28,9 @@ class EmailSourceRejectionResponse:
             created_at (str): When the mail was refused.
             id (str): Unique identifier of the refusal.
             reason (str): Why it was refused: sender_not_allowed, unauthenticated_sender, unreadable_from, sender_blocked,
-                spam, virus, unsafe_content, rate_limited, account_not_chargeable or empty_message; or, for a message the source
-                received before, what became of the earlier one: repeat_stored, repeat_held, repeat_deleted or
-                repeat_in_progress.
+                spam, virus, unsafe_content, rate_limited, account_not_chargeable, spend_limit_reached or empty_message; or, for
+                a message the source received before, what became of the earlier one: repeat_stored, repeat_held, repeat_deleted
+                or repeat_in_progress.
             recipient (str): The source address it was sent to.
             sender (str): The envelope sender. For bulk mail this is the delivery provider's bounce address, not the From
                 address.

@@ -99,7 +99,7 @@ def sync_detailed(
 ]:
     """Update agent metadata
 
-     Update an agent's name, description, evaluation settings, and model lifecycle settings.
+     Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
     Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
     `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
@@ -109,6 +109,11 @@ def sync_detailed(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
+    to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,
+    `max_runs_per_day`, `max_runs_total`. A runs-per-hour or per-day value above the plan's run quota is
+    rejected with 400.
 
     Replacing the workflow from an export:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only
@@ -167,7 +172,7 @@ def sync(
 ):
     """Update agent metadata
 
-     Update an agent's name, description, evaluation settings, and model lifecycle settings.
+     Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
     Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
     `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
@@ -177,6 +182,11 @@ def sync(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
+    to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,
+    `max_runs_per_day`, `max_runs_total`. A runs-per-hour or per-day value above the plan's run quota is
+    rejected with 400.
 
     Replacing the workflow from an export:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only
@@ -227,7 +237,7 @@ async def asyncio_detailed(
 ]:
     """Update agent metadata
 
-     Update an agent's name, description, evaluation settings, and model lifecycle settings.
+     Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
     Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
     `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
@@ -237,6 +247,11 @@ async def asyncio_detailed(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
+    to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,
+    `max_runs_per_day`, `max_runs_total`. A runs-per-hour or per-day value above the plan's run quota is
+    rejected with 400.
 
     Replacing the workflow from an export:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only
@@ -293,7 +308,7 @@ async def asyncio(
 ):
     """Update agent metadata
 
-     Update an agent's name, description, evaluation settings, and model lifecycle settings.
+     Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
     Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
     `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
@@ -303,6 +318,11 @@ async def asyncio(
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
     `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
     'governance_block', 'agent_run_failed').
+
+    Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
+    to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,
+    `max_runs_per_day`, `max_runs_total`. A runs-per-hour or per-day value above the plan's run quota is
+    rejected with 400.
 
     Replacing the workflow from an export:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. Update only

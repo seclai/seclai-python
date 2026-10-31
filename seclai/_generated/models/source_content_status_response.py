@@ -29,9 +29,8 @@ class SourceContentStatusResponse:
         mime_type (None | str): MIME type the item was ingested as, when known.
         published_at (None | str): Publication timestamp of the item, when known.
         pulled_at (str): Timestamp when the item was uploaded or pulled.
-        source_connection_content_version_id (None | str): ID to pass to `GET /contents/{id}`. `null` until the item has
-            finished indexing — an item that is still processing, or that failed, has no retrievable content and keeps this
-            `null`.
+        source_connection_content_version_id (None | str): ID to pass to `GET /contents/{id}`. `null` while the item has
+            no retrievable content.
         title (None | str): Title of the content item.
         awaiting_reindex (bool | Unset): True when the item is linked and reports completed but its content is not yet
             embedded under the index the source connection currently uses, because it still sits under the index that
@@ -56,8 +55,11 @@ class SourceContentStatusResponse:
             extraction was not capped, or when it stopped because the container could not be read rather than because a
             bound fired.
         held_for_review (bool | Unset): An ENFORCE governance policy blocked this item at import. It is held for review
-            and is not retrievable: resolving its blocking evaluations releases it into the source, and it is purged when
-            the hold window ends. Default: False.
+            and is not retrievable: resolving its blocking evaluations releases it into the source; left unresolved, it is
+            purged when the hold window ends. Default: False.
+        release_waiting_reason (None | str | Unset): Set on a held item review approved whose release was refused: why
+            it waits, the account being unable to pay for it or the source's spend limit having no room for it. Its release
+            is retried; null until one is refused.
     """
 
     content_status: str
@@ -78,6 +80,7 @@ class SourceContentStatusResponse:
     extracted_media_count: int | None | Unset = UNSET
     extracted_media_limit: int | None | Unset = UNSET
     held_for_review: bool | Unset = False
+    release_waiting_reason: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -134,6 +137,12 @@ class SourceContentStatusResponse:
 
         held_for_review = self.held_for_review
 
+        release_waiting_reason: None | str | Unset
+        if isinstance(self.release_waiting_reason, Unset):
+            release_waiting_reason = UNSET
+        else:
+            release_waiting_reason = self.release_waiting_reason
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -163,6 +172,8 @@ class SourceContentStatusResponse:
             field_dict["extracted_media_limit"] = extracted_media_limit
         if held_for_review is not UNSET:
             field_dict["held_for_review"] = held_for_review
+        if release_waiting_reason is not UNSET:
+            field_dict["release_waiting_reason"] = release_waiting_reason
 
         return field_dict
 
@@ -272,6 +283,17 @@ class SourceContentStatusResponse:
 
         held_for_review = d.pop("held_for_review", UNSET)
 
+        def _parse_release_waiting_reason(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        release_waiting_reason = _parse_release_waiting_reason(
+            d.pop("release_waiting_reason", UNSET)
+        )
+
         source_content_status_response = cls(
             content_status=content_status,
             content_token_count=content_token_count,
@@ -291,6 +313,7 @@ class SourceContentStatusResponse:
             extracted_media_count=extracted_media_count,
             extracted_media_limit=extracted_media_limit,
             held_for_review=held_for_review,
+            release_waiting_reason=release_waiting_reason,
         )
 
         source_content_status_response.additional_properties = d

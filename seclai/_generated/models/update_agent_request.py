@@ -33,13 +33,22 @@ class UpdateAgentRequest:
             are taken from the payload, and the agent's workflow is replaced from `agent.definition`. The previous version
             is preserved in history. Validation errors include line/column references against a canonical pretty-printed
             echo of the supplied payload.
+        apply_import_run_limits (bool | Unset): With `agent_definition`, also replace the agent's run limits with the
+            payload's (a null there removes a limit). Off by default: the agent keeps its limits. Default: False.
         default_evaluation_tier (None | str | Unset): Default evaluation tier: 'fast', 'balanced', or 'thorough'.
         description (None | str | Unset): New description for the agent.
         entity_remap (None | Unset | UpdateAgentRequestEntityRemapType0): Optional UUID-substitution map applied to the
             imported workflow before save (same shape as on POST /agents).
         evaluation_mode (None | str | Unset): Evaluation mode: 'output_expectation', 'eval_and_retry', or
             'sample_and_flag'.
+        max_credits_per_period (float | None | Unset): Credit limit per billing period of the paying account: once
+            reached, runs stop at their next step and new runs are refused.
+        max_credits_per_run (float | None | Unset): Credit limit per run: a run that reaches it is stopped before its
+            next step.
         max_retries (int | None | Unset): Max retries for eval_and_retry mode (1-10).
+        max_runs_per_day (int | None | Unset): Runs per day; at most the plan's run quota.
+        max_runs_per_hour (int | None | Unset): Runs per hour; at most the plan's run quota.
+        max_runs_total (int | None | Unset): Runs in total; once reached, new runs are refused.
         name (None | str | Unset): New name for the agent.
         prompt_model_auto_rollback_enabled (bool | None | Unset): Enable or disable automatic rollback for upgraded
             models.
@@ -52,6 +61,15 @@ class UpdateAgentRequest:
             sample_and_flag mode. Format: {combinator: 'and'|'or', rules: [...]}.
         set_default_evaluation_tier (bool | Unset): When true and default_evaluation_tier is omitted, clears the tier to
             null (system default). Default: False.
+        set_max_credits_per_period (bool | Unset): When true and max_credits_per_period is omitted, removes the limit.
+            Default: False.
+        set_max_credits_per_run (bool | Unset): When true and max_credits_per_run is omitted, removes the limit.
+            Default: False.
+        set_max_runs_per_day (bool | Unset): When true and max_runs_per_day is omitted, removes the limit. Default:
+            False.
+        set_max_runs_per_hour (bool | Unset): When true and max_runs_per_hour is omitted, removes the limit. Default:
+            False.
+        set_max_runs_total (bool | Unset): When true and max_runs_total is omitted, removes the limit. Default: False.
         set_prompt_model_auto_rollback_triggers (bool | Unset): When true and prompt_model_auto_rollback_triggers is
             omitted, clears the list to null (revert to system defaults). Default: False.
         set_sampling_config (bool | Unset): When true and sampling_config is omitted, clears the config to null.
@@ -59,11 +77,17 @@ class UpdateAgentRequest:
     """
 
     agent_definition: None | Unset | UpdateAgentRequestAgentDefinitionType0 = UNSET
+    apply_import_run_limits: bool | Unset = False
     default_evaluation_tier: None | str | Unset = UNSET
     description: None | str | Unset = UNSET
     entity_remap: None | Unset | UpdateAgentRequestEntityRemapType0 = UNSET
     evaluation_mode: None | str | Unset = UNSET
+    max_credits_per_period: float | None | Unset = UNSET
+    max_credits_per_run: float | None | Unset = UNSET
     max_retries: int | None | Unset = UNSET
+    max_runs_per_day: int | None | Unset = UNSET
+    max_runs_per_hour: int | None | Unset = UNSET
+    max_runs_total: int | None | Unset = UNSET
     name: None | str | Unset = UNSET
     prompt_model_auto_rollback_enabled: bool | None | Unset = UNSET
     prompt_model_auto_rollback_triggers: list[str] | None | Unset = UNSET
@@ -73,6 +97,11 @@ class UpdateAgentRequest:
     retry_on_failure: bool | None | Unset = UNSET
     sampling_config: None | Unset | UpdateAgentRequestSamplingConfigType0 = UNSET
     set_default_evaluation_tier: bool | Unset = False
+    set_max_credits_per_period: bool | Unset = False
+    set_max_credits_per_run: bool | Unset = False
+    set_max_runs_per_day: bool | Unset = False
+    set_max_runs_per_hour: bool | Unset = False
+    set_max_runs_total: bool | Unset = False
     set_prompt_model_auto_rollback_triggers: bool | Unset = False
     set_sampling_config: bool | Unset = False
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -95,6 +124,8 @@ class UpdateAgentRequest:
             agent_definition = self.agent_definition.to_dict()
         else:
             agent_definition = self.agent_definition
+
+        apply_import_run_limits = self.apply_import_run_limits
 
         default_evaluation_tier: None | str | Unset
         if isinstance(self.default_evaluation_tier, Unset):
@@ -122,11 +153,41 @@ class UpdateAgentRequest:
         else:
             evaluation_mode = self.evaluation_mode
 
+        max_credits_per_period: float | None | Unset
+        if isinstance(self.max_credits_per_period, Unset):
+            max_credits_per_period = UNSET
+        else:
+            max_credits_per_period = self.max_credits_per_period
+
+        max_credits_per_run: float | None | Unset
+        if isinstance(self.max_credits_per_run, Unset):
+            max_credits_per_run = UNSET
+        else:
+            max_credits_per_run = self.max_credits_per_run
+
         max_retries: int | None | Unset
         if isinstance(self.max_retries, Unset):
             max_retries = UNSET
         else:
             max_retries = self.max_retries
+
+        max_runs_per_day: int | None | Unset
+        if isinstance(self.max_runs_per_day, Unset):
+            max_runs_per_day = UNSET
+        else:
+            max_runs_per_day = self.max_runs_per_day
+
+        max_runs_per_hour: int | None | Unset
+        if isinstance(self.max_runs_per_hour, Unset):
+            max_runs_per_hour = UNSET
+        else:
+            max_runs_per_hour = self.max_runs_per_hour
+
+        max_runs_total: int | None | Unset
+        if isinstance(self.max_runs_total, Unset):
+            max_runs_total = UNSET
+        else:
+            max_runs_total = self.max_runs_total
 
         name: None | str | Unset
         if isinstance(self.name, Unset):
@@ -181,6 +242,16 @@ class UpdateAgentRequest:
 
         set_default_evaluation_tier = self.set_default_evaluation_tier
 
+        set_max_credits_per_period = self.set_max_credits_per_period
+
+        set_max_credits_per_run = self.set_max_credits_per_run
+
+        set_max_runs_per_day = self.set_max_runs_per_day
+
+        set_max_runs_per_hour = self.set_max_runs_per_hour
+
+        set_max_runs_total = self.set_max_runs_total
+
         set_prompt_model_auto_rollback_triggers = (
             self.set_prompt_model_auto_rollback_triggers
         )
@@ -192,6 +263,8 @@ class UpdateAgentRequest:
         field_dict.update({})
         if agent_definition is not UNSET:
             field_dict["agent_definition"] = agent_definition
+        if apply_import_run_limits is not UNSET:
+            field_dict["apply_import_run_limits"] = apply_import_run_limits
         if default_evaluation_tier is not UNSET:
             field_dict["default_evaluation_tier"] = default_evaluation_tier
         if description is not UNSET:
@@ -200,8 +273,18 @@ class UpdateAgentRequest:
             field_dict["entity_remap"] = entity_remap
         if evaluation_mode is not UNSET:
             field_dict["evaluation_mode"] = evaluation_mode
+        if max_credits_per_period is not UNSET:
+            field_dict["max_credits_per_period"] = max_credits_per_period
+        if max_credits_per_run is not UNSET:
+            field_dict["max_credits_per_run"] = max_credits_per_run
         if max_retries is not UNSET:
             field_dict["max_retries"] = max_retries
+        if max_runs_per_day is not UNSET:
+            field_dict["max_runs_per_day"] = max_runs_per_day
+        if max_runs_per_hour is not UNSET:
+            field_dict["max_runs_per_hour"] = max_runs_per_hour
+        if max_runs_total is not UNSET:
+            field_dict["max_runs_total"] = max_runs_total
         if name is not UNSET:
             field_dict["name"] = name
         if prompt_model_auto_rollback_enabled is not UNSET:
@@ -222,6 +305,16 @@ class UpdateAgentRequest:
             field_dict["sampling_config"] = sampling_config
         if set_default_evaluation_tier is not UNSET:
             field_dict["set_default_evaluation_tier"] = set_default_evaluation_tier
+        if set_max_credits_per_period is not UNSET:
+            field_dict["set_max_credits_per_period"] = set_max_credits_per_period
+        if set_max_credits_per_run is not UNSET:
+            field_dict["set_max_credits_per_run"] = set_max_credits_per_run
+        if set_max_runs_per_day is not UNSET:
+            field_dict["set_max_runs_per_day"] = set_max_runs_per_day
+        if set_max_runs_per_hour is not UNSET:
+            field_dict["set_max_runs_per_hour"] = set_max_runs_per_hour
+        if set_max_runs_total is not UNSET:
+            field_dict["set_max_runs_total"] = set_max_runs_total
         if set_prompt_model_auto_rollback_triggers is not UNSET:
             field_dict["set_prompt_model_auto_rollback_triggers"] = (
                 set_prompt_model_auto_rollback_triggers
@@ -265,6 +358,8 @@ class UpdateAgentRequest:
             return cast(None | Unset | UpdateAgentRequestAgentDefinitionType0, data)
 
         agent_definition = _parse_agent_definition(d.pop("agent_definition", UNSET))
+
+        apply_import_run_limits = d.pop("apply_import_run_limits", UNSET)
 
         def _parse_default_evaluation_tier(data: object) -> None | str | Unset:
             if data is None:
@@ -314,6 +409,28 @@ class UpdateAgentRequest:
 
         evaluation_mode = _parse_evaluation_mode(d.pop("evaluation_mode", UNSET))
 
+        def _parse_max_credits_per_period(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        max_credits_per_period = _parse_max_credits_per_period(
+            d.pop("max_credits_per_period", UNSET)
+        )
+
+        def _parse_max_credits_per_run(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        max_credits_per_run = _parse_max_credits_per_run(
+            d.pop("max_credits_per_run", UNSET)
+        )
+
         def _parse_max_retries(data: object) -> int | None | Unset:
             if data is None:
                 return data
@@ -322,6 +439,33 @@ class UpdateAgentRequest:
             return cast(int | None | Unset, data)
 
         max_retries = _parse_max_retries(d.pop("max_retries", UNSET))
+
+        def _parse_max_runs_per_day(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        max_runs_per_day = _parse_max_runs_per_day(d.pop("max_runs_per_day", UNSET))
+
+        def _parse_max_runs_per_hour(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        max_runs_per_hour = _parse_max_runs_per_hour(d.pop("max_runs_per_hour", UNSET))
+
+        def _parse_max_runs_total(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        max_runs_total = _parse_max_runs_total(d.pop("max_runs_total", UNSET))
 
         def _parse_name(data: object) -> None | str | Unset:
             if data is None:
@@ -423,6 +567,16 @@ class UpdateAgentRequest:
 
         set_default_evaluation_tier = d.pop("set_default_evaluation_tier", UNSET)
 
+        set_max_credits_per_period = d.pop("set_max_credits_per_period", UNSET)
+
+        set_max_credits_per_run = d.pop("set_max_credits_per_run", UNSET)
+
+        set_max_runs_per_day = d.pop("set_max_runs_per_day", UNSET)
+
+        set_max_runs_per_hour = d.pop("set_max_runs_per_hour", UNSET)
+
+        set_max_runs_total = d.pop("set_max_runs_total", UNSET)
+
         set_prompt_model_auto_rollback_triggers = d.pop(
             "set_prompt_model_auto_rollback_triggers", UNSET
         )
@@ -431,11 +585,17 @@ class UpdateAgentRequest:
 
         update_agent_request = cls(
             agent_definition=agent_definition,
+            apply_import_run_limits=apply_import_run_limits,
             default_evaluation_tier=default_evaluation_tier,
             description=description,
             entity_remap=entity_remap,
             evaluation_mode=evaluation_mode,
+            max_credits_per_period=max_credits_per_period,
+            max_credits_per_run=max_credits_per_run,
             max_retries=max_retries,
+            max_runs_per_day=max_runs_per_day,
+            max_runs_per_hour=max_runs_per_hour,
+            max_runs_total=max_runs_total,
             name=name,
             prompt_model_auto_rollback_enabled=prompt_model_auto_rollback_enabled,
             prompt_model_auto_rollback_triggers=prompt_model_auto_rollback_triggers,
@@ -443,6 +603,11 @@ class UpdateAgentRequest:
             retry_on_failure=retry_on_failure,
             sampling_config=sampling_config,
             set_default_evaluation_tier=set_default_evaluation_tier,
+            set_max_credits_per_period=set_max_credits_per_period,
+            set_max_credits_per_run=set_max_credits_per_run,
+            set_max_runs_per_day=set_max_runs_per_day,
+            set_max_runs_per_hour=set_max_runs_per_hour,
+            set_max_runs_total=set_max_runs_total,
             set_prompt_model_auto_rollback_triggers=set_prompt_model_auto_rollback_triggers,
             set_sampling_config=set_sampling_config,
         )

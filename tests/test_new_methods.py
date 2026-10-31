@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+from collections.abc import Callable
 from typing import Any
 
 import httpx
@@ -4840,10 +4841,10 @@ _INSUFFICIENT_CREDITS_402 = {
 }
 
 
-class TestLatestApiVersion20261021:
-    def test_latest_is_2026_10_21(self) -> None:
+class TestLatestApiVersion20261028:
+    def test_latest_is_2026_10_28(self) -> None:
         assert (
-            seclai_versions.LATEST_API_VERSION is seclai_versions.ApiVersion.V2026_10_21
+            seclai_versions.LATEST_API_VERSION is seclai_versions.ApiVersion.V2026_10_28
         )
 
     def test_latest_is_sent_as_the_header(self) -> None:
@@ -4855,7 +4856,7 @@ class TestLatestApiVersion20261021:
 
         client = _sync_client(handler, api_version=seclai_versions.LATEST_API_VERSION)
         client.list_agents()
-        assert seen["version"] == "2026-10-21"
+        assert seen["version"] == "2026-10-28"
 
 
 class TestInsufficientCredits402:
@@ -4912,3 +4913,404 @@ class TestNonManualSummaryErrorCount:
         parsed = NonManualEvaluationSummaryResponse.from_dict(_NON_MANUAL_SUMMARY)
         assert parsed.error == 2
         assert parsed.by_mode[0].error == 2
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-31 sync: agent examples, Slack triggers, declared query filters
+# ---------------------------------------------------------------------------
+
+
+class TestAgentExamples:
+    """The agent gallery."""
+
+    def test_list_agent_examples(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"data": [{"key": "triage"}], "pagination": {}})
+
+        client = _sync_client(handler)
+        result = client.list_agent_examples(
+            query="support inbox", use_case="support", page=2, limit=10
+        )
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/examples"
+        assert seen["params"] == {
+            "query": "support inbox",
+            "use_case": "support",
+            "page": "2",
+            "limit": "10",
+        }
+        assert result["data"] == [{"key": "triage"}]
+
+    def test_list_agent_examples_omits_unset_filters(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["params"] = dict(req.url.params)
+            return _json_response({"data": [], "pagination": {}})
+
+        _sync_client(handler).list_agent_examples()
+        assert seen["params"] == {"page": "1", "limit": "20"}
+
+    @pytest.mark.asyncio
+    async def test_async_list_agent_examples(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["params"] = dict(req.url.params)
+            return _json_response({"data": [{"key": "triage"}], "pagination": {}})
+
+        client = _async_client(handler)
+        result = await client.list_agent_examples(query="support", use_case="support")
+        assert seen["method"] == "GET"
+        assert seen["path"] == "/agents/examples"
+        assert seen["params"] == {
+            "query": "support",
+            "use_case": "support",
+            "page": "1",
+            "limit": "20",
+        }
+        assert result["data"] == [{"key": "triage"}]
+
+
+_SLACK_CONFIG = {
+    "trigger_id": "t1",
+    "agent_id": "a1",
+    "mcp_client_id": "m1",
+    "slack_team_id": "T1",
+    "form": [],
+    "scope": "selected_channels",
+    "allow_dms": False,
+    "activation": "channel_opt_in",
+    "visibility": "private",
+    "start_without_form": False,
+    "turns_enabled": True,
+    "turns_anyone": False,
+    "max_turns": 5,
+    "include_invoker_email": False,
+    "notify_failure_after_answer": True,
+    "channel_ids": ["C1"],
+    "missing_scopes": [],
+}
+
+
+class TestAgentSlackTriggers:
+    """Agent Slack triggers."""
+
+    def test_set_slack_trigger_config(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(_SLACK_CONFIG)
+
+        client = _sync_client(handler)
+        body = {"channel_ids": ["C1"], "visibility": "private", "max_turns": 5}
+        result = client.set_slack_trigger_config("a1", "t1", body)
+        assert seen["method"] == "PUT"
+        assert seen["path"] == "/agents/a1/triggers/t1/slack-config"
+        assert seen["body"] == body
+        assert result == _SLACK_CONFIG
+
+    @pytest.mark.asyncio
+    async def test_async_set_slack_trigger_config(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["method"] = req.method
+            seen["path"] = req.url.path
+            seen["body"] = json.loads(req.content)
+            return _json_response(_SLACK_CONFIG)
+
+        client = _async_client(handler)
+        result = await client.set_slack_trigger_config("a1", "t1", {"allow_dms": True})
+        assert seen["method"] == "PUT"
+        assert seen["path"] == "/agents/a1/triggers/t1/slack-config"
+        assert seen["body"] == {"allow_dms": True}
+        assert result == _SLACK_CONFIG
+
+
+# Each declared query filter: (method, positional args, kwargs, path, the query
+# the kwargs add, and the query the call sends when none of them is passed).
+_QUERY_FILTERS: list[
+    tuple[str, tuple[str, ...], dict[str, Any], str, dict[str, str], dict[str, str]]
+] = [
+    (
+        "list_evaluation_results",
+        ("c1",),
+        {
+            "status": "failed",
+            "flagged_only": True,
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        "/agents/evaluation-criteria/c1/results",
+        {
+            "status": "failed",
+            "flagged_only": "true",
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        {"page": "1", "limit": "50"},
+    ),
+    (
+        "list_compatible_runs",
+        ("c1",),
+        {"started_after": "2026-10-01T00:00:00Z"},
+        "/agents/evaluation-criteria/c1/compatible-runs",
+        {"started_after": "2026-10-01T00:00:00Z"},
+        {"page": "1", "limit": "50"},
+    ),
+    (
+        "list_agent_evaluation_results",
+        ("a1",),
+        {
+            "status": "passed",
+            "step": "s1",
+            "flagged_only": False,
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        "/agents/a1/evaluation-results",
+        {
+            "status": "passed",
+            "step": "s1",
+            "flagged_only": "false",
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        {"page": "1", "limit": "50"},
+    ),
+    (
+        "list_evaluation_runs",
+        ("a1",),
+        {
+            "status": "completed",
+            "step": "s1",
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        "/agents/a1/evaluation-runs",
+        {
+            "status": "completed",
+            "step": "s1",
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        {"page": "1", "limit": "50"},
+    ),
+    (
+        "get_non_manual_evaluation_summary",
+        ("a1",),
+        {"days": 7, "start_date": "2026-10-01", "end_date": "2026-10-07"},
+        "/agents/evaluation-results/non-manual-summary",
+        {"days": "7", "start_date": "2026-10-01", "end_date": "2026-10-07"},
+        {"agent_id": "a1"},
+    ),
+    (
+        "get_ai_assistant_memory_bank_history",
+        (),
+        {"limit": 10, "offset": 5},
+        "/ai-assistant/memory-bank/last-conversation",
+        {"limit": "10", "offset": "5"},
+        {},
+    ),
+    (
+        "get_memory_bank_ai_last_conversation",
+        (),
+        {"limit": 10, "offset": 5},
+        "/memory_banks/ai-assistant/last-conversation",
+        {"limit": "10", "offset": "5"},
+        {},
+    ),
+    (
+        "list_governance_ai_conversations",
+        (),
+        {"limit": 3},
+        "/governance/ai-assistant/conversations",
+        {"limit": "3"},
+        {},
+    ),
+    (
+        "list_alerts",
+        (),
+        {
+            "agent_id": "a1",
+            "source_connection_id": "s1",
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        "/alerts",
+        {
+            "agent_id": "a1",
+            "source_connection_id": "s1",
+            "time_from": "2026-10-01T00:00:00Z",
+            "time_to": "2026-10-31T00:00:00Z",
+        },
+        {"page": "1", "limit": "50"},
+    ),
+    (
+        "list_alert_configs",
+        (),
+        {"agent_id": "a1", "source_connection_id": "s1", "scope": "source"},
+        "/alerts/configs",
+        {"agent_id": "a1", "source_connection_id": "s1", "scope": "source"},
+        {"page": "1", "limit": "50"},
+    ),
+    (
+        "list_organization_alert_preferences",
+        (),
+        {"organization_id": "o1", "include_defaults": True},
+        "/alerts/organization-preferences/list",
+        {"organization_id": "o1", "include_defaults": "true"},
+        {},
+    ),
+    (
+        "list_model_alerts",
+        (),
+        {"agent_id": "a1", "unread_only": True},
+        "/models/alerts",
+        {"agent_id": "a1", "unread_only": "true"},
+        {"offset": "0", "limit": "50"},
+    ),
+    (
+        "list_memory_banks",
+        (),
+        {"type": "conversation"},
+        "/memory_banks",
+        {"type": "conversation"},
+        {"page": "1", "limit": "50", "sort": "created_at", "order": "desc"},
+    ),
+    (
+        "get_memory_bank_stats",
+        ("mb1",),
+        {"days": 14, "start_date": "2026-10-01", "end_date": "2026-10-14"},
+        "/memory_banks/mb1/stats",
+        {"days": "14", "start_date": "2026-10-01", "end_date": "2026-10-14"},
+        {},
+    ),
+    (
+        "get_model_recommendations",
+        ("m1",),
+        {
+            "require_tool_use": True,
+            "require_structured_output": False,
+            "require_thinking": True,
+            "min_context_tokens": 100000,
+            "min_output_tokens": 8000,
+        },
+        "/models/m1/recommendations",
+        {
+            "require_tool_use": "true",
+            "require_structured_output": "false",
+            "require_thinking": "true",
+            "min_context_tokens": "100000",
+            "min_output_tokens": "8000",
+        },
+        {},
+    ),
+    (
+        "list_models",
+        (),
+        {"supports_input_media": "image", "supports_output_media": "audio/mpeg"},
+        "/models",
+        {"supports_input_media": "image", "supports_output_media": "audio/mpeg"},
+        {},
+    ),
+    (
+        "list_solutions",
+        (),
+        {"search": "billing"},
+        "/solutions",
+        {"search": "billing"},
+        {"page": "1", "limit": "50", "sort": "created_at", "order": "desc"},
+    ),
+]
+
+_FILTER_IDS = [case[0] for case in _QUERY_FILTERS]
+
+
+def _query_recorder(
+    seen: dict[str, Any],
+) -> Callable[[httpx.Request], httpx.Response]:
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen["method"] = req.method
+        seen["path"] = req.url.path
+        seen["params"] = dict(req.url.params)
+        return _json_response({"data": []})
+
+    return handler
+
+
+class TestDeclaredQueryFilters:
+    """Every query param the spec declares on these endpoints is sent as given."""
+
+    @pytest.mark.parametrize(
+        "name,args,kwargs,path,added,default", _QUERY_FILTERS, ids=_FILTER_IDS
+    )
+    def test_sends_filters(
+        self,
+        name: str,
+        args: tuple[str, ...],
+        kwargs: dict[str, Any],
+        path: str,
+        added: dict[str, str],
+        default: dict[str, str],
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _sync_client(_query_recorder(seen))
+        getattr(client, name)(*args, **kwargs)
+        assert seen["method"] == "GET"
+        assert seen["path"] == path
+        assert seen["params"] == {**default, **added}
+
+    @pytest.mark.parametrize(
+        "name,args,kwargs,path,added,default", _QUERY_FILTERS, ids=_FILTER_IDS
+    )
+    def test_unset_filters_leave_the_request_unchanged(
+        self,
+        name: str,
+        args: tuple[str, ...],
+        kwargs: dict[str, Any],
+        path: str,
+        added: dict[str, str],
+        default: dict[str, str],
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _sync_client(_query_recorder(seen))
+        getattr(client, name)(*args)
+        assert seen["path"] == path
+        assert seen["params"] == default
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "name,args,kwargs,path,added,default", _QUERY_FILTERS, ids=_FILTER_IDS
+    )
+    async def test_async_sends_filters(
+        self,
+        name: str,
+        args: tuple[str, ...],
+        kwargs: dict[str, Any],
+        path: str,
+        added: dict[str, str],
+        default: dict[str, str],
+    ) -> None:
+        seen: dict[str, Any] = {}
+        sync_handler = _query_recorder(seen)
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            return sync_handler(req)
+
+        client = _async_client(handler)
+        await getattr(client, name)(*args, **kwargs)
+        assert seen["method"] == "GET"
+        assert seen["path"] == path
+        assert seen["params"] == {**default, **added}

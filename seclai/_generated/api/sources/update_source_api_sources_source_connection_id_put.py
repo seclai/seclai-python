@@ -93,6 +93,10 @@ def sync_detailed(
 
     System-managed sources only allow `retention_days` updates.
 
+    A source with a spend limit that reaches it refuses new content with a 402
+    `source_spend_limit_reached` (`spend_cap_action: stop`), or deletes entries to make room (`delete`);
+    a `delete` source whose spend already fills the limit refuses new content too.
+
     Args:
         source_connection_id (UUID):
         x_account_id (UUID | Unset):
@@ -136,6 +140,10 @@ def sync(
 
     System-managed sources only allow `retention_days` updates.
 
+    A source with a spend limit that reaches it refuses new content with a 402
+    `source_spend_limit_reached` (`spend_cap_action: stop`), or deletes entries to make room (`delete`);
+    a `delete` source whose spend already fills the limit refuses new content too.
+
     Args:
         source_connection_id (UUID):
         x_account_id (UUID | Unset):
@@ -173,6 +181,10 @@ async def asyncio_detailed(
     unchanged.
 
     System-managed sources only allow `retention_days` updates.
+
+    A source with a spend limit that reaches it refuses new content with a 402
+    `source_spend_limit_reached` (`spend_cap_action: stop`), or deletes entries to make room (`delete`);
+    a `delete` source whose spend already fills the limit refuses new content too.
 
     Args:
         source_connection_id (UUID):
@@ -214,6 +226,10 @@ async def asyncio(
     unchanged.
 
     System-managed sources only allow `retention_days` updates.
+
+    A source with a spend limit that reaches it refuses new content with a 402
+    `source_spend_limit_reached` (`spend_cap_action: stop`), or deletes entries to make room (`delete`);
+    a `delete` source whose spend already fills the limit refuses new content too.
 
     Args:
         source_connection_id (UUID):

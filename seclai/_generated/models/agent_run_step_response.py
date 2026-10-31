@@ -32,13 +32,17 @@ class AgentRunStepResponse:
         input_ (None | str): Input text provided to the step, if any.  Below `Seclai-Version: 2026-09-30`, the manifest
             JSON when the step that produced it output files and is not a `for_each`.
         output (None | str): Output text produced by the step, if any; its files are in `attachments`.  Below `Seclai-
-            Version: 2026-09-30`, the manifest JSON when the step output files and is not a `for_each`.
+            Version: 2026-09-30`, the manifest JSON when the step output files and is not a `for_each`.  For an `if_else` or
+            `switch`, the result of the arm it took (its input when that arm is empty or it took none); below `Seclai-
+            Version: 2026-10-28`, the `{"branch": ...}` marker naming that arm, with no `attachments`.
         output_content_type (None | str): Content type of the step output, if any.
         started_at (None | str): Timestamp when the step attempt started.
         status (PendingProcessingCompletedFailedStatus):
         step_type (str): Type of the agent step.
         attachments (list[AgentRunFileResponse] | Unset): Files in this step's output, in order. Empty for steps that
             produced none, for steps run before files were listed here, and once the run's trace is purged.
+        decision (None | str | Unset): The arm an `if_else` or `switch` step took: `then` or `else`, or the case name or
+            `else`. Null for other step types, until the step has decided, and when a `switch` took no arm.
         tool_calls (list[AgentRunToolCallResponse] | Unset): LLM tool calls made during this step (prompt_call steps
             only), ordered by execution. Empty for steps that invoked no tools.
         warnings (list[str] | None | Unset): Problems the step ran into, whether or not it then failed, such as a file
@@ -56,6 +60,7 @@ class AgentRunStepResponse:
     status: PendingProcessingCompletedFailedStatus
     step_type: str
     attachments: list[AgentRunFileResponse] | Unset = UNSET
+    decision: None | str | Unset = UNSET
     tool_calls: list[AgentRunToolCallResponse] | Unset = UNSET
     warnings: list[str] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -94,6 +99,12 @@ class AgentRunStepResponse:
                 attachments_item = attachments_item_data.to_dict()
                 attachments.append(attachments_item)
 
+        decision: None | str | Unset
+        if isinstance(self.decision, Unset):
+            decision = UNSET
+        else:
+            decision = self.decision
+
         tool_calls: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.tool_calls, Unset):
             tool_calls = []
@@ -128,6 +139,8 @@ class AgentRunStepResponse:
         )
         if attachments is not UNSET:
             field_dict["attachments"] = attachments
+        if decision is not UNSET:
+            field_dict["decision"] = decision
         if tool_calls is not UNSET:
             field_dict["tool_calls"] = tool_calls
         if warnings is not UNSET:
@@ -200,6 +213,15 @@ class AgentRunStepResponse:
 
                 attachments.append(attachments_item)
 
+        def _parse_decision(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        decision = _parse_decision(d.pop("decision", UNSET))
+
         _tool_calls = d.pop("tool_calls", UNSET)
         tool_calls: list[AgentRunToolCallResponse] | Unset = UNSET
         if _tool_calls is not UNSET:
@@ -240,6 +262,7 @@ class AgentRunStepResponse:
             status=status,
             step_type=step_type,
             attachments=attachments,
+            decision=decision,
             tool_calls=tool_calls,
             warnings=warnings,
         )

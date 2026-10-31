@@ -110,14 +110,14 @@ def sync_detailed(
     Trigger types:
     - `dynamic_input`: triggered via API with user-provided input
     - `template_input`: triggered via API with a predefined template
-    - `schedule`: triggered on a schedule
-    - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
     the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
     `trigger_id` this response returns.
 
-    Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
-    `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
+    Starting from the agent gallery:
+    - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
+    - Bind the template's resource slots to existing resources with `resource_bindings`, or set
+    `create_missing_resources` to have the creatable ones created.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
@@ -176,14 +176,14 @@ def sync(
     Trigger types:
     - `dynamic_input`: triggered via API with user-provided input
     - `template_input`: triggered via API with a predefined template
-    - `schedule`: triggered on a schedule
-    - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
     the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
     `trigger_id` this response returns.
 
-    Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
-    `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
+    Starting from the agent gallery:
+    - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
+    - Bind the template's resource slots to existing resources with `resource_bindings`, or set
+    `create_missing_resources` to have the creatable ones created.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
@@ -236,14 +236,14 @@ async def asyncio_detailed(
     Trigger types:
     - `dynamic_input`: triggered via API with user-provided input
     - `template_input`: triggered via API with a predefined template
-    - `schedule`: triggered on a schedule
-    - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
     the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
     `trigger_id` this response returns.
 
-    Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
-    `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
+    Starting from the agent gallery:
+    - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
+    - Bind the template's resource slots to existing resources with `resource_bindings`, or set
+    `create_missing_resources` to have the creatable ones created.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
@@ -300,14 +300,14 @@ async def asyncio(
     Trigger types:
     - `dynamic_input`: triggered via API with user-provided input
     - `template_input`: triggered via API with a predefined template
-    - `schedule`: triggered on a schedule
-    - `new_content`: triggered when new content arrives
     - `email_received`: a virtual email inbox; runs when mail arrives at the agent's address. Configure
     the alias/allowlist with `PUT /agents/{agent_id}/triggers/{trigger_id}/email-config`, using the
     `trigger_id` this response returns.
 
-    Templates: `blank`, `retrieval_example`, `simple_qa`, `summarizer`, `json_extractor`,
-    `content_change_notifier`, `scheduled_report`, `webhook_pipeline`
+    Starting from the agent gallery:
+    - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
+    - Bind the template's resource slots to existing resources with `resource_bindings`, or set
+    `create_missing_resources` to have the creatable ones created.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras

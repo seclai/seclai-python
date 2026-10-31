@@ -6,6 +6,8 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..models.spend_cap_action import SpendCapAction
+from ..models.spend_cap_delete_order import SpendCapDeleteOrder
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="UpdateSourceBody")
@@ -32,6 +34,9 @@ class UpdateSourceBody:
         feed_attachments (list[str] | None | Unset): Kinds of file listed beside a feed item's content to attach to the
             item and index, on an RSS source. Subset of ['enclosures', 'item_image', 'media_rss']; any other value is
             refused. [] attaches none. Applies to items added after it changes. Omit the field to leave it unchanged.
+        max_credits_per_period (float | None | Unset): Spend limit: the credits this source may commit per billing
+            period — what the account was charged for it this period plus the storage of what it holds until the period
+            ends. Send null to remove the limit; omit to leave it unchanged.
         media_types (list[str] | None | Unset): Media kinds in a web page's main content to attach to the page's item
             and index, on a website or RSS source. Subset of ['images', 'video']. From `Seclai-Version: 2026-10-13` any
             other value, and any kind on another source type, is refused with a 400; older versions drop an unknown value
@@ -43,6 +48,11 @@ class UpdateSourceBody:
         retention_days (int | None | Unset): New retention period in days — content older than this is deleted
             permanently. Send null to clear the window: content is then kept indefinitely. Omit the field to leave it
             unchanged.
+        spend_cap_action (None | SpendCapAction | Unset): Once the limit is reached: `stop` refuses new content;
+            `delete` deletes entries, in `spend_cap_delete_order`, to make room, and refuses new content as `stop` does once
+            spend already fills the limit. Deleting does not return credits already spent.
+        spend_cap_delete_order (None | SpendCapDeleteOrder | Unset): Which entries `delete` removes first:
+            `oldest_added`, `oldest_published` or `largest_first`.
     """
 
     cloud_drive_content_types: None | str | Unset = UNSET
@@ -52,10 +62,13 @@ class UpdateSourceBody:
     document_images: bool | None | Unset = UNSET
     email_allowed_senders: list[str] | None | Unset = UNSET
     feed_attachments: list[str] | None | Unset = UNSET
+    max_credits_per_period: float | None | Unset = UNSET
     media_types: list[str] | None | Unset = UNSET
     name: None | str | Unset = UNSET
     polling: None | str | Unset = UNSET
     retention_days: int | None | Unset = UNSET
+    spend_cap_action: None | SpendCapAction | Unset = UNSET
+    spend_cap_delete_order: None | SpendCapDeleteOrder | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -107,6 +120,12 @@ class UpdateSourceBody:
         else:
             feed_attachments = self.feed_attachments
 
+        max_credits_per_period: float | None | Unset
+        if isinstance(self.max_credits_per_period, Unset):
+            max_credits_per_period = UNSET
+        else:
+            max_credits_per_period = self.max_credits_per_period
+
         media_types: list[str] | None | Unset
         if isinstance(self.media_types, Unset):
             media_types = UNSET
@@ -134,6 +153,22 @@ class UpdateSourceBody:
         else:
             retention_days = self.retention_days
 
+        spend_cap_action: None | str | Unset
+        if isinstance(self.spend_cap_action, Unset):
+            spend_cap_action = UNSET
+        elif isinstance(self.spend_cap_action, SpendCapAction):
+            spend_cap_action = self.spend_cap_action.value
+        else:
+            spend_cap_action = self.spend_cap_action
+
+        spend_cap_delete_order: None | str | Unset
+        if isinstance(self.spend_cap_delete_order, Unset):
+            spend_cap_delete_order = UNSET
+        elif isinstance(self.spend_cap_delete_order, SpendCapDeleteOrder):
+            spend_cap_delete_order = self.spend_cap_delete_order.value
+        else:
+            spend_cap_delete_order = self.spend_cap_delete_order
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -151,6 +186,8 @@ class UpdateSourceBody:
             field_dict["email_allowed_senders"] = email_allowed_senders
         if feed_attachments is not UNSET:
             field_dict["feed_attachments"] = feed_attachments
+        if max_credits_per_period is not UNSET:
+            field_dict["max_credits_per_period"] = max_credits_per_period
         if media_types is not UNSET:
             field_dict["media_types"] = media_types
         if name is not UNSET:
@@ -159,6 +196,10 @@ class UpdateSourceBody:
             field_dict["polling"] = polling
         if retention_days is not UNSET:
             field_dict["retention_days"] = retention_days
+        if spend_cap_action is not UNSET:
+            field_dict["spend_cap_action"] = spend_cap_action
+        if spend_cap_delete_order is not UNSET:
+            field_dict["spend_cap_delete_order"] = spend_cap_delete_order
 
         return field_dict
 
@@ -255,6 +296,17 @@ class UpdateSourceBody:
 
         feed_attachments = _parse_feed_attachments(d.pop("feed_attachments", UNSET))
 
+        def _parse_max_credits_per_period(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        max_credits_per_period = _parse_max_credits_per_period(
+            d.pop("max_credits_per_period", UNSET)
+        )
+
         def _parse_media_types(data: object) -> list[str] | None | Unset:
             if data is None:
                 return data
@@ -299,6 +351,44 @@ class UpdateSourceBody:
 
         retention_days = _parse_retention_days(d.pop("retention_days", UNSET))
 
+        def _parse_spend_cap_action(data: object) -> None | SpendCapAction | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                spend_cap_action_type_0 = SpendCapAction(data)
+
+                return spend_cap_action_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | SpendCapAction | Unset, data)
+
+        spend_cap_action = _parse_spend_cap_action(d.pop("spend_cap_action", UNSET))
+
+        def _parse_spend_cap_delete_order(
+            data: object,
+        ) -> None | SpendCapDeleteOrder | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                spend_cap_delete_order_type_0 = SpendCapDeleteOrder(data)
+
+                return spend_cap_delete_order_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(None | SpendCapDeleteOrder | Unset, data)
+
+        spend_cap_delete_order = _parse_spend_cap_delete_order(
+            d.pop("spend_cap_delete_order", UNSET)
+        )
+
         update_source_body = cls(
             cloud_drive_content_types=cloud_drive_content_types,
             cloud_drive_folder_path=cloud_drive_folder_path,
@@ -307,10 +397,13 @@ class UpdateSourceBody:
             document_images=document_images,
             email_allowed_senders=email_allowed_senders,
             feed_attachments=feed_attachments,
+            max_credits_per_period=max_credits_per_period,
             media_types=media_types,
             name=name,
             polling=polling,
             retention_days=retention_days,
+            spend_cap_action=spend_cap_action,
+            spend_cap_delete_order=spend_cap_delete_order,
         )
 
         update_source_body.additional_properties = d
