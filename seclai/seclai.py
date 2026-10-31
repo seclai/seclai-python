@@ -2288,10 +2288,18 @@ class Seclai(_SeclaiBase):
         """Create a new agent.
 
         Args:
-            body: Agent creation payload (name, description, etc.).
+            body: Agent creation payload: ``name`` (required), ``description``
+                and the other ``CreateAgentRequest`` fields. To start from a
+                gallery entry, pass its ``key`` from :meth:`list_agent_examples`
+                as ``agent_template``, with ``resource_bindings``
+                (``{slot: resource_id}``) for the resources it needs. Set
+                ``create_missing_resources`` to ``True`` to create each unbound
+                slot instead of getting an error.
 
         Returns:
-            The created agent.
+            The created agent. On a create from ``agent_template`` that created
+            resources, ``created_resources`` maps each slot to the new resource
+            and ``solution_id`` names the solution grouping them with the agent.
         """
         return cast(dict[str, Any], self.request("POST", "/agents", json=body))
 
@@ -3127,7 +3135,7 @@ class Seclai(_SeclaiBase):
 
     def get_non_manual_evaluation_summary(
         self,
-        agent_id: str,
+        agent_id: str | None = None,
         *,
         days: int | None = None,
         start_date: str | None = None,
@@ -3136,15 +3144,16 @@ class Seclai(_SeclaiBase):
         """Get the non-manual evaluation summary, scoped to an agent when opted in.
 
         Args:
-            agent_id: Agent identifier. Scoping is part of the ``2026-07-27``
-                changeset: on the legacy baseline the API **ignores** it and
-                always returns the account-wide rollup, so set
-                ``api_version="2026-07-27"`` (or pin the account) to get
-                per-agent numbers.
+            agent_id: Agent identifier; omit it for the account-wide summary.
+                Scoping is part of the ``2026-07-27`` changeset: on the legacy
+                baseline the API **ignores** it and always returns the
+                account-wide rollup, so set ``api_version="2026-07-27"`` (or
+                pin the account) to get per-agent numbers.
             days: Report the last this many days (the API defaults to 30).
-            start_date: First day to report (YYYY-MM-DD). With ``end_date`` it
-                overrides ``days``.
-            end_date: Last day to report (YYYY-MM-DD).
+            start_date: First day to report (YYYY-MM-DD). When given it
+                overrides ``days``, and the range runs to ``end_date`` or today.
+            end_date: Last day to report (YYYY-MM-DD). Ignored without
+                ``start_date``.
 
         Returns:
             Summary of automated evaluation results — for ``agent_id`` when the
@@ -3410,8 +3419,8 @@ class Seclai(_SeclaiBase):
 
         Replaces the trigger's declaration. A run's files are each assigned to
         one declared attachment before any step runs, and steps reference one as
-        ``{{agent.attachments.<name>}}``. Only ``dynamic_input`` and
-        ``email_received`` triggers take files. The API answers 400 when the
+        ``{{agent.attachments.<name>}}``. Only ``dynamic_input``,
+        ``email_received`` and ``slack_command`` triggers take files. The API answers 400 when the
         agent references an attachment the new declaration leaves out.
 
         Args:
@@ -3541,6 +3550,7 @@ class Seclai(_SeclaiBase):
         limit: int = 50,
         sort: str = "created_at",
         order: str = "desc",
+        # Named for the wire param; shadows the builtin, so don't call type() here.
         type: str | None = None,
     ) -> dict[str, Any]:
         """List memory banks.
@@ -3660,9 +3670,10 @@ class Seclai(_SeclaiBase):
         Args:
             memory_bank_id: Memory bank identifier.
             days: Report the last this many days (the API defaults to 30).
-            start_date: First day to report (YYYY-MM-DD). With ``end_date`` it
-                overrides ``days``.
-            end_date: Last day to report (YYYY-MM-DD).
+            start_date: First day to report (YYYY-MM-DD). Only with
+                ``end_date``, when the two override ``days``; either alone is
+                ignored.
+            end_date: Last day to report (YYYY-MM-DD). Only with ``start_date``.
 
         Returns:
             Memory bank statistics.
@@ -7133,10 +7144,18 @@ class AsyncSeclai(_SeclaiBase):
         """Create a new agent.
 
         Args:
-            body: Agent creation payload (name, description, etc.).
+            body: Agent creation payload: ``name`` (required), ``description``
+                and the other ``CreateAgentRequest`` fields. To start from a
+                gallery entry, pass its ``key`` from :meth:`list_agent_examples`
+                as ``agent_template``, with ``resource_bindings``
+                (``{slot: resource_id}``) for the resources it needs. Set
+                ``create_missing_resources`` to ``True`` to create each unbound
+                slot instead of getting an error.
 
         Returns:
-            The created agent.
+            The created agent. On a create from ``agent_template`` that created
+            resources, ``created_resources`` maps each slot to the new resource
+            and ``solution_id`` names the solution grouping them with the agent.
         """
         return cast(dict[str, Any], await self.request("POST", "/agents", json=body))
 
@@ -7987,7 +8006,7 @@ class AsyncSeclai(_SeclaiBase):
 
     async def get_non_manual_evaluation_summary(
         self,
-        agent_id: str,
+        agent_id: str | None = None,
         *,
         days: int | None = None,
         start_date: str | None = None,
@@ -7996,15 +8015,16 @@ class AsyncSeclai(_SeclaiBase):
         """Get the non-manual evaluation summary, scoped to an agent when opted in.
 
         Args:
-            agent_id: Agent identifier. Scoping is part of the ``2026-07-27``
-                changeset: on the legacy baseline the API **ignores** it and
-                always returns the account-wide rollup, so set
-                ``api_version="2026-07-27"`` (or pin the account) to get
-                per-agent numbers.
+            agent_id: Agent identifier; omit it for the account-wide summary.
+                Scoping is part of the ``2026-07-27`` changeset: on the legacy
+                baseline the API **ignores** it and always returns the
+                account-wide rollup, so set ``api_version="2026-07-27"`` (or
+                pin the account) to get per-agent numbers.
             days: Report the last this many days (the API defaults to 30).
-            start_date: First day to report (YYYY-MM-DD). With ``end_date`` it
-                overrides ``days``.
-            end_date: Last day to report (YYYY-MM-DD).
+            start_date: First day to report (YYYY-MM-DD). When given it
+                overrides ``days``, and the range runs to ``end_date`` or today.
+            end_date: Last day to report (YYYY-MM-DD). Ignored without
+                ``start_date``.
 
         Returns:
             Summary of automated evaluation results — for ``agent_id`` when the
@@ -8273,8 +8293,8 @@ class AsyncSeclai(_SeclaiBase):
 
         Replaces the trigger's declaration. A run's files are each assigned to
         one declared attachment before any step runs, and steps reference one as
-        ``{{agent.attachments.<name>}}``. Only ``dynamic_input`` and
-        ``email_received`` triggers take files. The API answers 400 when the
+        ``{{agent.attachments.<name>}}``. Only ``dynamic_input``,
+        ``email_received`` and ``slack_command`` triggers take files. The API answers 400 when the
         agent references an attachment the new declaration leaves out.
 
         Args:
@@ -8406,6 +8426,7 @@ class AsyncSeclai(_SeclaiBase):
         limit: int = 50,
         sort: str = "created_at",
         order: str = "desc",
+        # Named for the wire param; shadows the builtin, so don't call type() here.
         type: str | None = None,
     ) -> dict[str, Any]:
         """List memory banks.
@@ -8529,9 +8550,10 @@ class AsyncSeclai(_SeclaiBase):
         Args:
             memory_bank_id: Memory bank identifier.
             days: Report the last this many days (the API defaults to 30).
-            start_date: First day to report (YYYY-MM-DD). With ``end_date`` it
-                overrides ``days``.
-            end_date: Last day to report (YYYY-MM-DD).
+            start_date: First day to report (YYYY-MM-DD). Only with
+                ``end_date``, when the two override ``days``; either alone is
+                ignored.
+            end_date: Last day to report (YYYY-MM-DD). Only with ``start_date``.
 
         Returns:
             Memory bank statistics.

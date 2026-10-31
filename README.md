@@ -498,6 +498,7 @@ client.create_evaluation_result("criteria_id", {"run_id": "run_id", "score": 0.9
 # Results by run
 run_results = client.list_run_evaluation_results("agent_id", "run_id")
 non_manual = client.get_non_manual_evaluation_summary("agent_id", days=7)
+account_wide = client.get_non_manual_evaluation_summary(days=7)
 compatible = client.list_compatible_runs(
     "criteria_id", started_after="2026-10-01T00:00:00Z"
 )

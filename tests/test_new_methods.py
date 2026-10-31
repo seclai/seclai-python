@@ -5238,18 +5238,6 @@ _QUERY_FILTERS: list[
 _FILTER_IDS = [case[0] for case in _QUERY_FILTERS]
 
 
-def _query_recorder(
-    seen: dict[str, Any],
-) -> Callable[[httpx.Request], httpx.Response]:
-    def handler(req: httpx.Request) -> httpx.Response:
-        seen["method"] = req.method
-        seen["path"] = req.url.path
-        seen["params"] = dict(req.url.params)
-        return _json_response({"data": []})
-
-    return handler
-
-
 class TestDeclaredQueryFilters:
     """Every query param the spec declares on these endpoints is sent as given."""
 
@@ -5266,11 +5254,11 @@ class TestDeclaredQueryFilters:
         default: dict[str, str],
     ) -> None:
         seen: dict[str, Any] = {}
-        client = _sync_client(_query_recorder(seen))
+        client = _sync_client(_recording_handler(seen, {"data": []}))
         getattr(client, name)(*args, **kwargs)
         assert seen["method"] == "GET"
         assert seen["path"] == path
-        assert seen["params"] == {**default, **added}
+        assert dict(seen["query"]) == {**default, **added}
 
     @pytest.mark.parametrize(
         "name,args,kwargs,path,added,default", _QUERY_FILTERS, ids=_FILTER_IDS
@@ -5285,10 +5273,10 @@ class TestDeclaredQueryFilters:
         default: dict[str, str],
     ) -> None:
         seen: dict[str, Any] = {}
-        client = _sync_client(_query_recorder(seen))
+        client = _sync_client(_recording_handler(seen, {"data": []}))
         getattr(client, name)(*args)
         assert seen["path"] == path
-        assert seen["params"] == default
+        assert dict(seen["query"]) == default
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -5304,7 +5292,9 @@ class TestDeclaredQueryFilters:
         default: dict[str, str],
     ) -> None:
         seen: dict[str, Any] = {}
-        sync_handler = _query_recorder(seen)
+        sync_handler: Callable[[httpx.Request], httpx.Response] = _recording_handler(
+            seen, {"data": []}
+        )
 
         async def handler(req: httpx.Request) -> httpx.Response:
             return sync_handler(req)
@@ -5313,4 +5303,54 @@ class TestDeclaredQueryFilters:
         await getattr(client, name)(*args, **kwargs)
         assert seen["method"] == "GET"
         assert seen["path"] == path
-        assert seen["params"] == {**default, **added}
+        assert dict(seen["query"]) == {**default, **added}
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "name,args,kwargs,path,added,default", _QUERY_FILTERS, ids=_FILTER_IDS
+    )
+    async def test_async_unset_filters_leave_the_request_unchanged(
+        self,
+        name: str,
+        args: tuple[str, ...],
+        kwargs: dict[str, Any],
+        path: str,
+        added: dict[str, str],
+        default: dict[str, str],
+    ) -> None:
+        seen: dict[str, Any] = {}
+        sync_handler: Callable[[httpx.Request], httpx.Response] = _recording_handler(
+            seen, {"data": []}
+        )
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            return sync_handler(req)
+
+        client = _async_client(handler)
+        await getattr(client, name)(*args)
+        assert seen["path"] == path
+        assert dict(seen["query"]) == default
+
+    def test_non_manual_summary_without_agent_is_account_wide(self) -> None:
+        seen: dict[str, Any] = {}
+        client = _sync_client(_recording_handler(seen, {}))
+        client.get_non_manual_evaluation_summary(days=7)
+        assert seen["path"] == "/agents/evaluation-results/non-manual-summary"
+        assert dict(seen["query"]) == {"days": "7"}
+
+    @pytest.mark.asyncio
+    async def test_async_non_manual_summary_without_agent_is_account_wide(
+        self,
+    ) -> None:
+        seen: dict[str, Any] = {}
+        sync_handler: Callable[[httpx.Request], httpx.Response] = _recording_handler(
+            seen, {}
+        )
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            return sync_handler(req)
+
+        client = _async_client(handler)
+        await client.get_non_manual_evaluation_summary()
+        assert seen["path"] == "/agents/evaluation-results/non-manual-summary"
+        assert dict(seen["query"]) == {}

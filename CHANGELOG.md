@@ -6,6 +6,7 @@
 
 - Sync the bundled OpenAPI spec, adding 2 paths and 8 schemas. The typed models gain the new fields, including `decision` on an agent run step, the run limits, `created_resources` and `solution_id` on an agent, `create_missing_resources` and `resource_bindings` on agent create, `apply_import_run_limits` and the `max_*` and `set_max_*` run limits on agent update, the `max_credits_per_period`, `spend_cap_action`, `spend_cap_delete_order` and `spend_cap_reached` spend-limit fields on a source and its update body, and `release_waiting_reason` on a content status
 - Move `LATEST_API_VERSION` to `2026-10-28`. A client built with `api_version=LATEST_API_VERSION` also opts into it: an `if_else` or `switch` step's `output` is the result of the arm it took rather than the `{"branch": ...}` marker. The arm is in the step's `decision` on every version
+- Make `agent_id` optional on `get_non_manual_evaluation_summary()`, as the API declares it. Leave it out for the account-wide summary
 
 ### Added
 
