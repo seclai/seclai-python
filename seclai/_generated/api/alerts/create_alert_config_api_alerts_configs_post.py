@@ -89,7 +89,8 @@ def sync_detailed(
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
     model_deprecated, model_sunset.
-    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike.
+    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
+    source_spend_limit_reached (needs source_connection_id).
 
     Distribution types: owner, owner_admins, selected_members. Organization accounts are normalized to
     owner_admins.
@@ -138,7 +139,8 @@ def sync(
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
     model_deprecated, model_sunset.
-    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike.
+    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
+    source_spend_limit_reached (needs source_connection_id).
 
     Distribution types: owner, owner_admins, selected_members. Organization accounts are normalized to
     owner_admins.
@@ -182,7 +184,8 @@ async def asyncio_detailed(
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
     model_deprecated, model_sunset.
-    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike.
+    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
+    source_spend_limit_reached (needs source_connection_id).
 
     Distribution types: owner, owner_admins, selected_members. Organization accounts are normalized to
     owner_admins.
@@ -229,7 +232,8 @@ async def asyncio(
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
     model_deprecated, model_sunset.
-    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike.
+    Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
+    source_spend_limit_reached (needs source_connection_id).
 
     Distribution types: owner, owner_admins, selected_members. Organization accounts are normalized to
     owner_admins.

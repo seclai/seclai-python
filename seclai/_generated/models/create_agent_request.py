@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from ..models.create_agent_request_entity_remap_type_0 import (
         CreateAgentRequestEntityRemapType0,
     )
+    from ..models.create_agent_request_resource_bindings_type_0 import (
+        CreateAgentRequestResourceBindingsType0,
+    )
 
 
 T = TypeVar("T", bound="CreateAgentRequest")
@@ -34,24 +37,32 @@ class CreateAgentRequest:
             produced by GET /agents/{id}/export. When provided, replaces any template-derived workflow and pre-fills
             metadata/trigger fields the request does not specify explicitly. Validation errors include line/column
             references against a canonical pretty-printed echo of the supplied payload.
-        agent_template (None | str | Unset): Template to initialize the agent from. Values: blank, retrieval_example,
-            simple_qa, summarizer, json_extractor, content_change_notifier, scheduled_report, webhook_pipeline.
+        agent_template (None | str | Unset): Agent gallery entry to start from: a `key` from GET /agents/examples, or
+            `blank`. The keys retrieval_example and simple_qa remain accepted for their gallery entries.
+        create_missing_resources (bool | Unset): For an `agent_template`: create each creatable resource slot left out
+            of `resource_bindings`, and group the agent with them in a new solution. When false, an unbound slot the
+            template needs is an error. Default: False.
         description (None | str | Unset): Optional description.
         entity_remap (CreateAgentRequestEntityRemapType0 | None | Unset): Optional UUID-substitution map applied to the
             imported workflow before save. Each key is a source-account UUID (as returned by /agents/preview-import's
             ``unresolved_refs``); each value is the target-account UUID to substitute. Used to relink knowledge bases,
             memory banks, source connections, and sub-agents on cross-account imports.
-        trigger_type (str | Unset): Trigger type: dynamic_input, template_input, schedule, new_content, email_received.
-            Default: 'dynamic_input'.
+        resource_bindings (CreateAgentRequestResourceBindingsType0 | None | Unset): For an `agent_template`: the
+            existing resource to use for each of the template's resource slots, as {slot: resource_id}. GET /agents/examples
+            lists each template's slots.
+        trigger_type (None | str | Unset): Defaults to dynamic_input, or to the template's own trigger type for an
+            `agent_template` without `agent_definition`.
     """
 
     name: str
     accepted_attachments: list[AcceptedAttachmentSlot] | None | Unset = UNSET
     agent_definition: CreateAgentRequestAgentDefinitionType0 | None | Unset = UNSET
     agent_template: None | str | Unset = UNSET
+    create_missing_resources: bool | Unset = False
     description: None | str | Unset = UNSET
     entity_remap: CreateAgentRequestEntityRemapType0 | None | Unset = UNSET
-    trigger_type: str | Unset = "dynamic_input"
+    resource_bindings: CreateAgentRequestResourceBindingsType0 | None | Unset = UNSET
+    trigger_type: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -60,6 +71,9 @@ class CreateAgentRequest:
         )
         from ..models.create_agent_request_entity_remap_type_0 import (
             CreateAgentRequestEntityRemapType0,
+        )
+        from ..models.create_agent_request_resource_bindings_type_0 import (
+            CreateAgentRequestResourceBindingsType0,
         )
 
         name = self.name
@@ -92,6 +106,8 @@ class CreateAgentRequest:
         else:
             agent_template = self.agent_template
 
+        create_missing_resources = self.create_missing_resources
+
         description: None | str | Unset
         if isinstance(self.description, Unset):
             description = UNSET
@@ -106,7 +122,21 @@ class CreateAgentRequest:
         else:
             entity_remap = self.entity_remap
 
-        trigger_type = self.trigger_type
+        resource_bindings: dict[str, Any] | None | Unset
+        if isinstance(self.resource_bindings, Unset):
+            resource_bindings = UNSET
+        elif isinstance(
+            self.resource_bindings, CreateAgentRequestResourceBindingsType0
+        ):
+            resource_bindings = self.resource_bindings.to_dict()
+        else:
+            resource_bindings = self.resource_bindings
+
+        trigger_type: None | str | Unset
+        if isinstance(self.trigger_type, Unset):
+            trigger_type = UNSET
+        else:
+            trigger_type = self.trigger_type
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -121,10 +151,14 @@ class CreateAgentRequest:
             field_dict["agent_definition"] = agent_definition
         if agent_template is not UNSET:
             field_dict["agent_template"] = agent_template
+        if create_missing_resources is not UNSET:
+            field_dict["create_missing_resources"] = create_missing_resources
         if description is not UNSET:
             field_dict["description"] = description
         if entity_remap is not UNSET:
             field_dict["entity_remap"] = entity_remap
+        if resource_bindings is not UNSET:
+            field_dict["resource_bindings"] = resource_bindings
         if trigger_type is not UNSET:
             field_dict["trigger_type"] = trigger_type
 
@@ -138,6 +172,9 @@ class CreateAgentRequest:
         )
         from ..models.create_agent_request_entity_remap_type_0 import (
             CreateAgentRequestEntityRemapType0,
+        )
+        from ..models.create_agent_request_resource_bindings_type_0 import (
+            CreateAgentRequestResourceBindingsType0,
         )
 
         d = dict(src_dict)
@@ -203,6 +240,8 @@ class CreateAgentRequest:
 
         agent_template = _parse_agent_template(d.pop("agent_template", UNSET))
 
+        create_missing_resources = d.pop("create_missing_resources", UNSET)
+
         def _parse_description(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -231,15 +270,45 @@ class CreateAgentRequest:
 
         entity_remap = _parse_entity_remap(d.pop("entity_remap", UNSET))
 
-        trigger_type = d.pop("trigger_type", UNSET)
+        def _parse_resource_bindings(
+            data: object,
+        ) -> CreateAgentRequestResourceBindingsType0 | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, dict):
+                    raise TypeError()
+                resource_bindings_type_0 = (
+                    CreateAgentRequestResourceBindingsType0.from_dict(data)
+                )
+
+                return resource_bindings_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(CreateAgentRequestResourceBindingsType0 | None | Unset, data)
+
+        resource_bindings = _parse_resource_bindings(d.pop("resource_bindings", UNSET))
+
+        def _parse_trigger_type(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        trigger_type = _parse_trigger_type(d.pop("trigger_type", UNSET))
 
         create_agent_request = cls(
             name=name,
             accepted_attachments=accepted_attachments,
             agent_definition=agent_definition,
             agent_template=agent_template,
+            create_missing_resources=create_missing_resources,
             description=description,
             entity_remap=entity_remap,
+            resource_bindings=resource_bindings,
             trigger_type=trigger_type,
         )
 

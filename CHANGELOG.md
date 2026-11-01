@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.0] - 2026-10-31
+
+### Changed
+
+- Sync the bundled OpenAPI spec, adding 2 paths and 8 schemas. The typed models gain the new fields, including `decision` on an agent run step, the run limits, `created_resources` and `solution_id` on an agent, `create_missing_resources` and `resource_bindings` on agent create, `apply_import_run_limits` and the `max_*` and `set_max_*` run limits on agent update, the `max_credits_per_period`, `spend_cap_action`, `spend_cap_delete_order` and `spend_cap_reached` spend-limit fields on a source and its update body, and `release_waiting_reason` on a content status
+- Move `LATEST_API_VERSION` to `2026-10-28`. A client built with `api_version=LATEST_API_VERSION` also opts into it: an `if_else` or `switch` step's `output` is the result of the arm it took rather than the `{"branch": ...}` marker. The arm is in the step's `decision` on every version
+- Make `agent_id` optional on `get_non_manual_evaluation_summary()`, as the API declares it. Leave it out for the account-wide summary
+
+### Added
+
+- Add `list_agent_examples()` to list the agent gallery, filtered by `query` and `use_case`. Pass an entry's `key` as `agent_template` to `create_agent()`
+- Add `set_slack_trigger_config()` to configure an agent's `SLACK_COMMAND` trigger
+- Add the query filters the API declares to existing list methods, each sent only when given: `status`, `flagged_only`, `time_from` and `time_to` on `list_evaluation_results()`; those and `step` on `list_agent_evaluation_results()`; `status`, `step`, `time_from` and `time_to` on `list_evaluation_runs()`; `started_after` on `list_compatible_runs()`; `days`, `start_date` and `end_date` on `get_non_manual_evaluation_summary()` and `get_memory_bank_stats()`; `limit` and `offset` on `get_ai_assistant_memory_bank_history()` and `get_memory_bank_ai_last_conversation()`; `limit` on `list_governance_ai_conversations()`; `agent_id`, `source_connection_id`, `time_from` and `time_to` on `list_alerts()`; `agent_id`, `source_connection_id` and `scope` on `list_alert_configs()`; `organization_id` and `include_defaults` on `list_organization_alert_preferences()`; `agent_id` and `unread_only` on `list_model_alerts()`; `type` on `list_memory_banks()`; `search` on `list_solutions()`; `supports_input_media` and `supports_output_media` on `list_models()`; and `require_tool_use`, `require_structured_output`, `require_thinking`, `min_context_tokens` and `min_output_tokens` on `get_model_recommendations()`
+- Add an `ApiVersion` member for `2026-10-28`, so it can be selected without `allow_unknown_api_version`
+
 ## [1.8.0] - 2026-10-21
 
 ### Changed
@@ -240,6 +255,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.9.0]: https://github.com/seclai/seclai-python/releases/tag/1.9.0
 [1.8.0]: https://github.com/seclai/seclai-python/releases/tag/1.8.0
 [1.7.2]: https://github.com/seclai/seclai-python/releases/tag/1.7.2
 [1.7.1]: https://github.com/seclai/seclai-python/releases/tag/1.7.1

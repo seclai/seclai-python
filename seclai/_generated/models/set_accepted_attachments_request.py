@@ -18,8 +18,8 @@ class SetAcceptedAttachmentsRequest:
     """
     Attributes:
         accepted_attachments (list[AcceptedAttachmentSlot] | None): The input attachments the trigger accepts; ``null``
-            accepts any files (one attachment named ``files``). Only ``dynamic_input`` and ``email_received`` triggers take
-            files.
+            accepts any files (one attachment named ``files``). Only ``dynamic_input``, ``email_received`` and
+            ``slack_command`` triggers take files.
     """
 
     accepted_attachments: list[AcceptedAttachmentSlot] | None

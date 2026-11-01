@@ -19,6 +19,7 @@ from .agent_definition_response_warnings_type_0_item import (
 from .agent_email_opt_out_list_response import AgentEmailOptOutListResponse
 from .agent_email_opt_out_response import AgentEmailOptOutResponse
 from .agent_evaluation_tier import AgentEvaluationTier
+from .agent_example_list_response import AgentExampleListResponse
 from .agent_export_response import AgentExportResponse
 from .agent_export_response_agent import AgentExportResponseAgent
 from .agent_export_response_alert_configs_type_0_item import (
@@ -54,6 +55,9 @@ from .agent_run_stream_request import AgentRunStreamRequest
 from .agent_run_stream_request_metadata_type_0 import AgentRunStreamRequestMetadataType0
 from .agent_run_tool_call_response import AgentRunToolCallResponse
 from .agent_summary_response import AgentSummaryResponse
+from .agent_summary_response_created_resources_type_0 import (
+    AgentSummaryResponseCreatedResourcesType0,
+)
 from .agent_summary_response_sampling_config_type_0 import (
     AgentSummaryResponseSamplingConfigType0,
 )
@@ -128,6 +132,9 @@ from .create_agent_request_agent_definition_type_0 import (
     CreateAgentRequestAgentDefinitionType0,
 )
 from .create_agent_request_entity_remap_type_0 import CreateAgentRequestEntityRemapType0
+from .create_agent_request_resource_bindings_type_0 import (
+    CreateAgentRequestResourceBindingsType0,
+)
 from .create_alert_config_request import CreateAlertConfigRequest
 from .create_alert_config_request_threshold_type_0 import (
     CreateAlertConfigRequestThresholdType0,
@@ -344,8 +351,19 @@ from .service_unavailable_error_error_code import ServiceUnavailableErrorErrorCo
 from .set_accepted_attachments_request import SetAcceptedAttachmentsRequest
 from .set_auto_block_mode_request import SetAutoBlockModeRequest
 from .set_email_trigger_config_request import SetEmailTriggerConfigRequest
+from .set_slack_trigger_config_api_request import SetSlackTriggerConfigApiRequest
+from .set_slack_trigger_config_api_request_form_type_0_item import (
+    SetSlackTriggerConfigApiRequestFormType0Item,
+)
 from .skipped_attachment_reason import SkippedAttachmentReason
 from .skipped_attachment_response import SkippedAttachmentResponse
+from .slack_reply_visibility import SlackReplyVisibility
+from .slack_trigger_activation import SlackTriggerActivation
+from .slack_trigger_config_api_response import SlackTriggerConfigApiResponse
+from .slack_trigger_config_api_response_form_item import (
+    SlackTriggerConfigApiResponseFormItem,
+)
+from .slack_trigger_scope import SlackTriggerScope
 from .solution_agent_response import SolutionAgentResponse
 from .solution_conversation_response import SolutionConversationResponse
 from .solution_conversation_response_actions_taken_type_0 import (
@@ -363,6 +381,8 @@ from .source_embedding_migration_response import SourceEmbeddingMigrationRespons
 from .source_index_mode import SourceIndexMode
 from .source_list_response import SourceListResponse
 from .source_response import SourceResponse
+from .spend_cap_action import SpendCapAction
+from .spend_cap_delete_order import SpendCapDeleteOrder
 from .standalone_test_compaction_request import StandaloneTestCompactionRequest
 from .start_source_embedding_migration_request import (
     StartSourceEmbeddingMigrationRequest,
@@ -424,6 +444,7 @@ __all__ = (
     "AgentEmailOptOutListResponse",
     "AgentEmailOptOutResponse",
     "AgentEvaluationTier",
+    "AgentExampleListResponse",
     "AgentExportResponse",
     "AgentExportResponseAgent",
     "AgentExportResponseAlertConfigsType0Item",
@@ -447,6 +468,7 @@ __all__ = (
     "AgentRunStreamRequestMetadataType0",
     "AgentRunToolCallResponse",
     "AgentSummaryResponse",
+    "AgentSummaryResponseCreatedResourcesType0",
     "AgentSummaryResponseSamplingConfigType0",
     "AgentTraceMatchResponse",
     "AgentTraceSearchRequest",
@@ -505,6 +527,7 @@ __all__ = (
     "CreateAgentRequest",
     "CreateAgentRequestAgentDefinitionType0",
     "CreateAgentRequestEntityRemapType0",
+    "CreateAgentRequestResourceBindingsType0",
     "CreateAlertConfigRequest",
     "CreateAlertConfigRequestThresholdType0",
     "CreateEvaluationCriteriaRequest",
@@ -655,8 +678,15 @@ __all__ = (
     "SetAcceptedAttachmentsRequest",
     "SetAutoBlockModeRequest",
     "SetEmailTriggerConfigRequest",
+    "SetSlackTriggerConfigApiRequest",
+    "SetSlackTriggerConfigApiRequestFormType0Item",
     "SkippedAttachmentReason",
     "SkippedAttachmentResponse",
+    "SlackReplyVisibility",
+    "SlackTriggerActivation",
+    "SlackTriggerConfigApiResponse",
+    "SlackTriggerConfigApiResponseFormItem",
+    "SlackTriggerScope",
     "SolutionAgentResponse",
     "SolutionConversationResponse",
     "SolutionConversationResponseActionsTakenType0",
@@ -672,6 +702,8 @@ __all__ = (
     "SourceIndexMode",
     "SourceListResponse",
     "SourceResponse",
+    "SpendCapAction",
+    "SpendCapDeleteOrder",
     "StandaloneTestCompactionRequest",
     "StartSourceEmbeddingMigrationRequest",
     "TestCompactionRequest",

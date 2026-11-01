@@ -2251,14 +2251,55 @@ class Seclai(_SeclaiBase):
             ),
         )
 
+    def list_agent_examples(
+        self,
+        *,
+        query: str | None = None,
+        use_case: str | None = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        """List the agent gallery: example agents to start from.
+
+        Pass an entry's ``key`` as ``agent_template`` to :meth:`create_agent`,
+        with ``resource_bindings`` for the resources it needs.
+
+        Args:
+            query: Words every match must contain.
+            use_case: Only entries for this use case.
+            page: Page number (1-indexed).
+            limit: Items per page.
+
+        Returns:
+            The page of examples under ``data`` with ``pagination``.
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "GET",
+                "/agents/examples",
+                params=_strip_none(
+                    {"query": query, "use_case": use_case, "page": page, "limit": limit}
+                ),
+            ),
+        )
+
     def create_agent(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a new agent.
 
         Args:
-            body: Agent creation payload (name, description, etc.).
+            body: Agent creation payload: ``name`` (required), ``description``
+                and the other ``CreateAgentRequest`` fields. To start from a
+                gallery entry, pass its ``key`` from :meth:`list_agent_examples`
+                as ``agent_template``, with ``resource_bindings``
+                (``{slot: resource_id}``) for the resources it needs. Set
+                ``create_missing_resources`` to ``True`` to create each unbound
+                slot instead of getting an error.
 
         Returns:
-            The created agent.
+            The created agent. On a create from ``agent_template`` that created
+            resources, ``created_resources`` maps each slot to the new resource
+            and ``solution_id`` names the solution grouping them with the agent.
         """
         return cast(dict[str, Any], self.request("POST", "/agents", json=body))
 
@@ -2825,7 +2866,15 @@ class Seclai(_SeclaiBase):
         )
 
     def list_evaluation_results(
-        self, criteria_id: str, *, page: int = 1, limit: int = 50
+        self,
+        criteria_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        status: str | None = None,
+        flagged_only: bool | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> dict[str, Any]:
         """List evaluation results for criteria.
 
@@ -2833,6 +2882,10 @@ class Seclai(_SeclaiBase):
             criteria_id: Evaluation criteria identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            status: Only results with this status.
+            flagged_only: Only flagged results.
+            time_from: Only results at or after this time (ISO 8601).
+            time_to: Only results at or before this time (ISO 8601).
 
         Returns:
             The page of results under ``data`` with ``total``, ``page`` and
@@ -2844,7 +2897,16 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/results",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "status": status,
+                        "flagged_only": flagged_only,
+                        "time_from": time_from,
+                        "time_to": time_to,
+                    }
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
@@ -2872,7 +2934,12 @@ class Seclai(_SeclaiBase):
         )
 
     def list_compatible_runs(
-        self, criteria_id: str, *, page: int = 1, limit: int = 50
+        self,
+        criteria_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        started_after: str | None = None,
     ) -> dict[str, Any]:
         """List agent runs compatible with evaluation criteria.
 
@@ -2880,6 +2947,7 @@ class Seclai(_SeclaiBase):
             criteria_id: Evaluation criteria identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            started_after: Only runs started after this time (ISO 8601).
 
         Returns:
             The page of compatible runs under ``data`` with ``total``, ``page`` and
@@ -2891,7 +2959,9 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {"page": page, "limit": limit, "started_after": started_after}
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
@@ -2921,7 +2991,16 @@ class Seclai(_SeclaiBase):
         )
 
     def list_agent_evaluation_results(
-        self, agent_id: str, *, page: int = 1, limit: int = 50
+        self,
+        agent_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        status: str | None = None,
+        step: str | None = None,
+        flagged_only: bool | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> dict[str, Any]:
         """List all evaluation results for an agent.
 
@@ -2929,6 +3008,11 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            status: Only results with this status.
+            step: Only results for this agent step.
+            flagged_only: Only flagged results.
+            time_from: Only results at or after this time (ISO 8601).
+            time_to: Only results at or before this time (ISO 8601).
 
         Returns:
             The page of results with their criteria under ``data`` with ``total``,
@@ -2940,7 +3024,17 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-results",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "status": status,
+                        "step": step,
+                        "flagged_only": flagged_only,
+                        "time_from": time_from,
+                        "time_to": time_to,
+                    }
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
@@ -2993,7 +3087,15 @@ class Seclai(_SeclaiBase):
         return _keyed_list(result, "data")
 
     def list_evaluation_runs(
-        self, agent_id: str, *, page: int = 1, limit: int = 50
+        self,
+        agent_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        status: str | None = None,
+        step: str | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> dict[str, Any]:
         """List evaluation run summaries for an agent.
 
@@ -3001,6 +3103,10 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            status: Only runs with this status.
+            step: Only runs for this agent step.
+            time_from: Only runs at or after this time (ISO 8601).
+            time_to: Only runs at or before this time (ISO 8601).
 
         Returns:
             The page of run summaries under ``data`` with ``total``, ``page`` and
@@ -3012,21 +3118,42 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-runs",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "status": status,
+                        "step": step,
+                        "time_from": time_from,
+                        "time_to": time_to,
+                    }
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
         )
 
-    def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
+    def get_non_manual_evaluation_summary(
+        self,
+        agent_id: str | None = None,
+        *,
+        days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
         """Get the non-manual evaluation summary, scoped to an agent when opted in.
 
         Args:
-            agent_id: Agent identifier. Scoping is part of the ``2026-07-27``
-                changeset: on the legacy baseline the API **ignores** it and
-                always returns the account-wide rollup, so set
-                ``api_version="2026-07-27"`` (or pin the account) to get
-                per-agent numbers.
+            agent_id: Agent identifier; omit it for the account-wide summary.
+                Scoping is part of the ``2026-07-27`` changeset: on the legacy
+                baseline the API **ignores** it and always returns the
+                account-wide rollup, so set ``api_version="2026-07-27"`` (or
+                pin the account) to get per-agent numbers.
+            days: Report the last this many days (the API defaults to 30).
+            start_date: First day to report (YYYY-MM-DD). When given it
+                overrides ``days``, and the range runs to ``end_date`` or today.
+            end_date: Last day to report (YYYY-MM-DD). Ignored without
+                ``start_date``.
 
         Returns:
             Summary of automated evaluation results — for ``agent_id`` when the
@@ -3040,7 +3167,14 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 "/agents/evaluation-results/non-manual-summary",
-                params={"agent_id": agent_id},
+                params=_strip_none(
+                    {
+                        "agent_id": agent_id,
+                        "days": days,
+                        "start_date": start_date,
+                        "end_date": end_date,
+                    }
+                ),
             ),
         )
 
@@ -3244,6 +3378,37 @@ class Seclai(_SeclaiBase):
             ),
         )
 
+    def set_slack_trigger_config(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        body: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Configure an agent's SLACK_COMMAND trigger.
+
+        People run the agent from Slack with ``/seclai`` or the message shortcut.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier.
+            body: Fields to set (mcp_client_id, form, scope, channel_ids,
+                allow_dms, activation, visibility, start_without_form, input,
+                turns_enabled, turns_anyone, max_turns, include_invoker_email,
+                notify_failure_after_answer). Omitted fields are unchanged.
+
+        Returns:
+            The trigger's Slack config, with ``missing_scopes`` listing what the
+            Slack connection lacks for optional features.
+        """
+        return cast(
+            dict[str, Any],
+            self.request(
+                "PUT",
+                f"/agents/{agent_id}/triggers/{trigger_id}/slack-config",
+                json=body,
+            ),
+        )
+
     def set_accepted_attachments(
         self,
         agent_id: str,
@@ -3254,8 +3419,8 @@ class Seclai(_SeclaiBase):
 
         Replaces the trigger's declaration. A run's files are each assigned to
         one declared attachment before any step runs, and steps reference one as
-        ``{{agent.attachments.<name>}}``. Only ``dynamic_input`` and
-        ``email_received`` triggers take files. The API answers 400 when the
+        ``{{agent.attachments.<name>}}``. Only ``dynamic_input``,
+        ``email_received`` and ``slack_command`` triggers take files. The API answers 400 when the
         agent references an attachment the new declaration leaves out.
 
         Args:
@@ -3385,6 +3550,8 @@ class Seclai(_SeclaiBase):
         limit: int = 50,
         sort: str = "created_at",
         order: str = "desc",
+        # Named for the wire param; shadows the builtin, so don't call type() here.
+        type: str | None = None,
     ) -> dict[str, Any]:
         """List memory banks.
 
@@ -3393,6 +3560,7 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
             sort: Sort field.
             order: Sort order (``"asc"`` or ``"desc"``).
+            type: Only banks of this type (``"conversation"`` or ``"general"``).
 
         Returns:
             The page of memory banks under ``memory_banks`` with ``total``, ``page``
@@ -3405,7 +3573,13 @@ class Seclai(_SeclaiBase):
                 "GET",
                 "/memory_banks",
                 params=_strip_none(
-                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "sort": sort,
+                        "order": order,
+                        "type": type,
+                    }
                 ),
             ),
             "memory_banks",
@@ -3483,16 +3657,34 @@ class Seclai(_SeclaiBase):
             unwrap_items(self.request("GET", f"/memory_banks/{memory_bank_id}/agents")),
         )
 
-    def get_memory_bank_stats(self, memory_bank_id: str) -> JSONValue:
+    def get_memory_bank_stats(
+        self,
+        memory_bank_id: str,
+        *,
+        days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> JSONValue:
         """Get statistics for a memory bank.
 
         Args:
             memory_bank_id: Memory bank identifier.
+            days: Report the last this many days (the API defaults to 30).
+            start_date: First day to report (YYYY-MM-DD). Only with
+                ``end_date``, when the two override ``days``; either alone is
+                ignored.
+            end_date: Last day to report (YYYY-MM-DD). Only with ``start_date``.
 
         Returns:
             Memory bank statistics.
         """
-        return self.request("GET", f"/memory_banks/{memory_bank_id}/stats")
+        return self.request(
+            "GET",
+            f"/memory_banks/{memory_bank_id}/stats",
+            params=_strip_none(
+                {"days": days, "start_date": start_date, "end_date": end_date}
+            ),
+        )
 
     def compact_memory_bank(self, memory_bank_id: str) -> None:
         """Trigger compaction of a memory bank.
@@ -3577,8 +3769,14 @@ class Seclai(_SeclaiBase):
             ),
         )
 
-    def get_memory_bank_ai_last_conversation(self) -> dict[str, Any]:
+    def get_memory_bank_ai_last_conversation(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> dict[str, Any]:
         """Get the last AI assistant conversation for memory banks.
+
+        Args:
+            limit: Most turns to return (the API defaults to 5).
+            offset: Number of most recent turns to skip.
 
         Returns:
             Last conversation with the memory bank AI assistant.
@@ -3588,6 +3786,7 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 "/memory_banks/ai-assistant/last-conversation",
+                params=_strip_none({"limit": limit, "offset": offset}),
             ),
         )
 
@@ -4009,6 +4208,7 @@ class Seclai(_SeclaiBase):
         limit: int = 50,
         sort: str = "created_at",
         order: str = "desc",
+        search: str | None = None,
     ) -> dict[str, Any]:
         """List solutions.
 
@@ -4017,6 +4217,7 @@ class Seclai(_SeclaiBase):
             limit: Items per page.
             sort: Sort field.
             order: Sort order (``"asc"`` or ``"desc"``).
+            search: Only solutions whose name contains this text, ignoring case.
 
         Returns:
             Paginated list of solutions.
@@ -4027,7 +4228,13 @@ class Seclai(_SeclaiBase):
                 "GET",
                 "/solutions",
                 params=_strip_none(
-                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "sort": sort,
+                        "order": order,
+                        "search": search,
+                    }
                 ),
             ),
         )
@@ -4377,8 +4584,13 @@ class Seclai(_SeclaiBase):
             ),
         )
 
-    def list_governance_ai_conversations(self) -> list[dict[str, Any]]:
+    def list_governance_ai_conversations(
+        self, *, limit: int | None = None
+    ) -> list[dict[str, Any]]:
         """List governance AI assistant conversations.
+
+        Args:
+            limit: Most conversations to return (the API defaults to 20).
 
         Returns:
             The governance conversations, as a list on every API version.
@@ -4387,6 +4599,7 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 "/governance/ai-assistant/conversations",
+                params=_strip_none({"limit": limit}),
             )
         )
 
@@ -4427,6 +4640,10 @@ class Seclai(_SeclaiBase):
         limit: int = 50,
         status: str | None = None,
         severity: str | None = None,
+        agent_id: str | None = None,
+        source_connection_id: str | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> JSONValue:
         """List alerts.
 
@@ -4438,6 +4655,10 @@ class Seclai(_SeclaiBase):
                 on this endpoint, so it never filtered anything, and sending it
                 is a 422 once ``api_version`` is ``2026-07-27`` or later. It is
                 accepted and dropped so existing call sites keep working.
+            agent_id: Only alerts for this agent.
+            source_connection_id: Only alerts for this source.
+            time_from: Only alerts at or after this time (ISO 8601).
+            time_to: Only alerts at or before this time (ISO 8601).
 
         Returns:
             Paginated list of alerts.
@@ -4445,7 +4666,17 @@ class Seclai(_SeclaiBase):
         return self.request(
             "GET",
             "/alerts",
-            params=_strip_none({"page": page, "limit": limit, "status": status}),
+            params=_strip_none(
+                {
+                    "page": page,
+                    "limit": limit,
+                    "status": status,
+                    "agent_id": agent_id,
+                    "source_connection_id": source_connection_id,
+                    "time_from": time_from,
+                    "time_to": time_to,
+                }
+            ),
         )
 
     def get_alert(self, alert_id: str) -> JSONValue:
@@ -4507,7 +4738,15 @@ class Seclai(_SeclaiBase):
 
     # ── Alert Configs ─────────────────────────────────────────────────────────
 
-    def list_alert_configs(self, *, page: int = 1, limit: int = 50) -> JSONValue:
+    def list_alert_configs(
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        agent_id: str | None = None,
+        source_connection_id: str | None = None,
+        scope: str | None = None,
+    ) -> JSONValue:
         """List alert configurations.
 
         Args:
@@ -4515,6 +4754,10 @@ class Seclai(_SeclaiBase):
                 with ``api_version="2026-07-27"`` or later — by default the
                 response is unpaginated and always contains every configuration.
             limit: Items per page. Ignored by default, as above.
+            agent_id: Only configurations for this agent.
+            source_connection_id: Only configurations for this source.
+            scope: ``"source"`` lists the account-level source alert
+                configurations.
 
         Returns:
             The configurations under ``configs`` with ``total``, on every API
@@ -4526,7 +4769,15 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 "/alerts/configs",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "agent_id": agent_id,
+                        "source_connection_id": source_connection_id,
+                        "scope": scope,
+                    }
+                ),
             ),
             "configs",
             ("total",),
@@ -4576,8 +4827,18 @@ class Seclai(_SeclaiBase):
 
     # ── Alert Preferences ─────────────────────────────────────────────────────
 
-    def list_organization_alert_preferences(self) -> dict[str, Any]:
+    def list_organization_alert_preferences(
+        self,
+        *,
+        organization_id: str | None = None,
+        include_defaults: bool | None = None,
+    ) -> dict[str, Any]:
         """List organization alert preferences.
+
+        Args:
+            organization_id: Only preferences for this organization.
+            include_defaults: Also return the effective subscribed state for
+                every alert type, not only explicit overrides.
 
         Returns:
             The preferences under ``preferences`` with ``total``, on every API
@@ -4588,6 +4849,12 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 "/alerts/organization-preferences/list",
+                params=_strip_none(
+                    {
+                        "organization_id": organization_id,
+                        "include_defaults": include_defaults,
+                    }
+                ),
             ),
             "preferences",
             ("total",),
@@ -4614,7 +4881,14 @@ class Seclai(_SeclaiBase):
 
     # ── Model Alerts ──────────────────────────────────────────────────────────
 
-    def list_model_alerts(self, *, page: int = 1, limit: int = 50) -> JSONValue:
+    def list_model_alerts(
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        agent_id: str | None = None,
+        unread_only: bool | None = None,
+    ) -> JSONValue:
         """List model alerts.
 
         Args:
@@ -4622,6 +4896,8 @@ class Seclai(_SeclaiBase):
                 endpoint actually declares; it does not accept ``page``, so
                 every page but the first previously returned page 1.
             limit: Items per page.
+            agent_id: Only alerts for this agent.
+            unread_only: Only unread alerts.
 
         Returns:
             The alerts under ``alerts`` with ``total``, on every API version. Once
@@ -4635,7 +4911,14 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 "/models/alerts",
-                params=_strip_none({"offset": offset, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "offset": offset,
+                        "limit": limit,
+                        "agent_id": agent_id,
+                        "unread_only": unread_only,
+                    }
+                ),
             ),
             "alerts",
             ("total",),
@@ -4663,16 +4946,43 @@ class Seclai(_SeclaiBase):
 
     # ── Models ────────────────────────────────────────────────────────────────
 
-    def get_model_recommendations(self, model_id: str) -> JSONValue:
+    def get_model_recommendations(
+        self,
+        model_id: str,
+        *,
+        require_tool_use: bool | None = None,
+        require_structured_output: bool | None = None,
+        require_thinking: bool | None = None,
+        min_context_tokens: int | None = None,
+        min_output_tokens: int | None = None,
+    ) -> JSONValue:
         """Get recommendations for a model.
 
         Args:
             model_id: Model identifier.
+            require_tool_use: Only recommend models that support tool use.
+            require_structured_output: Only recommend models that support
+                structured output.
+            require_thinking: Only recommend models that support thinking.
+            min_context_tokens: Smallest context window to accept, in tokens.
+            min_output_tokens: Smallest output token limit to accept.
 
         Returns:
             Model recommendations.
         """
-        return self.request("GET", f"/models/{model_id}/recommendations")
+        return self.request(
+            "GET",
+            f"/models/{model_id}/recommendations",
+            params=_strip_none(
+                {
+                    "require_tool_use": require_tool_use,
+                    "require_structured_output": require_structured_output,
+                    "require_thinking": require_thinking,
+                    "min_context_tokens": min_context_tokens,
+                    "min_output_tokens": min_output_tokens,
+                }
+            ),
+        )
 
     def list_models(
         self,
@@ -4680,6 +4990,8 @@ class Seclai(_SeclaiBase):
         provider: str | None = None,
         supports_tool_use: bool | None = None,
         supports_thinking: bool | None = None,
+        supports_input_media: str | None = None,
+        supports_output_media: str | None = None,
     ) -> JSONValue:
         """List all enabled LLM models grouped by provider.
 
@@ -4687,6 +4999,10 @@ class Seclai(_SeclaiBase):
             provider: Filter by provider name.
             supports_tool_use: Filter to models that support tool use.
             supports_thinking: Filter to models that support extended thinking.
+            supports_input_media: Filter to models that accept this input: a
+                kind (``image``, ``audio``, ``video``, ``pdf``) or a full MIME type.
+            supports_output_media: Filter to models that produce this output: a
+                kind (``image``, ``audio``, ``video``) or a full MIME type.
 
         Returns:
             The provider groups with their models, as a list on every API version.
@@ -4702,6 +5018,8 @@ class Seclai(_SeclaiBase):
                             "provider": provider,
                             "supports_tool_use": supports_tool_use,
                             "supports_thinking": supports_thinking,
+                            "supports_input_media": supports_input_media,
+                            "supports_output_media": supports_output_media,
                         }
                     ),
                 )
@@ -5218,8 +5536,14 @@ class Seclai(_SeclaiBase):
             ),
         )
 
-    def get_ai_assistant_memory_bank_history(self) -> dict[str, Any]:
+    def get_ai_assistant_memory_bank_history(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> dict[str, Any]:
         """Get the last AI assistant memory bank conversation.
+
+        Args:
+            limit: Most turns to return (the API defaults to 5).
+            offset: Number of most recent turns to skip.
 
         Returns:
             Last conversation.
@@ -5229,6 +5553,7 @@ class Seclai(_SeclaiBase):
             self.request(
                 "GET",
                 "/ai-assistant/memory-bank/last-conversation",
+                params=_strip_none({"limit": limit, "offset": offset}),
             ),
         )
 
@@ -6782,14 +7107,55 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
+    async def list_agent_examples(
+        self,
+        *,
+        query: str | None = None,
+        use_case: str | None = None,
+        page: int = 1,
+        limit: int = 20,
+    ) -> dict[str, Any]:
+        """List the agent gallery: example agents to start from.
+
+        Pass an entry's ``key`` as ``agent_template`` to :meth:`create_agent`,
+        with ``resource_bindings`` for the resources it needs.
+
+        Args:
+            query: Words every match must contain.
+            use_case: Only entries for this use case.
+            page: Page number (1-indexed).
+            limit: Items per page.
+
+        Returns:
+            The page of examples under ``data`` with ``pagination``.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "GET",
+                "/agents/examples",
+                params=_strip_none(
+                    {"query": query, "use_case": use_case, "page": page, "limit": limit}
+                ),
+            ),
+        )
+
     async def create_agent(self, body: dict[str, Any]) -> dict[str, Any]:
         """Create a new agent.
 
         Args:
-            body: Agent creation payload (name, description, etc.).
+            body: Agent creation payload: ``name`` (required), ``description``
+                and the other ``CreateAgentRequest`` fields. To start from a
+                gallery entry, pass its ``key`` from :meth:`list_agent_examples`
+                as ``agent_template``, with ``resource_bindings``
+                (``{slot: resource_id}``) for the resources it needs. Set
+                ``create_missing_resources`` to ``True`` to create each unbound
+                slot instead of getting an error.
 
         Returns:
-            The created agent.
+            The created agent. On a create from ``agent_template`` that created
+            resources, ``created_resources`` maps each slot to the new resource
+            and ``solution_id`` names the solution grouping them with the agent.
         """
         return cast(dict[str, Any], await self.request("POST", "/agents", json=body))
 
@@ -7371,7 +7737,15 @@ class AsyncSeclai(_SeclaiBase):
         )
 
     async def list_evaluation_results(
-        self, criteria_id: str, *, page: int = 1, limit: int = 50
+        self,
+        criteria_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        status: str | None = None,
+        flagged_only: bool | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> dict[str, Any]:
         """List evaluation results for criteria.
 
@@ -7379,6 +7753,10 @@ class AsyncSeclai(_SeclaiBase):
             criteria_id: Evaluation criteria identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            status: Only results with this status.
+            flagged_only: Only flagged results.
+            time_from: Only results at or after this time (ISO 8601).
+            time_to: Only results at or before this time (ISO 8601).
 
         Returns:
             The page of results under ``data`` with ``total``, ``page`` and
@@ -7390,7 +7768,16 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/results",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "status": status,
+                        "flagged_only": flagged_only,
+                        "time_from": time_from,
+                        "time_to": time_to,
+                    }
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
@@ -7418,7 +7805,12 @@ class AsyncSeclai(_SeclaiBase):
         )
 
     async def list_compatible_runs(
-        self, criteria_id: str, *, page: int = 1, limit: int = 50
+        self,
+        criteria_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        started_after: str | None = None,
     ) -> dict[str, Any]:
         """List agent runs compatible with evaluation criteria.
 
@@ -7426,6 +7818,7 @@ class AsyncSeclai(_SeclaiBase):
             criteria_id: Evaluation criteria identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            started_after: Only runs started after this time (ISO 8601).
 
         Returns:
             The page of compatible runs under ``data`` with ``total``, ``page`` and
@@ -7437,7 +7830,9 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 f"/agents/evaluation-criteria/{criteria_id}/compatible-runs",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {"page": page, "limit": limit, "started_after": started_after}
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
@@ -7467,7 +7862,16 @@ class AsyncSeclai(_SeclaiBase):
         )
 
     async def list_agent_evaluation_results(
-        self, agent_id: str, *, page: int = 1, limit: int = 50
+        self,
+        agent_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        status: str | None = None,
+        step: str | None = None,
+        flagged_only: bool | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> dict[str, Any]:
         """List all evaluation results for an agent.
 
@@ -7475,6 +7879,11 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            status: Only results with this status.
+            step: Only results for this agent step.
+            flagged_only: Only flagged results.
+            time_from: Only results at or after this time (ISO 8601).
+            time_to: Only results at or before this time (ISO 8601).
 
         Returns:
             The page of results with their criteria under ``data`` with ``total``,
@@ -7486,7 +7895,17 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-results",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "status": status,
+                        "step": step,
+                        "flagged_only": flagged_only,
+                        "time_from": time_from,
+                        "time_to": time_to,
+                    }
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
@@ -7539,7 +7958,15 @@ class AsyncSeclai(_SeclaiBase):
         return _keyed_list(result, "data")
 
     async def list_evaluation_runs(
-        self, agent_id: str, *, page: int = 1, limit: int = 50
+        self,
+        agent_id: str,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        status: str | None = None,
+        step: str | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> dict[str, Any]:
         """List evaluation run summaries for an agent.
 
@@ -7547,6 +7974,10 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             page: Page number (1-indexed).
             limit: Items per page.
+            status: Only runs with this status.
+            step: Only runs for this agent step.
+            time_from: Only runs at or after this time (ISO 8601).
+            time_to: Only runs at or before this time (ISO 8601).
 
         Returns:
             The page of run summaries under ``data`` with ``total``, ``page`` and
@@ -7558,21 +7989,42 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 f"/agents/{agent_id}/evaluation-runs",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "status": status,
+                        "step": step,
+                        "time_from": time_from,
+                        "time_to": time_to,
+                    }
+                ),
             ),
             "data",
             _PAGE_COUNTERS,
         )
 
-    async def get_non_manual_evaluation_summary(self, agent_id: str) -> dict[str, Any]:
+    async def get_non_manual_evaluation_summary(
+        self,
+        agent_id: str | None = None,
+        *,
+        days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
         """Get the non-manual evaluation summary, scoped to an agent when opted in.
 
         Args:
-            agent_id: Agent identifier. Scoping is part of the ``2026-07-27``
-                changeset: on the legacy baseline the API **ignores** it and
-                always returns the account-wide rollup, so set
-                ``api_version="2026-07-27"`` (or pin the account) to get
-                per-agent numbers.
+            agent_id: Agent identifier; omit it for the account-wide summary.
+                Scoping is part of the ``2026-07-27`` changeset: on the legacy
+                baseline the API **ignores** it and always returns the
+                account-wide rollup, so set ``api_version="2026-07-27"`` (or
+                pin the account) to get per-agent numbers.
+            days: Report the last this many days (the API defaults to 30).
+            start_date: First day to report (YYYY-MM-DD). When given it
+                overrides ``days``, and the range runs to ``end_date`` or today.
+            end_date: Last day to report (YYYY-MM-DD). Ignored without
+                ``start_date``.
 
         Returns:
             Summary of automated evaluation results — for ``agent_id`` when the
@@ -7586,7 +8038,14 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 "/agents/evaluation-results/non-manual-summary",
-                params={"agent_id": agent_id},
+                params=_strip_none(
+                    {
+                        "agent_id": agent_id,
+                        "days": days,
+                        "start_date": start_date,
+                        "end_date": end_date,
+                    }
+                ),
             ),
         )
 
@@ -7793,6 +8252,37 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
+    async def set_slack_trigger_config(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        body: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Configure an agent's SLACK_COMMAND trigger.
+
+        People run the agent from Slack with ``/seclai`` or the message shortcut.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier.
+            body: Fields to set (mcp_client_id, form, scope, channel_ids,
+                allow_dms, activation, visibility, start_without_form, input,
+                turns_enabled, turns_anyone, max_turns, include_invoker_email,
+                notify_failure_after_answer). Omitted fields are unchanged.
+
+        Returns:
+            The trigger's Slack config, with ``missing_scopes`` listing what the
+            Slack connection lacks for optional features.
+        """
+        return cast(
+            dict[str, Any],
+            await self.request(
+                "PUT",
+                f"/agents/{agent_id}/triggers/{trigger_id}/slack-config",
+                json=body,
+            ),
+        )
+
     async def set_accepted_attachments(
         self,
         agent_id: str,
@@ -7803,8 +8293,8 @@ class AsyncSeclai(_SeclaiBase):
 
         Replaces the trigger's declaration. A run's files are each assigned to
         one declared attachment before any step runs, and steps reference one as
-        ``{{agent.attachments.<name>}}``. Only ``dynamic_input`` and
-        ``email_received`` triggers take files. The API answers 400 when the
+        ``{{agent.attachments.<name>}}``. Only ``dynamic_input``,
+        ``email_received`` and ``slack_command`` triggers take files. The API answers 400 when the
         agent references an attachment the new declaration leaves out.
 
         Args:
@@ -7936,6 +8426,8 @@ class AsyncSeclai(_SeclaiBase):
         limit: int = 50,
         sort: str = "created_at",
         order: str = "desc",
+        # Named for the wire param; shadows the builtin, so don't call type() here.
+        type: str | None = None,
     ) -> dict[str, Any]:
         """List memory banks.
 
@@ -7944,6 +8436,7 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
             sort: Sort field.
             order: Sort order (``"asc"`` or ``"desc"``).
+            type: Only banks of this type (``"conversation"`` or ``"general"``).
 
         Returns:
             The page of memory banks under ``memory_banks`` with ``total``, ``page``
@@ -7956,7 +8449,13 @@ class AsyncSeclai(_SeclaiBase):
                 "GET",
                 "/memory_banks",
                 params=_strip_none(
-                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "sort": sort,
+                        "order": order,
+                        "type": type,
+                    }
                 ),
             ),
             "memory_banks",
@@ -8038,16 +8537,34 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
-    async def get_memory_bank_stats(self, memory_bank_id: str) -> JSONValue:
+    async def get_memory_bank_stats(
+        self,
+        memory_bank_id: str,
+        *,
+        days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> JSONValue:
         """Get statistics for a memory bank.
 
         Args:
             memory_bank_id: Memory bank identifier.
+            days: Report the last this many days (the API defaults to 30).
+            start_date: First day to report (YYYY-MM-DD). Only with
+                ``end_date``, when the two override ``days``; either alone is
+                ignored.
+            end_date: Last day to report (YYYY-MM-DD). Only with ``start_date``.
 
         Returns:
             Memory bank statistics.
         """
-        return await self.request("GET", f"/memory_banks/{memory_bank_id}/stats")
+        return await self.request(
+            "GET",
+            f"/memory_banks/{memory_bank_id}/stats",
+            params=_strip_none(
+                {"days": days, "start_date": start_date, "end_date": end_date}
+            ),
+        )
 
     async def compact_memory_bank(self, memory_bank_id: str) -> None:
         """Trigger compaction of a memory bank.
@@ -8135,8 +8652,14 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
-    async def get_memory_bank_ai_last_conversation(self) -> dict[str, Any]:
+    async def get_memory_bank_ai_last_conversation(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> dict[str, Any]:
         """Get the last AI assistant conversation for memory banks.
+
+        Args:
+            limit: Most turns to return (the API defaults to 5).
+            offset: Number of most recent turns to skip.
 
         Returns:
             Last conversation with the memory bank AI assistant.
@@ -8146,6 +8669,7 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 "/memory_banks/ai-assistant/last-conversation",
+                params=_strip_none({"limit": limit, "offset": offset}),
             ),
         )
 
@@ -8577,6 +9101,7 @@ class AsyncSeclai(_SeclaiBase):
         limit: int = 50,
         sort: str = "created_at",
         order: str = "desc",
+        search: str | None = None,
     ) -> dict[str, Any]:
         """List solutions.
 
@@ -8585,6 +9110,7 @@ class AsyncSeclai(_SeclaiBase):
             limit: Items per page.
             sort: Sort field.
             order: Sort order (``"asc"`` or ``"desc"``).
+            search: Only solutions whose name contains this text, ignoring case.
 
         Returns:
             Paginated list of solutions.
@@ -8595,7 +9121,13 @@ class AsyncSeclai(_SeclaiBase):
                 "GET",
                 "/solutions",
                 params=_strip_none(
-                    {"page": page, "limit": limit, "sort": sort, "order": order}
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "sort": sort,
+                        "order": order,
+                        "search": search,
+                    }
                 ),
             ),
         )
@@ -8953,8 +9485,13 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
-    async def list_governance_ai_conversations(self) -> list[dict[str, Any]]:
+    async def list_governance_ai_conversations(
+        self, *, limit: int | None = None
+    ) -> list[dict[str, Any]]:
         """List governance AI assistant conversations.
+
+        Args:
+            limit: Most conversations to return (the API defaults to 20).
 
         Returns:
             The governance conversations, as a list on every API version.
@@ -8963,6 +9500,7 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 "/governance/ai-assistant/conversations",
+                params=_strip_none({"limit": limit}),
             )
         )
 
@@ -9003,6 +9541,10 @@ class AsyncSeclai(_SeclaiBase):
         limit: int = 50,
         status: str | None = None,
         severity: str | None = None,
+        agent_id: str | None = None,
+        source_connection_id: str | None = None,
+        time_from: str | None = None,
+        time_to: str | None = None,
     ) -> JSONValue:
         """List alerts.
 
@@ -9014,6 +9556,10 @@ class AsyncSeclai(_SeclaiBase):
                 on this endpoint, so it never filtered anything, and sending it
                 is a 422 once ``api_version`` is ``2026-07-27`` or later. It is
                 accepted and dropped so existing call sites keep working.
+            agent_id: Only alerts for this agent.
+            source_connection_id: Only alerts for this source.
+            time_from: Only alerts at or after this time (ISO 8601).
+            time_to: Only alerts at or before this time (ISO 8601).
 
         Returns:
             Paginated list of alerts.
@@ -9021,7 +9567,17 @@ class AsyncSeclai(_SeclaiBase):
         return await self.request(
             "GET",
             "/alerts",
-            params=_strip_none({"page": page, "limit": limit, "status": status}),
+            params=_strip_none(
+                {
+                    "page": page,
+                    "limit": limit,
+                    "status": status,
+                    "agent_id": agent_id,
+                    "source_connection_id": source_connection_id,
+                    "time_from": time_from,
+                    "time_to": time_to,
+                }
+            ),
         )
 
     async def get_alert(self, alert_id: str) -> JSONValue:
@@ -9085,7 +9641,15 @@ class AsyncSeclai(_SeclaiBase):
 
     # ── Alert Configs ─────────────────────────────────────────────────────────
 
-    async def list_alert_configs(self, *, page: int = 1, limit: int = 50) -> JSONValue:
+    async def list_alert_configs(
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        agent_id: str | None = None,
+        source_connection_id: str | None = None,
+        scope: str | None = None,
+    ) -> JSONValue:
         """List alert configurations.
 
         Args:
@@ -9093,6 +9657,10 @@ class AsyncSeclai(_SeclaiBase):
                 with ``api_version="2026-07-27"`` or later — by default the
                 response is unpaginated and always contains every configuration.
             limit: Items per page. Ignored by default, as above.
+            agent_id: Only configurations for this agent.
+            source_connection_id: Only configurations for this source.
+            scope: ``"source"`` lists the account-level source alert
+                configurations.
 
         Returns:
             The configurations under ``configs`` with ``total``, on every API
@@ -9104,7 +9672,15 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 "/alerts/configs",
-                params=_strip_none({"page": page, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "page": page,
+                        "limit": limit,
+                        "agent_id": agent_id,
+                        "source_connection_id": source_connection_id,
+                        "scope": scope,
+                    }
+                ),
             ),
             "configs",
             ("total",),
@@ -9156,8 +9732,18 @@ class AsyncSeclai(_SeclaiBase):
 
     # ── Alert Preferences ─────────────────────────────────────────────────────
 
-    async def list_organization_alert_preferences(self) -> dict[str, Any]:
+    async def list_organization_alert_preferences(
+        self,
+        *,
+        organization_id: str | None = None,
+        include_defaults: bool | None = None,
+    ) -> dict[str, Any]:
         """List organization alert preferences.
+
+        Args:
+            organization_id: Only preferences for this organization.
+            include_defaults: Also return the effective subscribed state for
+                every alert type, not only explicit overrides.
 
         Returns:
             The preferences under ``preferences`` with ``total``, on every API
@@ -9168,6 +9754,12 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 "/alerts/organization-preferences/list",
+                params=_strip_none(
+                    {
+                        "organization_id": organization_id,
+                        "include_defaults": include_defaults,
+                    }
+                ),
             ),
             "preferences",
             ("total",),
@@ -9194,7 +9786,14 @@ class AsyncSeclai(_SeclaiBase):
 
     # ── Model Alerts ──────────────────────────────────────────────────────────
 
-    async def list_model_alerts(self, *, page: int = 1, limit: int = 50) -> JSONValue:
+    async def list_model_alerts(
+        self,
+        *,
+        page: int = 1,
+        limit: int = 50,
+        agent_id: str | None = None,
+        unread_only: bool | None = None,
+    ) -> JSONValue:
         """List model alerts.
 
         Args:
@@ -9202,6 +9801,8 @@ class AsyncSeclai(_SeclaiBase):
                 endpoint actually declares; it does not accept ``page``, so
                 every page but the first previously returned page 1.
             limit: Items per page.
+            agent_id: Only alerts for this agent.
+            unread_only: Only unread alerts.
 
         Returns:
             The alerts under ``alerts`` with ``total``, on every API version. Once
@@ -9215,7 +9816,14 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 "/models/alerts",
-                params=_strip_none({"offset": offset, "limit": limit}),
+                params=_strip_none(
+                    {
+                        "offset": offset,
+                        "limit": limit,
+                        "agent_id": agent_id,
+                        "unread_only": unread_only,
+                    }
+                ),
             ),
             "alerts",
             ("total",),
@@ -9243,16 +9851,43 @@ class AsyncSeclai(_SeclaiBase):
 
     # ── Models ────────────────────────────────────────────────────────────────
 
-    async def get_model_recommendations(self, model_id: str) -> JSONValue:
+    async def get_model_recommendations(
+        self,
+        model_id: str,
+        *,
+        require_tool_use: bool | None = None,
+        require_structured_output: bool | None = None,
+        require_thinking: bool | None = None,
+        min_context_tokens: int | None = None,
+        min_output_tokens: int | None = None,
+    ) -> JSONValue:
         """Get recommendations for a model.
 
         Args:
             model_id: Model identifier.
+            require_tool_use: Only recommend models that support tool use.
+            require_structured_output: Only recommend models that support
+                structured output.
+            require_thinking: Only recommend models that support thinking.
+            min_context_tokens: Smallest context window to accept, in tokens.
+            min_output_tokens: Smallest output token limit to accept.
 
         Returns:
             Model recommendations.
         """
-        return await self.request("GET", f"/models/{model_id}/recommendations")
+        return await self.request(
+            "GET",
+            f"/models/{model_id}/recommendations",
+            params=_strip_none(
+                {
+                    "require_tool_use": require_tool_use,
+                    "require_structured_output": require_structured_output,
+                    "require_thinking": require_thinking,
+                    "min_context_tokens": min_context_tokens,
+                    "min_output_tokens": min_output_tokens,
+                }
+            ),
+        )
 
     async def list_models(
         self,
@@ -9260,6 +9895,8 @@ class AsyncSeclai(_SeclaiBase):
         provider: str | None = None,
         supports_tool_use: bool | None = None,
         supports_thinking: bool | None = None,
+        supports_input_media: str | None = None,
+        supports_output_media: str | None = None,
     ) -> JSONValue:
         """List all enabled LLM models grouped by provider.
 
@@ -9267,6 +9904,10 @@ class AsyncSeclai(_SeclaiBase):
             provider: Filter by provider name.
             supports_tool_use: Filter to models that support tool use.
             supports_thinking: Filter to models that support extended thinking.
+            supports_input_media: Filter to models that accept this input: a
+                kind (``image``, ``audio``, ``video``, ``pdf``) or a full MIME type.
+            supports_output_media: Filter to models that produce this output: a
+                kind (``image``, ``audio``, ``video``) or a full MIME type.
 
         Returns:
             The provider groups with their models, as a list on every API version.
@@ -9282,6 +9923,8 @@ class AsyncSeclai(_SeclaiBase):
                             "provider": provider,
                             "supports_tool_use": supports_tool_use,
                             "supports_thinking": supports_thinking,
+                            "supports_input_media": supports_input_media,
+                            "supports_output_media": supports_output_media,
                         }
                     ),
                 )
@@ -9809,8 +10452,14 @@ class AsyncSeclai(_SeclaiBase):
             ),
         )
 
-    async def get_ai_assistant_memory_bank_history(self) -> dict[str, Any]:
+    async def get_ai_assistant_memory_bank_history(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> dict[str, Any]:
         """Get the last AI assistant memory bank conversation.
+
+        Args:
+            limit: Most turns to return (the API defaults to 5).
+            offset: Number of most recent turns to skip.
 
         Returns:
             Last conversation.
@@ -9820,6 +10469,7 @@ class AsyncSeclai(_SeclaiBase):
             await self.request(
                 "GET",
                 "/ai-assistant/memory-bank/last-conversation",
+                params=_strip_none({"limit": limit, "offset": offset}),
             ),
         )
 

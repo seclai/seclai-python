@@ -244,6 +244,7 @@ client decodes:
 | `2026-10-18` | A source's `document_images` defaults to true on a text-only embedder as well |
 | `2026-10-19` | `create_source()` refuses `polling_max_items` with a 400 on any source other than an RSS feed |
 | `2026-10-21` | An evaluation result whose evaluator returned no verdict (`error`) is left out of `failed` and of the pass and failure rates in `get_non_manual_evaluation_summary()`; `get_evaluation_criteria_summary()`'s `average_score` averages only passed and failed results; `test_draft_evaluation()` returns `score` and `passed` as `None` for an `error` result instead of 0.5 and `False` |
+| `2026-10-28` | An `if_else` or `switch` step's `output` is the result of the arm it took (its input when that arm is empty or it took none), rather than the `{"branch": ...}` marker with no `attachments`. The arm is in the step's `decision` on every version |
 
 Moving to a later version can still change a value your code branches on, or
 reject a request that used to work. From `2026-10-05`, a content item held for
@@ -255,7 +256,9 @@ find held items stops seeing them: check `held_for_review` instead. (The
 400s. From `2026-10-21`, code that reads `passed` from `test_draft_evaluation()`
 as a bool, or does arithmetic on its `score`, gets `None` when `status` is
 `error`, and `get_non_manual_evaluation_summary()`'s `failed` no longer counts
-those results: read its `error` count. Passing
+those results: read its `error` count. From `2026-10-28`, code that parses an
+`if_else` or `switch` step's `output` for the `{"branch": ...}` marker gets the
+arm's result instead: read `decision`. Passing
 `api_version=LATEST_API_VERSION` opts into all of these at once.
 
 ## Resources
@@ -310,6 +313,31 @@ imported = client.create_agent({
     "entity_remap": entity_remap,
 })
 # `imported["import_warnings"]` lists any items that couldn't be applied.
+
+# Run limits are on the agent; an update with `set_max_<limit>: True` and no
+# value removes that limit
+client.update_agent("agent_id", {"max_runs_per_day": 100})
+client.update_agent("agent_id", {"set_max_runs_per_day": True})
+```
+
+### Agent examples
+
+The agent gallery lists example agents to start from. Create one by passing its
+`key` as `agent_template`, binding the resources it needs to existing ones or
+letting the API create them:
+
+```python
+examples = client.list_agent_examples(query="support", use_case="support")
+example = examples["data"][0]
+
+agent = client.create_agent({
+    "name": "Support triage",
+    "agent_template": example["key"],
+    "resource_bindings": {"knowledge_base": "kb_id"},  # {slot: resource_id}
+    "create_missing_resources": True,  # create any slot left unbound
+})
+# {slot: resource_id} for what was created, grouped in agent["solution_id"]
+print(agent.get("created_resources"))
 ```
 
 ### Agent runs
@@ -461,13 +489,23 @@ draft = client.test_draft_evaluation("agent_id", {"criteria": {}, "run_id": "run
 
 # Results & summaries
 results = client.list_evaluation_results("criteria_id")
+flagged = client.list_evaluation_results(
+    "criteria_id", flagged_only=True, time_from="2026-10-01T00:00:00Z"
+)
 summary = client.get_evaluation_criteria_summary("criteria_id")
 client.create_evaluation_result("criteria_id", {"run_id": "run_id", "score": 0.9})
 
 # Results by run
 run_results = client.list_run_evaluation_results("agent_id", "run_id")
-non_manual = client.get_non_manual_evaluation_summary("agent_id")
-compatible = client.list_compatible_runs("criteria_id")
+non_manual = client.get_non_manual_evaluation_summary("agent_id", days=7)
+account_wide = client.get_non_manual_evaluation_summary(days=7)
+compatible = client.list_compatible_runs(
+    "criteria_id", started_after="2026-10-01T00:00:00Z"
+)
+
+# Across an agent: filter by status, step, flagged and time window
+agent_results = client.list_agent_evaluation_results("agent_id", status="failed")
+eval_runs = client.list_evaluation_runs("agent_id", step="step_id")
 ```
 
 ### Knowledge bases
@@ -483,14 +521,14 @@ client.delete_knowledge_base("kb_id")
 ### Memory banks
 
 ```python
-banks = client.list_memory_banks()
+banks = client.list_memory_banks(type="conversation")
 bank = client.create_memory_bank({"name": "Chat Memory", "type": "conversation"})
 fetched = client.get_memory_bank("mb_id")
 client.update_memory_bank("mb_id", {"name": "Updated"})
 client.delete_memory_bank("mb_id")
 
 # Stats & compaction
-stats = client.get_memory_bank_stats("mb_id")
+stats = client.get_memory_bank_stats("mb_id", start_date="2026-10-01", end_date="2026-10-31")
 client.compact_memory_bank("mb_id")
 
 # Test compaction
@@ -503,7 +541,7 @@ agents = client.get_agents_using_memory_bank("mb_id")
 
 # AI assistant
 suggestion = client.generate_memory_bank_config({"user_input": "Create a bank"})
-last_conv = client.get_memory_bank_ai_last_conversation()
+last_conv = client.get_memory_bank_ai_last_conversation(limit=10)
 client.accept_memory_bank_ai_suggestion("conversation_id", {"accepted": True})
 
 # Source management
@@ -518,6 +556,14 @@ source = client.create_source({"name": "My Source"})
 fetched = client.get_source("source_id")
 client.update_source("source_id", {"name": "Updated"})
 client.delete_source("source_id")
+
+# Spend limit: credits per billing period, then stop or delete entries.
+# `None` removes the limit; `spend_cap_reached` reports when it is hit.
+client.update_source("source_id", {
+    "max_credits_per_period": 500,
+    "spend_cap_action": "delete",
+    "spend_cap_delete_order": "oldest_added",
+})
 ```
 
 Indexing status of a source's content, keyed by the `content_version_id` the
@@ -653,7 +699,7 @@ finally:
 ### Solutions
 
 ```python
-solutions = client.list_solutions()
+solutions = client.list_solutions(search="billing")
 sol = client.create_solution({"name": "My Solution"})
 fetched = client.get_solution("solution_id")
 client.update_solution("solution_id", {"name": "Renamed"})
@@ -686,7 +732,7 @@ client.mark_solution_conversation_turn("solution_id", "conversation_id", {"accep
 
 ```python
 plan = client.generate_governance_ai_plan({"user_input": "Create a content policy"})
-convs = client.list_governance_ai_conversations()
+convs = client.list_governance_ai_conversations(limit=5)
 client.accept_governance_ai_plan("conversation_id")
 client.decline_governance_ai_plan("conversation_id")
 ```
@@ -694,7 +740,7 @@ client.decline_governance_ai_plan("conversation_id")
 ### Alerts
 
 ```python
-alerts = client.list_alerts(status="active")
+alerts = client.list_alerts(status="active", agent_id="agent_id")
 alert = client.get_alert("alert_id")
 client.change_alert_status("alert_id", {"status": "resolved"})
 client.add_alert_comment("alert_id", {"text": "Investigating"})
@@ -704,14 +750,14 @@ client.subscribe_to_alert("alert_id")
 client.unsubscribe_from_alert("alert_id")
 
 # Alert configs
-configs = client.list_alert_configs()
+configs = client.list_alert_configs(agent_id="agent_id")
 client.create_alert_config({"name": "Config"})
 config = client.get_alert_config("config_id")
 client.update_alert_config("config_id", {"name": "Updated"})
 client.delete_alert_config("config_id")
 
 # Organization preferences
-prefs = client.list_organization_alert_preferences()
+prefs = client.list_organization_alert_preferences(include_defaults=True)
 client.update_organization_alert_preference("org_id", "anomaly", {"enabled": True})
 ```
 
@@ -732,6 +778,28 @@ config = client.set_email_trigger_config(
     },
 )
 print(config["email_addresses"])
+```
+
+### Agent Slack triggers
+
+```python
+# Configure a SLACK_COMMAND trigger, run from Slack with /seclai or the message
+# shortcut; omitted fields are left unchanged
+config = client.set_slack_trigger_config(
+    "agent_id",
+    "trigger_id",
+    {
+        "mcp_client_id": "mcp_client_id",  # the account's connected Slack MCP client
+        "scope": "selected_channels",
+        "channel_ids": ["C0123456789"],
+        "activation": "channel_opt_in",  # or "everywhere" in scope
+        "visibility": "private",          # or "channel"
+        "form": [{"key": "ticket", "label": "Ticket", "type": "short_text"}],
+        "turns_enabled": True,
+        "max_turns": 5,
+    },
+)
+print(config["missing_scopes"])  # Slack scopes needed for optional features
 ```
 
 ### Agent email governance
@@ -795,11 +863,11 @@ tiers = client.get_generation_tiers()
 embedders = client.list_embedding_models()["models"]
 rerankers = client.list_reranker_models()["models"]
 
-alerts = client.list_model_alerts()
+alerts = client.list_model_alerts(unread_only=True)
 client.mark_model_alert_read("alert_id")
 client.mark_all_model_alerts_read()
 unread = client.get_unread_model_alert_count()
-recs = client.get_model_recommendations("model_id")
+recs = client.get_model_recommendations("model_id", require_tool_use=True)
 
 # Model playground experiments
 experiment = client.create_experiment({"model_ids": ["model_id"], "prompt": "..."})
