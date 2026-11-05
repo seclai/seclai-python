@@ -29,16 +29,16 @@ class EvaluationCriteriaResponse:
         created_at (str):
         description (None | str):
         enabled (bool):
-        evaluation_mode (str): Runtime behavior mode. output_expectation (manual validation), eval_and_retry (every run
-            + retry), sample_and_flag (sampled monitoring).
+        evaluation_mode (str): Runtime behavior mode. output_expectation (manual validation), sample_and_flag (sampled
+            monitoring).
         evaluation_prompt (None | str):
         evaluation_tier (None | str):
         expectation_config (EvaluationCriteriaResponseExpectationConfigType0 | None):
         id (UUID):
-        max_retries (int):
+        max_retries (int): Deprecated: has no effect.
         pass_threshold (float): Score cutoff for pass/fail, inclusive (0.0 to 1.0).
         result_summary (EvaluationCriteriaResponseResultSummary):
-        retry_on_failure (bool):
+        retry_on_failure (bool): Deprecated: has no effect.
         step_id (None | str):
         updated_at (str):
     """

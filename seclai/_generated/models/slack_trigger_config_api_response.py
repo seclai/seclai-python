@@ -7,6 +7,8 @@ from uuid import UUID
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.slack_trigger_config_api_response_form_item import (
         SlackTriggerConfigApiResponseFormItem,
@@ -37,6 +39,7 @@ class SlackTriggerConfigApiResponse:
         turns_anyone (bool):
         turns_enabled (bool):
         visibility (str):
+        alias (None | str | Unset): The name people type after `/seclai` to run this agent.
     """
 
     activation: str
@@ -56,6 +59,7 @@ class SlackTriggerConfigApiResponse:
     turns_anyone: bool
     turns_enabled: bool
     visibility: str
+    alias: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -102,6 +106,12 @@ class SlackTriggerConfigApiResponse:
 
         visibility = self.visibility
 
+        alias: None | str | Unset
+        if isinstance(self.alias, Unset):
+            alias = UNSET
+        else:
+            alias = self.alias
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -125,6 +135,8 @@ class SlackTriggerConfigApiResponse:
                 "visibility": visibility,
             }
         )
+        if alias is not UNSET:
+            field_dict["alias"] = alias
 
         return field_dict
 
@@ -197,6 +209,15 @@ class SlackTriggerConfigApiResponse:
 
         visibility = d.pop("visibility")
 
+        def _parse_alias(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        alias = _parse_alias(d.pop("alias", UNSET))
+
         slack_trigger_config_api_response = cls(
             activation=activation,
             agent_id=agent_id,
@@ -215,6 +236,7 @@ class SlackTriggerConfigApiResponse:
             turns_anyone=turns_anyone,
             turns_enabled=turns_enabled,
             visibility=visibility,
+            alias=alias,
         )
 
         slack_trigger_config_api_response.additional_properties = d

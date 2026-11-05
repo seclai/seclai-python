@@ -245,6 +245,8 @@ client decodes:
 | `2026-10-19` | `create_source()` refuses `polling_max_items` with a 400 on any source other than an RSS feed |
 | `2026-10-21` | An evaluation result whose evaluator returned no verdict (`error`) is left out of `failed` and of the pass and failure rates in `get_non_manual_evaluation_summary()`; `get_evaluation_criteria_summary()`'s `average_score` averages only passed and failed results; `test_draft_evaluation()` returns `score` and `passed` as `None` for an `error` result instead of 0.5 and `False` |
 | `2026-10-28` | An `if_else` or `switch` step's `output` is the result of the arm it took (its input when that arm is empty or it took none), rather than the `{"branch": ...}` marker with no `attachments`. The arm is in the step's `decision` on every version |
+| `2026-11-02` | An agent-definition or sampling-rule write (other than an import) that references a metadata key no trigger declares is refused, rather than the key being declared optional: `update_agent_definition()` answers 400, and `update_agent()` setting `sampling_config` answers 422 |
+| `2026-11-04` | `create_evaluation_result()` refuses `retry_triggered: true`, and `update_agent()` refuses `evaluation_mode` `eval_and_retry` (earlier versions store it as `sample_and_flag`), each with a 400; a new or changed evaluation criterion's `step_id` must name a `display_result` or `streaming_result` step |
 
 Moving to a later version can still change a value your code branches on, or
 reject a request that used to work. From `2026-10-05`, a content item held for
@@ -258,7 +260,9 @@ as a bool, or does arithmetic on its `score`, gets `None` when `status` is
 `error`, and `get_non_manual_evaluation_summary()`'s `failed` no longer counts
 those results: read its `error` count. From `2026-10-28`, code that parses an
 `if_else` or `switch` step's `output` for the `{"branch": ...}` marker gets the
-arm's result instead: read `decision`. Passing
+arm's result instead: read `decision`. `2026-11-02` and `2026-11-04` turn
+requests that were accepted before into 400s: declare metadata keys with
+`set_metadata_keys()` before referencing them. Passing
 `api_version=LATEST_API_VERSION` opts into all of these at once.
 
 ## Resources
@@ -446,6 +450,29 @@ upload = client.upload_agent_input("agent_id", file=b"data", file_name="input.pd
 status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
 ```
 
+### Trigger metadata keys
+
+```python
+# The run metadata keys a trigger declares. Steps reference one as
+# {{metadata.<key>}}; a run you start is refused with a 400 when it lacks a
+# required key or sends a custom key the trigger does not declare.
+keys = client.get_metadata_keys("agent_id", "trigger_id")
+print([k.key for k in keys.metadata_keys])
+print([k.key for k in keys.declarable_keys])  # system/source keys on offer
+
+# Replace the whole declaration. Only a custom key can be required. The API
+# answers 400 if the agent references a key no trigger of its branch declares.
+updated = client.set_metadata_keys(
+    "agent_id",
+    "trigger_id",
+    [
+        {"key": "topic", "origin": "custom", "required": True},
+        {"key": "trigger_type", "origin": "system"},
+    ],
+)
+print(updated.warnings)  # agents whose call_agent mapping no longer fits
+```
+
 ### Agent run attachments
 
 ```python
@@ -516,6 +543,12 @@ kb = client.create_knowledge_base({"name": "My KB"})
 fetched = client.get_knowledge_base("kb_id")
 client.update_knowledge_base("kb_id", {"name": "Renamed"})
 client.delete_knowledge_base("kb_id")
+
+# How often each item-metadata key appears on the KB's content, for choosing
+# the keys a content trigger declares (set_metadata_keys)
+stats = client.get_knowledge_base_metadata_key_stats("kb_id")
+for window in stats.windows:  # all_time, last_30_days, last_7_days
+    print(window.window, window.total_items, [k.key for k in window.keys])
 ```
 
 ### Memory banks
@@ -790,6 +823,7 @@ config = client.set_slack_trigger_config(
     "trigger_id",
     {
         "mcp_client_id": "mcp_client_id",  # the account's connected Slack MCP client
+        "alias": "support",  # run as /seclai support; defaults from the agent name
         "scope": "selected_channels",
         "channel_ids": ["C0123456789"],
         "activation": "channel_opt_in",  # or "everywhere" in scope
@@ -801,6 +835,11 @@ config = client.set_slack_trigger_config(
 )
 print(config["missing_scopes"])  # Slack scopes needed for optional features
 ```
+
+A run's input is the text after `/seclai <alias>`, or the message the shortcut
+was used on; form values reach it as `{{metadata.<key>}}`. The `input` field
+(the trigger's input template) is deprecated: the API no longer accepts it and
+ignores it if sent.
 
 ### Agent email governance
 

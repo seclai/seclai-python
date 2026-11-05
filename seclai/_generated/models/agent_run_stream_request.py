@@ -33,8 +33,9 @@ class AgentRunStreamRequest:
         input_upload_ids (list[UUID] | None | Unset): IDs of multiple previously uploaded files. See the non-streaming
             endpoint for full semantics, including fitting the trigger's ``accepted_attachments`` (else HTTP 400) and
             combining the batch with ``input`` prompt text. Max 20.
-        metadata (AgentRunStreamRequestMetadataType0 | None | Unset): Metadata to make available for string substitution
-            expressions in agent tasks.
+        metadata (AgentRunStreamRequestMetadataType0 | None | Unset): Metadata for string substitution in agent tasks.
+            Each key must be one the agent's trigger declares (or sets); a run that sends another custom key, or lacks a
+            required one, is refused with HTTP 400.
         replay_of_run_id (None | Unset | UUID): Re-run reusing a prior run's uploaded input files (re-resolved server-
             side from the source run, which must belong to this account and agent). A fresh upload batch takes precedence.
             Files the trigger's ``accepted_attachments`` no longer accepts are left out.

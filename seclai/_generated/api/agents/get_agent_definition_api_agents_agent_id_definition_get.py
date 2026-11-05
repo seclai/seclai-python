@@ -79,7 +79,7 @@ def sync_detailed(
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
 ) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
-    r"""Get agent definition
+    """Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -90,9 +90,9 @@ def sync_detailed(
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
     - `regex_replace`: Reshape text via ordered regex find/replace rules
-    - `gate`: Evaluate conditions, stop or continue child execution
-    - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
-    step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
+    - `repeat_until`: Run a body (`body[]`) again until its `conditions` match the iteration's verdict
+    or `max_iterations` (1–1000, default 3) is reached. Fields: `conditions`, `match`, optional
+    `verdict_template`, `output` (`last` or `all`), `fail_when_max_reached`
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
@@ -118,21 +118,18 @@ def sync_detailed(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
-    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
-    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
-    first, so its validated output becomes the run's result while the tokens act as a progress channel
+    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
+    second
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
-    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
-    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
-    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
-    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
-    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
-    `child_steps`.
+    - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
+    the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
+    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
+    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
+    `prompt_call`) and place the single `display_result` in `child_steps`.
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
@@ -177,7 +174,7 @@ def sync(
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
 ) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
-    r"""Get agent definition
+    """Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -188,9 +185,9 @@ def sync(
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
     - `regex_replace`: Reshape text via ordered regex find/replace rules
-    - `gate`: Evaluate conditions, stop or continue child execution
-    - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
-    step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
+    - `repeat_until`: Run a body (`body[]`) again until its `conditions` match the iteration's verdict
+    or `max_iterations` (1–1000, default 3) is reached. Fields: `conditions`, `match`, optional
+    `verdict_template`, `output` (`last` or `all`), `fail_when_max_reached`
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
@@ -216,21 +213,18 @@ def sync(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
-    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
-    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
-    first, so its validated output becomes the run's result while the tokens act as a progress channel
+    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
+    second
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
-    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
-    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
-    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
-    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
-    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
-    `child_steps`.
+    - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
+    the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
+    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
+    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
+    `prompt_call`) and place the single `display_result` in `child_steps`.
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
@@ -270,7 +264,7 @@ async def asyncio_detailed(
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
 ) -> Response[AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError]:
-    r"""Get agent definition
+    """Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -281,9 +275,9 @@ async def asyncio_detailed(
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
     - `regex_replace`: Reshape text via ordered regex find/replace rules
-    - `gate`: Evaluate conditions, stop or continue child execution
-    - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
-    step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
+    - `repeat_until`: Run a body (`body[]`) again until its `conditions` match the iteration's verdict
+    or `max_iterations` (1–1000, default 3) is reached. Fields: `conditions`, `match`, optional
+    `verdict_template`, `output` (`last` or `all`), `fail_when_max_reached`
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
@@ -309,21 +303,18 @@ async def asyncio_detailed(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
-    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
-    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
-    first, so its validated output becomes the run's result while the tokens act as a progress channel
+    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
+    second
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
-    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
-    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
-    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
-    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
-    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
-    `child_steps`.
+    - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
+    the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
+    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
+    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
+    `prompt_call`) and place the single `display_result` in `child_steps`.
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
@@ -366,7 +357,7 @@ async def asyncio(
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
 ) -> AgentDefinitionResponse | HTTPValidationError | ServiceUnavailableError | None:
-    r"""Get agent definition
+    """Get agent definition
 
      Fetch the current agent definition from the main branch.
 
@@ -377,9 +368,9 @@ async def asyncio(
     - `prompt_call`: Call an LLM with a prompt template
     - `retrieval`: Search a knowledge base
     - `regex_replace`: Reshape text via ordered regex find/replace rules
-    - `gate`: Evaluate conditions, stop or continue child execution
-    - `retry`: Re-execute from a target ancestor step (for quality-control loops; pair with a `gate`
-    step for conditional retrying. Fields: `target_step_id` (ancestor step ID), `max_retries` (1–10))
+    - `repeat_until`: Run a body (`body[]`) again until its `conditions` match the iteration's verdict
+    or `max_iterations` (1–1000, default 3) is reached. Fields: `conditions`, `match`, optional
+    `verdict_template`, `output` (`last` or `all`), `fail_when_max_reached`
     - `evaluate_step`: Score a selected previous step output and emit JSON with `score`, `passed`, and
     `pass_threshold` (fields: `target_step_id`, `evaluation_prompt`, `pass_threshold`, optional
     `evaluation_tier`, optional `expectation_config`)
@@ -405,21 +396,18 @@ async def asyncio(
     optional)
     - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
     `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). To stream **and** return a schema-validated payload, add a sibling branch
-    `extract_content` (`expected_format: \"json\"` + `json_schema`) → `display_result` under the same
-    `prompt_call` — a `display_result` takes precedence over the stream regardless of which finishes
-    first, so its validated output becomes the run's result while the tokens act as a progress channel
+    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
+    second
     - `display_result`: Show output to the user
     - `join`: Merge parallel branches
     - `merge`: Combine multiple inputs into a single templated output
     - `text`: Static text literal
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
-    - `if_else`: Conditional dispatch. Evaluates `conditions` (same shape as `gate`) and runs
-    `then_steps` on match, otherwise the optional `else_steps`. The chosen branch's output flows to the
-    if_else step's own `child_steps` (post-branch continuation chain). **`display_result` and
-    `streaming_result` are not allowed inside `then_steps` / `else_steps`** — end each branch with a
-    content-producing step (e.g. `text`, `prompt_call`) and place the single `display_result` in
-    `child_steps`.
+    - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
+    the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
+    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
+    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
+    `prompt_call`) and place the single `display_result` in `child_steps`.
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch

@@ -94,8 +94,9 @@ def sync_detailed(
 
      Create new step evaluation settings for an agent.
 
-    The evaluation mode, retry settings, and sample frequency are inherited
-    from the agent and stored on the criteria row for historical reference.
+    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
+    `streaming_result` step, the run's published result; another step returns 400.
+    The evaluation mode and sample frequency are the agent's.
 
     Args:
         agent_id (str):
@@ -103,7 +104,8 @@ def sync_detailed(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            The evaluation mode, retry settings, and sample frequency are set at the
+            step_id names the display_result or streaming_result step to score. The
+            evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 
     Raises:
@@ -140,8 +142,9 @@ def sync(
 
      Create new step evaluation settings for an agent.
 
-    The evaluation mode, retry settings, and sample frequency are inherited
-    from the agent and stored on the criteria row for historical reference.
+    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
+    `streaming_result` step, the run's published result; another step returns 400.
+    The evaluation mode and sample frequency are the agent's.
 
     Args:
         agent_id (str):
@@ -149,7 +152,8 @@ def sync(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            The evaluation mode, retry settings, and sample frequency are set at the
+            step_id names the display_result or streaming_result step to score. The
+            evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 
     Raises:
@@ -183,8 +187,9 @@ async def asyncio_detailed(
 
      Create new step evaluation settings for an agent.
 
-    The evaluation mode, retry settings, and sample frequency are inherited
-    from the agent and stored on the criteria row for historical reference.
+    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
+    `streaming_result` step, the run's published result; another step returns 400.
+    The evaluation mode and sample frequency are the agent's.
 
     Args:
         agent_id (str):
@@ -192,7 +197,8 @@ async def asyncio_detailed(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            The evaluation mode, retry settings, and sample frequency are set at the
+            step_id names the display_result or streaming_result step to score. The
+            evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 
     Raises:
@@ -227,8 +233,9 @@ async def asyncio(
 
      Create new step evaluation settings for an agent.
 
-    The evaluation mode, retry settings, and sample frequency are inherited
-    from the agent and stored on the criteria row for historical reference.
+    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
+    `streaming_result` step, the run's published result; another step returns 400.
+    The evaluation mode and sample frequency are the agent's.
 
     Args:
         agent_id (str):
@@ -236,7 +243,8 @@ async def asyncio(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            The evaluation mode, retry settings, and sample frequency are set at the
+            step_id names the display_result or streaming_result step to score. The
+            evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 
     Raises:

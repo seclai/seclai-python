@@ -41,8 +41,9 @@ class AgentRunRequest:
             Mutually exclusive with ``input_upload_id`` (two spellings of the same batch), but may be combined with
             ``input`` — the prompt text leads and the per-file sections follow, so "a photo plus a sentence about it" needs
             no synthetic text upload. Max 20 uploads per run.
-        metadata (AgentRunRequestMetadataType0 | None | Unset): Metadata to make available for string substitution
-            expressions in agent tasks.
+        metadata (AgentRunRequestMetadataType0 | None | Unset): Metadata for string substitution in agent tasks. Each
+            key must be one the agent's trigger declares (or sets); a run that sends another custom key, or lacks a required
+            one, is refused with HTTP 400.
         priority (bool | Unset): If true, the agent run will be treated as priority execution. Default: False.
         replay_of_run_id (None | Unset | UUID): Re-run this agent reusing a prior run's uploaded input files. The files
             are re-resolved server-side from the source run (which must belong to this account and agent) — you do not re-

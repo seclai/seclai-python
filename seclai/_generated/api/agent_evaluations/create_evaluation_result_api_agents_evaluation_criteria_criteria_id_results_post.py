@@ -92,7 +92,8 @@ def sync_detailed(
 
     Use this endpoint to push results from external test harnesses, CI/CD
     pipelines, or custom evaluation logic.  Each result is linked to an
-    agent run and optionally a specific step run.
+    agent run and optionally a specific step run. From Seclai-Version 2026-11-04
+    `retry_triggered: true` returns 400: evaluations never retry a step.
 
     Args:
         criteria_id (str):
@@ -136,7 +137,8 @@ def sync(
 
     Use this endpoint to push results from external test harnesses, CI/CD
     pipelines, or custom evaluation logic.  Each result is linked to an
-    agent run and optionally a specific step run.
+    agent run and optionally a specific step run. From Seclai-Version 2026-11-04
+    `retry_triggered: true` returns 400: evaluations never retry a step.
 
     Args:
         criteria_id (str):
@@ -175,7 +177,8 @@ async def asyncio_detailed(
 
     Use this endpoint to push results from external test harnesses, CI/CD
     pipelines, or custom evaluation logic.  Each result is linked to an
-    agent run and optionally a specific step run.
+    agent run and optionally a specific step run. From Seclai-Version 2026-11-04
+    `retry_triggered: true` returns 400: evaluations never retry a step.
 
     Args:
         criteria_id (str):
@@ -217,7 +220,8 @@ async def asyncio(
 
     Use this endpoint to push results from external test harnesses, CI/CD
     pipelines, or custom evaluation logic.  Each result is linked to an
-    agent run and optionally a specific step run.
+    agent run and optionally a specific step run. From Seclai-Version 2026-11-04
+    `retry_triggered: true` returns 400: evaluations never retry a step.
 
     Args:
         criteria_id (str):

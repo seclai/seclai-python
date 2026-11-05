@@ -12,10 +12,10 @@ T = TypeVar("T", bound="AgentDefinitionResponseDefinition")
 @_attrs_define
 class AgentDefinitionResponseDefinition:
     """The agent definition containing name, description, tags, and step workflow tree. Step types include prompt_call,
-    retrieval, regex_replace, gate, retry, evaluate_step, extract_data, extract_content, add_chat_turn,
-    load_chat_history, add_memory, search_memory, load_memory, streaming_result, send_email, webhook_call, call_agent,
-    write_metadata, write_content_attachment, load_content_attachment, load_content, display_result, merge, for_each,
-    if_else, switch, and others.
+    retrieval, regex_replace, evaluate_step, extract_data, extract_content, add_chat_turn, load_chat_history,
+    add_memory, search_memory, load_memory, streaming_result, send_email, webhook_call, call_agent, write_metadata,
+    write_content_attachment, load_content_attachment, load_content, display_result, merge, for_each, if_else, switch,
+    and others.
 
     """
 

@@ -96,7 +96,8 @@ def sync_detailed(
 
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
-    evaluation prompt, adjust retries, or rename the criteria.
+    evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
+    changed `step_id` must name a `display_result` or `streaming_result` step.
 
     Args:
         criteria_id (str):
@@ -104,7 +105,7 @@ def sync_detailed(
         seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
-            Retry settings and sample frequency are set at the agent level.
+            The evaluation mode and sample frequency are set at the agent level.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -142,7 +143,8 @@ def sync(
 
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
-    evaluation prompt, adjust retries, or rename the criteria.
+    evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
+    changed `step_id` must name a `display_result` or `streaming_result` step.
 
     Args:
         criteria_id (str):
@@ -150,7 +152,7 @@ def sync(
         seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
-            Retry settings and sample frequency are set at the agent level.
+            The evaluation mode and sample frequency are set at the agent level.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -185,7 +187,8 @@ async def asyncio_detailed(
 
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
-    evaluation prompt, adjust retries, or rename the criteria.
+    evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
+    changed `step_id` must name a `display_result` or `streaming_result` step.
 
     Args:
         criteria_id (str):
@@ -193,7 +196,7 @@ async def asyncio_detailed(
         seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
-            Retry settings and sample frequency are set at the agent level.
+            The evaluation mode and sample frequency are set at the agent level.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -229,7 +232,8 @@ async def asyncio(
 
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
-    evaluation prompt, adjust retries, or rename the criteria.
+    evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
+    changed `step_id` must name a `display_result` or `streaming_result` step.
 
     Args:
         criteria_id (str):
@@ -237,7 +241,7 @@ async def asyncio(
         seclai_version (str | Unset):
         body (UpdateEvaluationCriteriaRequest): Request body for updating an evaluation criteria.
 
-            Retry settings and sample frequency are set at the agent level.
+            The evaluation mode and sample frequency are set at the agent level.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

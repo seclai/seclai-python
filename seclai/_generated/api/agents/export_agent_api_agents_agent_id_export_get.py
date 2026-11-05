@@ -97,7 +97,7 @@ def sync_detailed(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"5\"`)
+    - `export_version`: schema version (currently `\"6\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules
@@ -158,7 +158,7 @@ def sync(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"5\"`)
+    - `export_version`: schema version (currently `\"6\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules
@@ -214,7 +214,7 @@ async def asyncio_detailed(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"5\"`)
+    - `export_version`: schema version (currently `\"6\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules
@@ -273,7 +273,7 @@ async def asyncio(
     every referenced external entity UUID to its human-readable name.
 
     Response shape:
-    - `export_version`: schema version (currently `\"5\"`)
+    - `export_version`: schema version (currently `\"6\"`)
     - `exported_at`: ISO-8601 timestamp
     - `agent`: name, description, schema_version, definition, timestamps
     - `trigger`: trigger type, input template, schedules

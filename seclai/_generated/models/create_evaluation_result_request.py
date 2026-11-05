@@ -29,8 +29,8 @@ class CreateEvaluationResultRequest:
         agent_step_run_id (None | Unset | UUID):
         details (CreateEvaluationResultRequestDetailsType0 | None | Unset):
         flagged (bool | Unset):  Default: False.
-        retry_count (int | Unset):  Default: 0.
-        retry_triggered (bool | Unset):  Default: False.
+        retry_count (int | Unset): Deprecated: has no effect on any count. Default: 0.
+        retry_triggered (bool | Unset): Retired; true returns 400 from Seclai-Version 2026-11-04. Default: False.
         score (float | None | Unset):
     """
 

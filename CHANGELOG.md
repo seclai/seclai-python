@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.10.0] - 2026-11-05
+
+### Changed
+
+- Sync the bundled OpenAPI spec, adding 2 paths and 9 schemas. The typed models gain `result_reported_at` on an agent run and `alias` on the Slack trigger config and its update body
+- Move `LATEST_API_VERSION` to `2026-11-04`. A client built with `api_version=LATEST_API_VERSION` also opts into `2026-11-02` and `2026-11-04`, which refuse requests that were accepted before: an agent-definition or sampling-rule write that references a metadata key no trigger declares is refused rather than declaring the key optional (400 from `update_agent_definition()`, 422 from `update_agent()` setting `sampling_config`); and each with a 400, `create_evaluation_result()` refuses `retry_triggered: true`, `update_agent()` refuses `evaluation_mode` `eval_and_retry`, and a new or changed evaluation criterion's `step_id` must name a `display_result` or `streaming_result` step
+- Deprecate `input` in the `set_slack_trigger_config()` body. The API no longer accepts the trigger's input template and ignores it; a run's input is the text after `/seclai <alias>`, or the message the shortcut was used on. A body that still sets `input` is sent as before, and the generated `SetSlackTriggerConfigApiRequest` model no longer has an `input_` attribute
+
+### Added
+
+- Add `get_metadata_keys()` and `set_metadata_keys()` to read and replace the run metadata keys an agent trigger declares, returning `MetadataKeysResponse`
+- Add `get_knowledge_base_metadata_key_stats()` to count the item-metadata keys on a knowledge base's content per time window, returning `KnowledgeBaseMetadataKeyStats`
+- Document `alias` in the `set_slack_trigger_config()` body, the name people type after `/seclai` to run the agent
+- Add `ApiVersion` members for `2026-11-02` and `2026-11-04`, so each can be selected without `allow_unknown_api_version`
+
 ## [1.9.0] - 2026-10-31
 
 ### Changed
@@ -255,6 +270,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.10.0]: https://github.com/seclai/seclai-python/releases/tag/1.10.0
 [1.9.0]: https://github.com/seclai/seclai-python/releases/tag/1.9.0
 [1.8.0]: https://github.com/seclai/seclai-python/releases/tag/1.8.0
 [1.7.2]: https://github.com/seclai/seclai-python/releases/tag/1.7.2

@@ -27,14 +27,16 @@ class SetSlackTriggerConfigApiRequest:
 
     Attributes:
         activation (None | SlackTriggerActivation | Unset): `everywhere` in scope, or `channel_opt_in`.
+        alias (None | str | Unset): The name people type after `/seclai` to run this agent: lowercase letters, digits
+            and hyphens, starting with a letter, unique in the Slack workspace. Generated from the agent's name when not set
+            or empty.
         allow_dms (bool | None | Unset): Runnable in the app's own DMs.
         channel_ids (list[str] | None | Unset):
         form (list[SetSlackTriggerConfigApiRequestFormType0Item] | None | Unset): Form fields `{key, label, type,
             required, hint, choices, max_length}`. `type`: short_text, long_text, number, single_choice, multi_choice,
-            yes_no, date, slack_user or slack_channel. Each value reaches the run as `{{metadata.<key>}}`.
+            yes_no, date, slack_user or slack_channel. Each value reaches the run as `{{metadata.<key>}}`, not in the run's
+            input, which is the text after `/seclai <alias>` or the message the shortcut was used on, and its files.
         include_invoker_email (bool | None | Unset):
-        input_ (None | str | Unset): The trigger's input template. Each `{{metadata.<key>}}` in it must be a form field
-            key or a platform key; it is checked together with `form`.
         max_turns (int | None | Unset):
         mcp_client_id (None | Unset | UUID): The account's connected Slack (Bot) MCP client.
         notify_failure_after_answer (bool | None | Unset):
@@ -46,11 +48,11 @@ class SetSlackTriggerConfigApiRequest:
     """
 
     activation: None | SlackTriggerActivation | Unset = UNSET
+    alias: None | str | Unset = UNSET
     allow_dms: bool | None | Unset = UNSET
     channel_ids: list[str] | None | Unset = UNSET
     form: list[SetSlackTriggerConfigApiRequestFormType0Item] | None | Unset = UNSET
     include_invoker_email: bool | None | Unset = UNSET
-    input_: None | str | Unset = UNSET
     max_turns: int | None | Unset = UNSET
     mcp_client_id: None | Unset | UUID = UNSET
     notify_failure_after_answer: bool | None | Unset = UNSET
@@ -69,6 +71,12 @@ class SetSlackTriggerConfigApiRequest:
             activation = self.activation.value
         else:
             activation = self.activation
+
+        alias: None | str | Unset
+        if isinstance(self.alias, Unset):
+            alias = UNSET
+        else:
+            alias = self.alias
 
         allow_dms: bool | None | Unset
         if isinstance(self.allow_dms, Unset):
@@ -102,12 +110,6 @@ class SetSlackTriggerConfigApiRequest:
             include_invoker_email = UNSET
         else:
             include_invoker_email = self.include_invoker_email
-
-        input_: None | str | Unset
-        if isinstance(self.input_, Unset):
-            input_ = UNSET
-        else:
-            input_ = self.input_
 
         max_turns: int | None | Unset
         if isinstance(self.max_turns, Unset):
@@ -168,6 +170,8 @@ class SetSlackTriggerConfigApiRequest:
         field_dict.update({})
         if activation is not UNSET:
             field_dict["activation"] = activation
+        if alias is not UNSET:
+            field_dict["alias"] = alias
         if allow_dms is not UNSET:
             field_dict["allow_dms"] = allow_dms
         if channel_ids is not UNSET:
@@ -176,8 +180,6 @@ class SetSlackTriggerConfigApiRequest:
             field_dict["form"] = form
         if include_invoker_email is not UNSET:
             field_dict["include_invoker_email"] = include_invoker_email
-        if input_ is not UNSET:
-            field_dict["input"] = input_
         if max_turns is not UNSET:
             field_dict["max_turns"] = max_turns
         if mcp_client_id is not UNSET:
@@ -221,6 +223,15 @@ class SetSlackTriggerConfigApiRequest:
             return cast(None | SlackTriggerActivation | Unset, data)
 
         activation = _parse_activation(d.pop("activation", UNSET))
+
+        def _parse_alias(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        alias = _parse_alias(d.pop("alias", UNSET))
 
         def _parse_allow_dms(data: object) -> bool | None | Unset:
             if data is None:
@@ -288,15 +299,6 @@ class SetSlackTriggerConfigApiRequest:
         include_invoker_email = _parse_include_invoker_email(
             d.pop("include_invoker_email", UNSET)
         )
-
-        def _parse_input_(data: object) -> None | str | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(None | str | Unset, data)
-
-        input_ = _parse_input_(d.pop("input", UNSET))
 
         def _parse_max_turns(data: object) -> int | None | Unset:
             if data is None:
@@ -400,11 +402,11 @@ class SetSlackTriggerConfigApiRequest:
 
         set_slack_trigger_config_api_request = cls(
             activation=activation,
+            alias=alias,
             allow_dms=allow_dms,
             channel_ids=channel_ids,
             form=form,
             include_invoker_email=include_invoker_email,
-            input_=input_,
             max_turns=max_turns,
             mcp_client_id=mcp_client_id,
             notify_failure_after_answer=notify_failure_after_answer,

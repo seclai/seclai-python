@@ -101,14 +101,15 @@ def sync_detailed(
 
      Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
-    Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
-    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
-    `sampling_config`.
+    Evaluation settings: `evaluation_mode` ('output_expectation', 'sample_and_flag'; see the field),
+    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `sampling_config`. `max_retries` and
+    `retry_on_failure` are accepted and have no effect.
 
     Model lifecycle settings: `prompt_model_auto_upgrade_strategy` ('none', 'early_adopter',
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
-    `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
-    'governance_block', 'agent_run_failed').
+    `prompt_model_auto_rollback_triggers` (list of 'governance_flag', 'governance_block',
+    'agent_run_failed'; 'agent_eval_fail' never fires, and in the list keeps a run with a failed
+    evaluation from being a rollback target).
 
     Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
     to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,
@@ -174,14 +175,15 @@ def sync(
 
      Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
-    Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
-    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
-    `sampling_config`.
+    Evaluation settings: `evaluation_mode` ('output_expectation', 'sample_and_flag'; see the field),
+    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `sampling_config`. `max_retries` and
+    `retry_on_failure` are accepted and have no effect.
 
     Model lifecycle settings: `prompt_model_auto_upgrade_strategy` ('none', 'early_adopter',
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
-    `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
-    'governance_block', 'agent_run_failed').
+    `prompt_model_auto_rollback_triggers` (list of 'governance_flag', 'governance_block',
+    'agent_run_failed'; 'agent_eval_fail' never fires, and in the list keeps a run with a failed
+    evaluation from being a rollback target).
 
     Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
     to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,
@@ -239,14 +241,15 @@ async def asyncio_detailed(
 
      Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
-    Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
-    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
-    `sampling_config`.
+    Evaluation settings: `evaluation_mode` ('output_expectation', 'sample_and_flag'; see the field),
+    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `sampling_config`. `max_retries` and
+    `retry_on_failure` are accepted and have no effect.
 
     Model lifecycle settings: `prompt_model_auto_upgrade_strategy` ('none', 'early_adopter',
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
-    `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
-    'governance_block', 'agent_run_failed').
+    `prompt_model_auto_rollback_triggers` (list of 'governance_flag', 'governance_block',
+    'agent_run_failed'; 'agent_eval_fail' never fires, and in the list keeps a run with a failed
+    evaluation from being a rollback target).
 
     Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
     to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,
@@ -310,14 +313,15 @@ async def asyncio(
 
      Update an agent's name, description, evaluation settings, model lifecycle settings and run limits.
 
-    Evaluation settings: `evaluation_mode` ('output_expectation', 'eval_and_retry', 'sample_and_flag'),
-    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `max_retries`, `retry_on_failure`,
-    `sampling_config`.
+    Evaluation settings: `evaluation_mode` ('output_expectation', 'sample_and_flag'; see the field),
+    `default_evaluation_tier` ('fast', 'balanced', 'thorough'), `sampling_config`. `max_retries` and
+    `retry_on_failure` are accepted and have no effect.
 
     Model lifecycle settings: `prompt_model_auto_upgrade_strategy` ('none', 'early_adopter',
     'middle_of_road', 'cautious_adopter'), `prompt_model_auto_rollback_enabled`,
-    `prompt_model_auto_rollback_triggers` (list of 'agent_eval_fail', 'governance_flag',
-    'governance_block', 'agent_run_failed').
+    `prompt_model_auto_rollback_triggers` (list of 'governance_flag', 'governance_block',
+    'agent_run_failed'; 'agent_eval_fail' never fires, and in the list keeps a run with a failed
+    evaluation from being a rollback target).
 
     Run limits (each must be greater than 0; pass the paired `set_<name>: true` with the value omitted
     to remove one): `max_credits_per_run`, `max_credits_per_period`, `max_runs_per_hour`,

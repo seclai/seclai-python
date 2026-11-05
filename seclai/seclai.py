@@ -83,6 +83,10 @@ from seclai._generated.models.email_source_rejection_list_response import (
 )
 from seclai._generated.models.file_upload_response import FileUploadResponse
 from seclai._generated.models.http_validation_error import HTTPValidationError
+from seclai._generated.models.knowledge_base_metadata_key_stats import (
+    KnowledgeBaseMetadataKeyStats,
+)
+from seclai._generated.models.metadata_keys_response import MetadataKeysResponse
 from seclai._generated.models.source_list_response import SourceListResponse
 from seclai._generated.types import UNSET, Unset
 from seclai._generated.types import Response as OpenAPIResponse
@@ -3391,10 +3395,18 @@ class Seclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             trigger_id: Trigger identifier.
-            body: Fields to set (mcp_client_id, form, scope, channel_ids,
-                allow_dms, activation, visibility, start_without_form, input,
-                turns_enabled, turns_anyone, max_turns, include_invoker_email,
-                notify_failure_after_answer). Omitted fields are unchanged.
+            body: Fields to set (mcp_client_id, alias, form, scope,
+                channel_ids, allow_dms, activation, visibility,
+                start_without_form, turns_enabled, turns_anyone, max_turns,
+                include_invoker_email, notify_failure_after_answer). Omitted
+                fields are unchanged. ``alias`` is the name people type after
+                ``/seclai`` to run this agent; it is generated from the agent's
+                name when not set. A run's input is the text after
+                ``/seclai <alias>``, or the message the shortcut was used on;
+                form values reach it as ``{{metadata.<key>}}``.
+                Deprecated: ``input``, the trigger's input template, is no
+                longer accepted and the API ignores it. A body that still sets
+                it is sent as given, so existing callers keep working.
 
         Returns:
             The trigger's Slack config, with ``missing_scopes`` listing what the
@@ -3447,6 +3459,76 @@ class Seclai(_SeclaiBase):
             json=body,
         )
         return _parse_model(payload, AcceptedAttachmentsResponse)
+
+    def get_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+    ) -> MetadataKeysResponse:
+        """Get the run metadata keys a trigger declares.
+
+        Steps reference a declared key as ``{{metadata.<key>}}``. ``system``
+        and ``source`` keys are written by the platform and are never required;
+        ``custom`` keys are sent by the caller. A run you start is refused with
+        a 400 when it lacks a required key or sends a custom key the trigger
+        does not declare.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+
+        Returns:
+            The trigger's ``metadata_keys``, the ``declarable_keys`` its type
+            offers, and ``accepts_any_source_key``. ``warnings`` is always
+            empty here.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = self.request(
+            "GET",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+        )
+        return _parse_model(payload, MetadataKeysResponse)
+
+    def set_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        metadata_keys: list[dict[str, Any]],
+    ) -> MetadataKeysResponse:
+        """Declare the run metadata keys a trigger accepts.
+
+        Replaces the trigger's whole declaration. The API answers 400 when the
+        agent references a key that no trigger of its branch then declares.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+            metadata_keys: The keys, each with a ``key``, an ``origin``
+                (``system``, ``source`` or ``custom``) and an optional
+                ``required`` (default ``False``; only a ``custom`` key can be
+                required). ``[]`` declares none.
+
+        Returns:
+            The new declaration, as :meth:`get_metadata_keys` returns it, with
+            ``warnings`` naming agents whose ``call_agent`` mapping no longer
+            fits it.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        body: dict[str, Any] = {"metadata_keys": metadata_keys}
+        payload = self.request(
+            "PUT",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+            json=body,
+        )
+        return _parse_model(payload, MetadataKeysResponse)
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
@@ -3540,6 +3622,34 @@ class Seclai(_SeclaiBase):
             knowledge_base_id: Knowledge base identifier.
         """
         self.request("DELETE", f"/knowledge_bases/{knowledge_base_id}")
+
+    def get_knowledge_base_metadata_key_stats(
+        self, knowledge_base_id: str
+    ) -> KnowledgeBaseMetadataKeyStats:
+        """Count the item-metadata keys on a knowledge base's content.
+
+        For choosing the keys a content trigger declares
+        (:meth:`set_metadata_keys`). Each item is counted once, at its latest
+        version; a null value counts as absent, and reserved and
+        platform-set keys are left out.
+
+        Args:
+            knowledge_base_id: Knowledge base identifier.
+
+        Returns:
+            One entry in ``windows`` per window (``all_time``,
+            ``last_30_days``, ``last_7_days``), each with ``total_items`` and
+            its ``keys``, most frequent first, with their top values.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = self.request(
+            "GET", f"/knowledge_bases/{knowledge_base_id}/metadata-key-stats"
+        )
+        return _parse_model(payload, KnowledgeBaseMetadataKeyStats)
 
     # ── Memory Banks ──────────────────────────────────────────────────────────
 
@@ -8265,10 +8375,18 @@ class AsyncSeclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             trigger_id: Trigger identifier.
-            body: Fields to set (mcp_client_id, form, scope, channel_ids,
-                allow_dms, activation, visibility, start_without_form, input,
-                turns_enabled, turns_anyone, max_turns, include_invoker_email,
-                notify_failure_after_answer). Omitted fields are unchanged.
+            body: Fields to set (mcp_client_id, alias, form, scope,
+                channel_ids, allow_dms, activation, visibility,
+                start_without_form, turns_enabled, turns_anyone, max_turns,
+                include_invoker_email, notify_failure_after_answer). Omitted
+                fields are unchanged. ``alias`` is the name people type after
+                ``/seclai`` to run this agent; it is generated from the agent's
+                name when not set. A run's input is the text after
+                ``/seclai <alias>``, or the message the shortcut was used on;
+                form values reach it as ``{{metadata.<key>}}``.
+                Deprecated: ``input``, the trigger's input template, is no
+                longer accepted and the API ignores it. A body that still sets
+                it is sent as given, so existing callers keep working.
 
         Returns:
             The trigger's Slack config, with ``missing_scopes`` listing what the
@@ -8321,6 +8439,76 @@ class AsyncSeclai(_SeclaiBase):
             json=body,
         )
         return _parse_model(payload, AcceptedAttachmentsResponse)
+
+    async def get_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+    ) -> MetadataKeysResponse:
+        """Get the run metadata keys a trigger declares.
+
+        Steps reference a declared key as ``{{metadata.<key>}}``. ``system``
+        and ``source`` keys are written by the platform and are never required;
+        ``custom`` keys are sent by the caller. A run you start is refused with
+        a 400 when it lacks a required key or sends a custom key the trigger
+        does not declare.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+
+        Returns:
+            The trigger's ``metadata_keys``, the ``declarable_keys`` its type
+            offers, and ``accepts_any_source_key``. ``warnings`` is always
+            empty here.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = await self.request(
+            "GET",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+        )
+        return _parse_model(payload, MetadataKeysResponse)
+
+    async def set_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        metadata_keys: list[dict[str, Any]],
+    ) -> MetadataKeysResponse:
+        """Declare the run metadata keys a trigger accepts.
+
+        Replaces the trigger's whole declaration. The API answers 400 when the
+        agent references a key that no trigger of its branch then declares.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+            metadata_keys: The keys, each with a ``key``, an ``origin``
+                (``system``, ``source`` or ``custom``) and an optional
+                ``required`` (default ``False``; only a ``custom`` key can be
+                required). ``[]`` declares none.
+
+        Returns:
+            The new declaration, as :meth:`get_metadata_keys` returns it, with
+            ``warnings`` naming agents whose ``call_agent`` mapping no longer
+            fits it.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        body: dict[str, Any] = {"metadata_keys": metadata_keys}
+        payload = await self.request(
+            "PUT",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+            json=body,
+        )
+        return _parse_model(payload, MetadataKeysResponse)
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
@@ -8416,6 +8604,34 @@ class AsyncSeclai(_SeclaiBase):
             knowledge_base_id: Knowledge base identifier.
         """
         await self.request("DELETE", f"/knowledge_bases/{knowledge_base_id}")
+
+    async def get_knowledge_base_metadata_key_stats(
+        self, knowledge_base_id: str
+    ) -> KnowledgeBaseMetadataKeyStats:
+        """Count the item-metadata keys on a knowledge base's content.
+
+        For choosing the keys a content trigger declares
+        (:meth:`set_metadata_keys`). Each item is counted once, at its latest
+        version; a null value counts as absent, and reserved and
+        platform-set keys are left out.
+
+        Args:
+            knowledge_base_id: Knowledge base identifier.
+
+        Returns:
+            One entry in ``windows`` per window (``all_time``,
+            ``last_30_days``, ``last_7_days``), each with ``total_items`` and
+            its ``keys``, most frequent first, with their top values.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = await self.request(
+            "GET", f"/knowledge_bases/{knowledge_base_id}/metadata-key-stats"
+        )
+        return _parse_model(payload, KnowledgeBaseMetadataKeyStats)
 
     # ── Memory Banks ──────────────────────────────────────────────────────────
 
