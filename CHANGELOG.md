@@ -10,7 +10,7 @@
 - Default `evaluation_mode` on the generated `AgentSummaryResponse` to `sample_and_flag`, as the API now declares, rather than `eval_and_retry`. A model built, or parsed from a payload, without `evaluation_mode` reports `sample_and_flag`
 - Note API behavior that changed on every API version, whatever `Seclai-Version` a client sends: a run whose `metadata` has a custom key the trigger does not declare, or lacks a required one, is refused with a 400; an agent definition holding a `gate` or `retry` step is rejected (use `if_else`, or `repeat_until` to run steps again); the `agent_eval_fail` rollback trigger is accepted, never fires, and is no longer in the default rollback triggers (`governance_block` and `agent_run_failed` when none are set); and `max_retries` and `retry_on_failure` are accepted and have no effect
 - Accept the generated `AcceptedAttachmentSlot` models, as well as dicts, in `set_accepted_attachments()`, so the slots a previous call returned can be edited and sent back
-- Return the `result` snapshot from `run_streaming_agent_and_wait()` when the stream ends or times out after the `event: result` the API now sends but before `done`, rather than the `init` snapshot or a timeout error
+- Return the `result` snapshot from `run_streaming_agent_and_wait()` when the stream ends after the `event: result` the API now sends but before `done`, as the latest snapshot, rather than the `init` one
 
 ### Added
 
@@ -18,7 +18,15 @@
 - Add `get_knowledge_base_metadata_key_stats()` to count the item-metadata keys on a knowledge base's content per time window, returning `KnowledgeBaseMetadataKeyStats`
 - Document `alias` in the `set_slack_trigger_config()` body, the name people type after `/seclai` to run the agent
 - Add `ApiVersion` members for `2026-11-02` and `2026-11-04`, so each can be selected without `allow_unknown_api_version`
-- Add `return_on_result` to `run_agent_and_poll()`, to return as soon as a run reports its result (`result_reported_at` is set) instead of waiting for a terminal status
+- Add `return_on_result` to `run_agent_and_poll()` and `run_streaming_agent_and_wait()`, to return as soon as a run reports its result (`result_reported_at` is set, or the `result` event arrives) instead of waiting for a terminal status or `done`. That run may still be in progress and can still fail
+- Add `raise_on_incomplete` to `run_streaming_agent_and_wait()`. It raises `SeclaiStreamingError` when the stream ends, or is cut by a transport error such as `httpx.ReadError`, before the `done` event, instead of returning a run that has not finished or letting the `httpx` error through, with the latest snapshot in the error's `run`. It will become the default in the next major version
+- Add `run` to `SeclaiStreamingError`, the latest run snapshot when `run_streaming_agent_and_wait()` times out, or with `raise_on_incomplete` gives up before `done`. Its timeout error is now this `SeclaiError` subclass
+- Export `Unset` and `UNSET` from `seclai`, to test for a response field the API omitted without importing a private module
+
+### Fixed
+
+- Return the run from a `done` event that `run_streaming_agent_and_wait()` reads just past its `timeout`, rather than raising a timeout error
+- Fetch the run at least once in `run_agent_and_poll()` with `include_step_outputs=True`. When the `run_agent()` response was already terminal it was returned as is, without the step outputs asked for
 
 ## [1.9.0] - 2026-10-31
 

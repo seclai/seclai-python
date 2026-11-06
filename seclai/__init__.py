@@ -24,8 +24,11 @@ All public symbols are re-exported from this package:
 - :data:`DEFAULT_API_VERSION` / :data:`LATEST_API_VERSION` — the baseline and
   newest known version
 - :func:`unwrap_items` — read a version-gated list response in either shape
+- :class:`Unset` / :data:`UNSET` — the marker for a response field the API
+  omitted, e.g. ``isinstance(result.warnings, Unset)``
 """
 
+from ._generated.types import UNSET, Unset
 from .auth import (
     DEFAULT_SSO_CLIENT_ID,
     DEFAULT_SSO_DOMAIN,
@@ -66,4 +69,6 @@ __all__ = [
     "ApiVersion",
     "DEFAULT_API_VERSION",
     "LATEST_API_VERSION",
+    "UNSET",
+    "Unset",
 ]

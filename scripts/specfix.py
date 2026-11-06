@@ -8,8 +8,9 @@ already exposed (``RETAINED_REQUEST_FIELDS``), so the generated model keeps the
 attribute and existing callers keep working. Each is described as ignored by
 the API. Remove an entry at the next major version.
 
-Exits non-zero when a listed schema, or its ``properties``, is missing: the
-entry is stale and must be removed or updated rather than silently skipped.
+Exits non-zero when an entry is stale: its schema, or the schema's
+``properties``, is missing, or the spec already declares the property again.
+A stale entry must be removed or updated rather than silently skipped.
 """
 
 from __future__ import annotations
@@ -53,7 +54,13 @@ def retain_removed_request_fields(spec: dict[str, Any]) -> list[str]:
         if not isinstance(props, dict):
             errors.append(f"schema {schema_name!r} has no properties")
             continue
-        props.setdefault(prop, dict(definition))
+        if prop in props:
+            errors.append(
+                f"stale entry `{schema_name}.{prop}` in the retained-fields "
+                "list: the spec declares it again; remove the entry"
+            )
+            continue
+        props[prop] = dict(definition)
     return errors
 
 

@@ -368,17 +368,44 @@ client.cancel_agent_run("run_id")
 
 The SDK provides two streaming patterns over the SSE `/runs/stream` endpoint.
 
-**Block until done** — returns the final `done` payload or raises on timeout:
+**Block until done** — returns the run from the `done` event. Pass
+`raise_on_incomplete=True` (recommended; it becomes the default in the next
+major version) so a run that has not finished is never returned:
 
 ```python
-from seclai import AgentRunStreamRequest
+from seclai import AgentRunStreamRequest, SeclaiStreamingError
 
-run = client.run_streaming_agent_and_wait(
-    "agent_id",
-    body=AgentRunStreamRequest(input="Hello from streaming", metadata={}),
-    timeout=60.0,
-)
+try:
+    run = client.run_streaming_agent_and_wait(
+        "agent_id",
+        body=AgentRunStreamRequest(input="Hello from streaming", metadata={}),
+        timeout=60.0,
+        raise_on_incomplete=True,
+    )
+except SeclaiStreamingError as e:
+    # Timed out, or the stream ended or was cut, before `done`. `e.run` is the
+    # latest snapshot: the `result` one if it arrived, so its `output` is the
+    # answer even though the run had not finished.
+    if e.run is not None and e.run.result_reported_at:
+        print(e.run.output)
+    else:
+        raise
 ```
+
+With `raise_on_incomplete=True`, on `timeout`, or when the stream ends or is
+cut before `done`, it raises `SeclaiStreamingError` with the latest snapshot
+in `e.run` (or `None` if none arrived).
+
+By default it behaves as in earlier releases: when the stream ends before
+`done` it returns the latest snapshot, which may be a run that has not
+finished, so check `status` and `result_reported_at`; a connection cut
+mid-stream raises the `httpx` error (such as `httpx.ReadError`). On `timeout`
+it raises `SeclaiStreamingError`, with `e.run`, either way.
+
+Pass `return_on_result=True` to return the `result` snapshot as soon as it
+arrives, without waiting for `done`. That run may still be in progress: its
+`status` may not be terminal and it can still fail. Check
+`result_reported_at`, not `status`.
 
 **Generator-based** — yields every SSE event as `(event_type, data)` tuples:
 
@@ -393,8 +420,8 @@ for event_type, data in client.run_streaming_agent(
 Set `include_reasoning=True` in the request to also receive `stream_reasoning`
 events with the model's reasoning, for a `streaming_result` step whose author
 enabled `show_reasoning`. `run_streaming_agent_and_wait()` keeps only the
-`init` and `done` events, so it removes `include_reasoning` from the body
-before sending.
+`init`, `result` and `done` events, so it removes `include_reasoning` from the
+body before sending.
 
 Every key of `AgentRunStreamRequest` is optional, so a run on an uploaded file
 can send just `AgentRunStreamRequest(input_upload_id=upload["upload_id"])`.
@@ -422,6 +449,11 @@ result = client.run_agent_and_poll(
     poll_interval=2.0,
 )
 ```
+
+It returns once the run's status is `completed` or `failed`. With
+`return_on_result=True` it returns the first snapshot with
+`result_reported_at` set; that run may still be in progress and can still
+fail, so check `result_reported_at`, not `status`.
 
 ### Agent input uploads
 
@@ -456,7 +488,7 @@ Declare custom keys with `set_metadata_keys()` before sending them in a run's
 `metadata`.
 
 ```python
-from seclai._generated.types import Unset
+from seclai import Unset
 
 # The run metadata keys a trigger declares. Steps reference one as
 # {{metadata.<key>}}; a run you start is refused with a 400 when it lacks a
@@ -1024,7 +1056,7 @@ except SeclaiConfigurationError as e:
 | `SeclaiConfigurationError` | Missing API key, invalid configuration |
 | `SeclaiAPIStatusError` | Non-2xx HTTP response |
 | `SeclaiAPIValidationError` | HTTP 422 (inherits `SeclaiAPIStatusError`) |
-| `SeclaiStreamingError` | SSE stream error event received |
+| `SeclaiStreamingError` | SSE stream error event received; `run_streaming_agent_and_wait()` timed out, or, with `raise_on_incomplete=True`, its stream ended or was cut before `done` (`e.run` holds the latest snapshot) |
 
 ## Low-level access
 

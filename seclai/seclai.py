@@ -431,16 +431,31 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
 class SeclaiStreamingError(SeclaiError):
     """Raised when an error event is received during a streaming agent run.
 
+    ``run_streaming_agent_and_wait`` also raises it when the run did not
+    finish: on its timeout, and with ``raise_on_incomplete`` when the stream
+    ends or is cut before the ``done`` event. ``run`` then holds the latest
+    snapshot.
+
     Attributes:
         message: Human-readable error message from the stream.
         run_id: Agent run identifier, if available.
+        run: The latest run snapshot received before the stream stopped: the
+            ``result`` one if it arrived (its ``output`` is the answer), else
+            the ``init`` one, else ``None``.
     """
 
-    def __init__(self, message: str, *, run_id: str | None = None) -> None:
-        """Initialize with stream error message and optional run ID."""
+    def __init__(
+        self,
+        message: str,
+        *,
+        run_id: str | None = None,
+        run: AgentRunResponse | None = None,
+    ) -> None:
+        """Initialize with stream error message, optional run ID and snapshot."""
         super().__init__(message)
         self.message = message
         self.run_id = run_id
+        self.run = run
 
 
 def _guess_mime_type(file_name: str | None) -> str | None:
@@ -1221,36 +1236,61 @@ class Seclai(_SeclaiBase):
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
+        return_on_result: bool = False,
+        raise_on_incomplete: bool = False,
     ) -> AgentRunResponse:
         """Run an agent via SSE streaming and block until completion.
 
-        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
-        The method returns when an `event: done` message is received. A
-        `result` event, sent once the run has reported its result, is kept as
-        the latest snapshot: if the stream ends, or `timeout` passes, after
-        `result` but before `done`, that snapshot is returned (its `output` is
-        the answer) instead of the `init` one or an error. Every event but
-        `init`, `result` and `done` is discarded, so `include_reasoning` is
-        removed from the body before it is sent: reasoning events would only
-        add traffic and count against `timeout`. Use `run_streaming_agent` to
-        receive `stream_reasoning` events.
+        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent
+        Events (SSE). The method returns the run from the ``done`` event, or,
+        with ``return_on_result``, the snapshot from the ``result`` event.
+
+        By default, when the stream ends before ``done`` it returns the latest
+        snapshot, which may be a run that has not finished: check ``status``
+        and ``result_reported_at``. A connection cut mid-stream raises the
+        ``httpx`` error. Pass ``raise_on_incomplete=True`` (recommended; the
+        default in the next major version) to raise
+        :class:`SeclaiStreamingError` instead, with the latest snapshot in
+        ``run`` (the ``result`` one if it arrived, so its ``output`` is the
+        answer). On ``timeout`` it raises :class:`SeclaiStreamingError` with
+        ``run`` either way.
+
+        Every event but ``init``, ``result`` and ``done`` is discarded, so
+        ``include_reasoning`` is removed from the body before it is sent:
+        reasoning events would only add traffic and count against
+        ``timeout``. Use ``run_streaming_agent`` to receive
+        ``stream_reasoning`` events.
 
         Args:
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
-            timeout: Max time (seconds) to wait for the final result (client-side). Defaults to this
-                client's configured timeout.
+            timeout: Max time (seconds) to wait for the final result
+                (client-side). Defaults to this client's configured timeout.
             headers: Optional extra headers for this request.
+            return_on_result: Return the ``result`` snapshot as soon as it
+                arrives, without waiting for ``done``. That run may still be
+                in progress: its ``status`` may not be terminal and it can
+                still fail, so check ``result_reported_at``, not ``status``.
+            raise_on_incomplete: Raise :class:`SeclaiStreamingError` when the
+                stream ends or is cut before ``done``, rather than returning
+                the latest snapshot or letting the ``httpx`` error through.
+                Becomes the default in the next major version.
 
         Returns:
-            The final agent run payload from the `done` event, or the `result`
-            snapshot when the stream ends or times out before `done`.
+            The run from the ``done`` event, or with ``return_on_result`` the
+            ``result`` snapshot. Without ``raise_on_incomplete``, the latest
+            snapshot when the stream ends before ``done``.
 
         Raises:
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
-            SeclaiError: If the stream ends before any snapshot, or times out
-                before a `result` or `done` event.
+            SeclaiStreamingError: If ``timeout`` passes before the run
+                finished, or the stream ends with no snapshot; with
+                ``raise_on_incomplete``, also if the stream ends or is cut
+                before ``done``. ``run`` holds the latest snapshot, or
+                ``None`` if none arrived.
+            httpx.TransportError: Without ``raise_on_incomplete``, if the
+                connection is cut mid-stream.
         """
         import json as _json
         import time as _time
@@ -1265,9 +1305,42 @@ class Seclai(_SeclaiBase):
         _setdefault_header(merged_headers, "accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
+        timed_out = f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete"
         start = _time.monotonic()
+        current_event: str | None = None
+        data_lines: list[str] = []
+        last_seen: AgentRunResponse | None = None
         result_seen: AgentRunResponse | None = None
 
+        def dispatch() -> AgentRunResponse | None:
+            """Handle the buffered event; return the run to return, if any."""
+            nonlocal current_event, data_lines, last_seen, result_seen
+            if current_event is None and not data_lines:
+                return None
+            data = "\n".join(data_lines)
+            evt = current_event
+            current_event = None
+            data_lines = []
+            if not data:
+                return None
+            if evt not in {"init", "result", "done"}:
+                return None
+            try:
+                parsed_dict = cast(dict[str, Any], _json.loads(data))
+                parsed = AgentRunResponse.from_dict(parsed_dict)
+            except Exception:
+                return None
+            last_seen = parsed
+            if evt == "result":
+                result_seen = parsed
+                if return_on_result:
+                    return parsed
+            if evt == "done":
+                return parsed
+            return None
+
+        ending: str | None = None  # None: the stream ended
+        cause: httpx.TransportError | None = None
         try:
             with self._client.stream(
                 "POST",
@@ -1279,69 +1352,58 @@ class Seclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so the error carries
                 # its text and a 422 its field-level detail.
                 _raise_for_unread_status(response)
-
-                current_event: str | None = None
-                data_lines: list[str] = []
-                last_seen: AgentRunResponse | None = None
-
-                def dispatch() -> AgentRunResponse | None:
-                    nonlocal current_event, data_lines, last_seen, result_seen
-                    if current_event is None and not data_lines:
-                        return None
-                    data = "\n".join(data_lines)
-                    evt = current_event
-                    current_event = None
-                    data_lines = []
-                    if not data:
-                        return None
-                    if evt not in {"init", "result", "done"}:
-                        return None
-                    try:
-                        parsed_dict = cast(dict[str, Any], _json.loads(data))
-                        parsed = AgentRunResponse.from_dict(parsed_dict)
-                        last_seen = parsed
-                        if evt == "result":
-                            result_seen = parsed
-                        if evt == "done":
-                            return parsed
-                    except Exception:
-                        return None
-                    return None
-
-                for line in response.iter_lines():
-                    if _time.monotonic() - start > timeout_seconds:
-                        if result_seen is not None:
-                            return result_seen
-                        raise SeclaiError(
-                            f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-                        )
-
-                    if line == "":
-                        done = dispatch()
-                        if done is not None:
-                            return done
-                        continue
-                    if line.startswith(":"):
-                        continue
-                    if line.startswith("event:"):
-                        current_event = line[len("event:") :].strip() or None
-                        continue
-                    if line.startswith("data:"):
-                        data_lines.append(line[len("data:") :].lstrip())
-                        continue
-
-                done = dispatch()
-                if done is not None:
-                    return done
-                if last_seen is not None:
-                    return last_seen
-                raise SeclaiError("Stream ended before receiving a 'done' event.")
+                try:
+                    for line in response.iter_lines():
+                        if line == "":
+                            run = dispatch()
+                            if run is not None:
+                                return run
+                        elif line.startswith("event:"):
+                            current_event = line[len("event:") :].strip() or None
+                        elif line.startswith("data:"):
+                            data_lines.append(line[len("data:") :].lstrip())
+                        # Checked after the line is handled, and not inside
+                        # an event, so a `done` read just past the deadline
+                        # is still used.
+                        if (
+                            current_event is None
+                            and not data_lines
+                            and _time.monotonic() - start > timeout_seconds
+                        ):
+                            ending = timed_out
+                            break
+                except httpx.TransportError as e:
+                    if not raise_on_incomplete and not isinstance(
+                        e, httpx.TimeoutException
+                    ):
+                        raise  # as released: the cut surfaces raw
+                    cause = e
+                    ending = (
+                        timed_out
+                        if isinstance(e, httpx.TimeoutException)
+                        else f"The stream was cut ({type(e).__name__}: {e})"
+                    )
         except httpx.TimeoutException as e:
-            if result_seen is not None:
-                return result_seen
-            raise SeclaiError(
-                f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-            ) from e
+            cause = e
+            ending = timed_out
+
+        # An event whose blank line never came still counts.
+        run = dispatch()
+        if run is not None:
+            return run
+        if ending is None and not raise_on_incomplete and last_seen is not None:
+            return last_seen  # as released
+        snapshot = result_seen if result_seen is not None else last_seen
+        outcome = (
+            "the run had reported its result; read it from the error's `run`"
+            if result_seen is not None
+            else "the run had not reported a result"
+        )
+        raise SeclaiStreamingError(
+            f"{ending or 'The stream ended'} before the 'done' event: {outcome}.",
+            run_id=snapshot.run_id if snapshot is not None else None,
+            run=snapshot,
+        ) from cause
 
     def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -3557,7 +3619,8 @@ class Seclai(_SeclaiBase):
             The new declaration, as :meth:`get_metadata_keys` returns it.
             ``warnings``, when the API sends it, names agents whose
             ``call_agent`` mapping no longer fits it; it is ``UNSET`` when
-            omitted, so check ``isinstance(result.warnings, Unset)`` first.
+            omitted, so check ``isinstance(result.warnings, Unset)`` first
+            (``from seclai import Unset``).
 
         Raises:
             SeclaiAPIValidationError: If the API returns a validation error.
@@ -5847,7 +5910,9 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Agent run request payload.
             poll_interval: Seconds between poll attempts (default 2.0).
-            include_step_outputs: Include per-step outputs when polling.
+            include_step_outputs: Include per-step outputs when polling. The
+                run is then fetched at least once, since the ``run_agent``
+                response carries no step outputs.
             return_on_result: Return as soon as a snapshot has
                 ``result_reported_at`` set: its ``output`` is the answer, and
                 for an agent whose ``report_success`` is ``on_result`` that can
@@ -5864,6 +5929,10 @@ class Seclai(_SeclaiBase):
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
         run = self.run_agent(agent_id, body)
+        if include_step_outputs:
+            # The run_agent response carries no step outputs, so it must not
+            # end the poll: fetch the run once and check that instead.
+            run = self.get_agent_run(run.run_id, include_step_outputs=True)
         while run.status not in ("completed", "failed") and not (
             return_on_result and run.result_reported_at
         ):
@@ -6251,19 +6320,61 @@ class AsyncSeclai(_SeclaiBase):
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
+        return_on_result: bool = False,
+        raise_on_incomplete: bool = False,
     ) -> AgentRunResponse:
         """Run an agent via SSE streaming and block until completion (async).
 
-        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
-        The method returns when an `event: done` message is received. A
-        `result` event, sent once the run has reported its result, is kept as
-        the latest snapshot: if the stream ends, or `timeout` passes, after
-        `result` but before `done`, that snapshot is returned (its `output` is
-        the answer) instead of the `init` one or an error. Every event but
-        `init`, `result` and `done` is discarded, so `include_reasoning` is
-        removed from the body before it is sent: reasoning events would only
-        add traffic and count against `timeout`. Use `run_streaming_agent` to
-        receive `stream_reasoning` events.
+        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent
+        Events (SSE). The method returns the run from the ``done`` event, or,
+        with ``return_on_result``, the snapshot from the ``result`` event.
+
+        By default, when the stream ends before ``done`` it returns the latest
+        snapshot, which may be a run that has not finished: check ``status``
+        and ``result_reported_at``. A connection cut mid-stream raises the
+        ``httpx`` error. Pass ``raise_on_incomplete=True`` (recommended; the
+        default in the next major version) to raise
+        :class:`SeclaiStreamingError` instead, with the latest snapshot in
+        ``run`` (the ``result`` one if it arrived, so its ``output`` is the
+        answer). On ``timeout`` it raises :class:`SeclaiStreamingError` with
+        ``run`` either way.
+
+        Every event but ``init``, ``result`` and ``done`` is discarded, so
+        ``include_reasoning`` is removed from the body before it is sent:
+        reasoning events would only add traffic and count against
+        ``timeout``. Use ``run_streaming_agent`` to receive
+        ``stream_reasoning`` events.
+
+        Args:
+            agent_id: Agent identifier.
+            body: Streaming agent run request payload.
+            timeout: Max time (seconds) to wait for the final result
+                (client-side). Defaults to this client's configured timeout.
+            headers: Optional extra headers for this request.
+            return_on_result: Return the ``result`` snapshot as soon as it
+                arrives, without waiting for ``done``. That run may still be
+                in progress: its ``status`` may not be terminal and it can
+                still fail, so check ``result_reported_at``, not ``status``.
+            raise_on_incomplete: Raise :class:`SeclaiStreamingError` when the
+                stream ends or is cut before ``done``, rather than returning
+                the latest snapshot or letting the ``httpx`` error through.
+                Becomes the default in the next major version.
+
+        Returns:
+            The run from the ``done`` event, or with ``return_on_result`` the
+            ``result`` snapshot. Without ``raise_on_incomplete``, the latest
+            snapshot when the stream ends before ``done``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiStreamingError: If ``timeout`` passes before the run
+                finished, or the stream ends with no snapshot; with
+                ``raise_on_incomplete``, also if the stream ends or is cut
+                before ``done``. ``run`` holds the latest snapshot, or
+                ``None`` if none arrived.
+            httpx.TransportError: Without ``raise_on_incomplete``, if the
+                connection is cut mid-stream.
         """
         import json as _json
         import time as _time
@@ -6278,9 +6389,42 @@ class AsyncSeclai(_SeclaiBase):
         _setdefault_header(merged_headers, "accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
+        timed_out = f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete"
         start = _time.monotonic()
+        current_event: str | None = None
+        data_lines: list[str] = []
+        last_seen: AgentRunResponse | None = None
         result_seen: AgentRunResponse | None = None
 
+        def dispatch() -> AgentRunResponse | None:
+            """Handle the buffered event; return the run to return, if any."""
+            nonlocal current_event, data_lines, last_seen, result_seen
+            if current_event is None and not data_lines:
+                return None
+            data = "\n".join(data_lines)
+            evt = current_event
+            current_event = None
+            data_lines = []
+            if not data:
+                return None
+            if evt not in {"init", "result", "done"}:
+                return None
+            try:
+                parsed_dict = cast(dict[str, Any], _json.loads(data))
+                parsed = AgentRunResponse.from_dict(parsed_dict)
+            except Exception:
+                return None
+            last_seen = parsed
+            if evt == "result":
+                result_seen = parsed
+                if return_on_result:
+                    return parsed
+            if evt == "done":
+                return parsed
+            return None
+
+        ending: str | None = None  # None: the stream ended
+        cause: httpx.TransportError | None = None
         try:
             async with self._client.stream(
                 "POST",
@@ -6292,69 +6436,58 @@ class AsyncSeclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so the error carries
                 # its text and a 422 its field-level detail.
                 await _araise_for_unread_status(response)
-
-                current_event: str | None = None
-                data_lines: list[str] = []
-                last_seen: AgentRunResponse | None = None
-
-                def dispatch() -> AgentRunResponse | None:
-                    nonlocal current_event, data_lines, last_seen, result_seen
-                    if current_event is None and not data_lines:
-                        return None
-                    data = "\n".join(data_lines)
-                    evt = current_event
-                    current_event = None
-                    data_lines = []
-                    if not data:
-                        return None
-                    if evt not in {"init", "result", "done"}:
-                        return None
-                    try:
-                        parsed_dict = cast(dict[str, Any], _json.loads(data))
-                        parsed = AgentRunResponse.from_dict(parsed_dict)
-                        last_seen = parsed
-                        if evt == "result":
-                            result_seen = parsed
-                        if evt == "done":
-                            return parsed
-                    except Exception:
-                        return None
-                    return None
-
-                async for line in response.aiter_lines():
-                    if _time.monotonic() - start > timeout_seconds:
-                        if result_seen is not None:
-                            return result_seen
-                        raise SeclaiError(
-                            f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-                        )
-
-                    if line == "":
-                        done = dispatch()
-                        if done is not None:
-                            return done
-                        continue
-                    if line.startswith(":"):
-                        continue
-                    if line.startswith("event:"):
-                        current_event = line[len("event:") :].strip() or None
-                        continue
-                    if line.startswith("data:"):
-                        data_lines.append(line[len("data:") :].lstrip())
-                        continue
-
-                done = dispatch()
-                if done is not None:
-                    return done
-                if last_seen is not None:
-                    return last_seen
-                raise SeclaiError("Stream ended before receiving a 'done' event.")
+                try:
+                    async for line in response.aiter_lines():
+                        if line == "":
+                            run = dispatch()
+                            if run is not None:
+                                return run
+                        elif line.startswith("event:"):
+                            current_event = line[len("event:") :].strip() or None
+                        elif line.startswith("data:"):
+                            data_lines.append(line[len("data:") :].lstrip())
+                        # Checked after the line is handled, and not inside
+                        # an event, so a `done` read just past the deadline
+                        # is still used.
+                        if (
+                            current_event is None
+                            and not data_lines
+                            and _time.monotonic() - start > timeout_seconds
+                        ):
+                            ending = timed_out
+                            break
+                except httpx.TransportError as e:
+                    if not raise_on_incomplete and not isinstance(
+                        e, httpx.TimeoutException
+                    ):
+                        raise  # as released: the cut surfaces raw
+                    cause = e
+                    ending = (
+                        timed_out
+                        if isinstance(e, httpx.TimeoutException)
+                        else f"The stream was cut ({type(e).__name__}: {e})"
+                    )
         except httpx.TimeoutException as e:
-            if result_seen is not None:
-                return result_seen
-            raise SeclaiError(
-                f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-            ) from e
+            cause = e
+            ending = timed_out
+
+        # An event whose blank line never came still counts.
+        run = dispatch()
+        if run is not None:
+            return run
+        if ending is None and not raise_on_incomplete and last_seen is not None:
+            return last_seen  # as released
+        snapshot = result_seen if result_seen is not None else last_seen
+        outcome = (
+            "the run had reported its result; read it from the error's `run`"
+            if result_seen is not None
+            else "the run had not reported a result"
+        )
+        raise SeclaiStreamingError(
+            f"{ending or 'The stream ended'} before the 'done' event: {outcome}.",
+            run_id=snapshot.run_id if snapshot is not None else None,
+            run=snapshot,
+        ) from cause
 
     async def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -8590,7 +8723,8 @@ class AsyncSeclai(_SeclaiBase):
             The new declaration, as :meth:`get_metadata_keys` returns it.
             ``warnings``, when the API sends it, names agents whose
             ``call_agent`` mapping no longer fits it; it is ``UNSET`` when
-            omitted, so check ``isinstance(result.warnings, Unset)`` first.
+            omitted, so check ``isinstance(result.warnings, Unset)`` first
+            (``from seclai import Unset``).
 
         Raises:
             SeclaiAPIValidationError: If the API returns a validation error.
@@ -10924,7 +11058,9 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Agent run request payload.
             poll_interval: Seconds between poll attempts (default 2.0).
-            include_step_outputs: Include per-step outputs when polling.
+            include_step_outputs: Include per-step outputs when polling. The
+                run is then fetched at least once, since the ``run_agent``
+                response carries no step outputs.
             return_on_result: Return as soon as a snapshot has
                 ``result_reported_at`` set: its ``output`` is the answer, and
                 for an agent whose ``report_success`` is ``on_result`` that can
@@ -10943,6 +11079,10 @@ class AsyncSeclai(_SeclaiBase):
         import asyncio
 
         run = await self.run_agent(agent_id, body)
+        if include_step_outputs:
+            # The run_agent response carries no step outputs, so it must not
+            # end the poll: fetch the run once and check that instead.
+            run = await self.get_agent_run(run.run_id, include_step_outputs=True)
         while run.status not in ("completed", "failed") and not (
             return_on_result and run.result_reported_at
         ):

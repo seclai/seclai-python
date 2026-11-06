@@ -5550,7 +5550,10 @@ class TestSettersAcceptModels:
         client = _sync_client(handler)
         keys = client.get_metadata_keys("a1", "t1")
         keys.metadata_keys[0].required = False
-        client.set_metadata_keys("a1", "t1", keys.metadata_keys)
+        updated = client.set_metadata_keys("a1", "t1", keys.metadata_keys)
+        # The README's check, with `Unset` from the public package.
+        assert {"Unset", "UNSET"} <= set(seclai.__all__)
+        assert not isinstance(updated.warnings, seclai.Unset)
         assert seen["body"] == {
             "metadata_keys": [
                 {"key": "topic", "origin": "custom", "required": False},
@@ -5660,6 +5663,65 @@ class TestRunAgentAndPollReturnOnResult:
         )
         assert run.status == "completed"
         assert len(seen) == 3
+
+    @staticmethod
+    def _terminal_at_once(seen: list[str]) -> Any:
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.append(f"{req.method} {req.url.path}?{req.url.query.decode()}")
+            run = _run("completed", reported=True)
+            if req.method == "GET":
+                run["output"] = "with steps"
+            return _json_response(run)
+
+        return handler
+
+    @pytest.mark.parametrize("return_on_result", [False, True])
+    def test_step_outputs_fetch_the_run_even_if_the_start_is_terminal(
+        self, return_on_result: bool
+    ) -> None:
+        seen: list[str] = []
+        client = _sync_client(self._terminal_at_once(seen))
+        run = client.run_agent_and_poll(
+            "a1",
+            AgentRunRequest(input_="hi"),
+            poll_interval=0,
+            include_step_outputs=True,
+            return_on_result=return_on_result,
+        )
+        assert run.output == "with steps"
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
+
+    def test_without_step_outputs_a_terminal_start_ends_the_poll(self) -> None:
+        seen: list[str] = []
+        client = _sync_client(self._terminal_at_once(seen))
+        run = client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), poll_interval=0
+        )
+        assert run.output == "answer"
+        assert seen == ["POST /agents/a1/runs?"]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("return_on_result", [False, True])
+    async def test_step_outputs_fetch_the_run_even_if_the_start_is_terminal_async(
+        self, return_on_result: bool
+    ) -> None:
+        seen: list[str] = []
+        client = _async_client(self._terminal_at_once(seen))
+        run = await client.run_agent_and_poll(
+            "a1",
+            AgentRunRequest(input_="hi"),
+            poll_interval=0,
+            include_step_outputs=True,
+            return_on_result=return_on_result,
+        )
+        assert run.output == "with steps"
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
 
     @pytest.mark.asyncio
     async def test_returns_on_result_async(self) -> None:
