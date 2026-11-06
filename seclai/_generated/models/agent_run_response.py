@@ -44,11 +44,11 @@ class AgentRunResponse:
             BLOCK verdict during this run.  Deduplicated by policy id.
         flagged_policies (list[GovernancePolicyRefResponse] | Unset): Governance policies that produced at least one
             FLAG verdict during this run.  Deduplicated by policy id.
-        governance_input_status (None | str | Unset): Result of the governance input evaluation: safe, blocked, skipped,
-            or timed_out.
+        governance_input_status (None | str | Unset): Result of the governance input evaluation: pending, safe, blocked,
+            skipped, timed_out, or error.
         governance_input_wait_ms (int | None | Unset): Milliseconds spent waiting for governance input evaluation.
-        hitl_wait_ms (int | None | Unset): Cumulative milliseconds the run was parked waiting for a human decision on a
-            human_in_the_loop step.  Subtracted from active duration in run-detail and duration-stats responses.
+        hitl_wait_ms (int | None | Unset): Sum over the run's human_in_the_loop steps of each one's wait for a decision,
+            in milliseconds.  Waits that overlap are each counted in full, so the sum can exceed the run's duration.
         input_scan_status (None | str | Unset): Result of the prompt injection scan: safe, unsafe, skipped, timed_out,
             or error.
         output_content_type (None | str | Unset): MIME type of `output` — mirrors the terminal step's
@@ -56,6 +56,12 @@ class AgentRunResponse:
             Below `Seclai-Version: 2026-09-30` an output that has files reads `application/vnd.seclai.manifest+json` (see
             `output`); the same files are in `attachments` on every version, each with a `download_url`.  Null on runs that
             produced no terminal output or that pre-date this column.
+        result_reported_at (datetime.datetime | None | Unset): When the run reported success: for an agent whose
+            `report_success` is `on_result`, once its result step published, or once its run started if it has no result
+            step; else when the run completed.  From then on `output` is the run's answer and never changes; stop polling
+            here if you only need the answer.  `status` still follows every step, so a run can report success and later
+            fail.  Null until the run reports, for a run that failed before reporting, and for runs that ended before this
+            field existed.
         scan_wait_ms (int | None | Unset): Milliseconds spent waiting for prompt injection scan.
         steps (list[AgentRunStepResponse] | None | Unset): Step outputs and per-step timing/credits. Only included when
             requested.
@@ -65,9 +71,8 @@ class AgentRunResponse:
             `error` may be null as well, so a failed tool call can report its status without a message.  Branch on this
             rather than on a null `output`: a run that genuinely produced nothing looks identical.  Status, timing and
             credits remain accurate.
-        wait_ms (int | None | Unset): Cumulative milliseconds the run was parked on standard-mode wait steps.
-            Subtracted from active duration in run-detail and duration-stats responses, exactly like hitl_wait_ms.  Priority
-            waits block inline and are not counted here.
+        wait_ms (int | None | Unset): Sum over the run's standard-mode wait steps of each one's wait, in milliseconds.
+            Waits that overlap are each counted in full.  Priority waits block inline and are not counted here.
     """
 
     attempts: list[AgentRunAttemptResponse]
@@ -86,6 +91,7 @@ class AgentRunResponse:
     hitl_wait_ms: int | None | Unset = UNSET
     input_scan_status: None | str | Unset = UNSET
     output_content_type: None | str | Unset = UNSET
+    result_reported_at: datetime.datetime | None | Unset = UNSET
     scan_wait_ms: int | None | Unset = UNSET
     steps: list[AgentRunStepResponse] | None | Unset = UNSET
     trace_purged_at: datetime.datetime | None | Unset = UNSET
@@ -166,6 +172,14 @@ class AgentRunResponse:
         else:
             output_content_type = self.output_content_type
 
+        result_reported_at: None | str | Unset
+        if isinstance(self.result_reported_at, Unset):
+            result_reported_at = UNSET
+        elif isinstance(self.result_reported_at, datetime.datetime):
+            result_reported_at = self.result_reported_at.isoformat()
+        else:
+            result_reported_at = self.result_reported_at
+
         scan_wait_ms: int | None | Unset
         if isinstance(self.scan_wait_ms, Unset):
             scan_wait_ms = UNSET
@@ -228,6 +242,8 @@ class AgentRunResponse:
             field_dict["input_scan_status"] = input_scan_status
         if output_content_type is not UNSET:
             field_dict["output_content_type"] = output_content_type
+        if result_reported_at is not UNSET:
+            field_dict["result_reported_at"] = result_reported_at
         if scan_wait_ms is not UNSET:
             field_dict["scan_wait_ms"] = scan_wait_ms
         if steps is not UNSET:
@@ -365,6 +381,25 @@ class AgentRunResponse:
             d.pop("output_content_type", UNSET)
         )
 
+        def _parse_result_reported_at(data: object) -> datetime.datetime | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                result_reported_at_type_0 = isoparse(data)
+
+                return result_reported_at_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None | Unset, data)
+
+        result_reported_at = _parse_result_reported_at(
+            d.pop("result_reported_at", UNSET)
+        )
+
         def _parse_scan_wait_ms(data: object) -> int | None | Unset:
             if data is None:
                 return data
@@ -441,6 +476,7 @@ class AgentRunResponse:
             hitl_wait_ms=hitl_wait_ms,
             input_scan_status=input_scan_status,
             output_content_type=output_content_type,
+            result_reported_at=result_reported_at,
             scan_wait_ms=scan_wait_ms,
             steps=steps,
             trace_purged_at=trace_purged_at,

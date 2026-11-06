@@ -22,7 +22,8 @@ T = TypeVar("T", bound="CreateEvaluationCriteriaRequest")
 class CreateEvaluationCriteriaRequest:
     """Request body for creating an evaluation criteria.
 
-    The evaluation mode, retry settings, and sample frequency are set at the
+    step_id names the display_result or streaming_result step to score. The
+    evaluation mode and sample frequency are set at the
     agent level, not per-criteria.
 
         Attributes:

@@ -6,8 +6,10 @@ query parameters, and JSON body are sent via ``MockTransport``.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import pathlib
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -19,12 +21,16 @@ from seclai import AgentRunStreamRequest, AsyncSeclai, Seclai
 from seclai import versions as seclai_versions
 from seclai._generated.models import (
     AcceptedAttachmentsResponse,
+    AgentRunRequest,
     ContentAttachmentDetailResponse,
     ContentAttachmentsListResponse,
     ContentEmbeddingsListResponse,
     EmailSourceRejectionListResponse,
     EvaluationStatus,
     InsufficientCreditsResponse,
+    KnowledgeBaseMetadataKeyStats,
+    MetadataKeysResponse,
+    MetadataOrigin,
     NonManualEvaluationSummaryResponse,
 )
 from seclai._generated.models import (
@@ -4841,10 +4847,10 @@ _INSUFFICIENT_CREDITS_402 = {
 }
 
 
-class TestLatestApiVersion20261028:
-    def test_latest_is_2026_10_28(self) -> None:
+class TestLatestApiVersion20261104:
+    def test_latest_is_2026_11_04(self) -> None:
         assert (
-            seclai_versions.LATEST_API_VERSION is seclai_versions.ApiVersion.V2026_10_28
+            seclai_versions.LATEST_API_VERSION is seclai_versions.ApiVersion.V2026_11_04
         )
 
     def test_latest_is_sent_as_the_header(self) -> None:
@@ -4856,7 +4862,7 @@ class TestLatestApiVersion20261028:
 
         client = _sync_client(handler, api_version=seclai_versions.LATEST_API_VERSION)
         client.list_agents()
-        assert seen["version"] == "2026-10-28"
+        assert seen["version"] == "2026-11-04"
 
 
 class TestInsufficientCredits402:
@@ -4983,6 +4989,7 @@ _SLACK_CONFIG = {
     "trigger_id": "t1",
     "agent_id": "a1",
     "mcp_client_id": "m1",
+    "alias": "support-bot",
     "slack_team_id": "T1",
     "form": [],
     "scope": "selected_channels",
@@ -5013,7 +5020,12 @@ class TestAgentSlackTriggers:
             return _json_response(_SLACK_CONFIG)
 
         client = _sync_client(handler)
-        body = {"channel_ids": ["C1"], "visibility": "private", "max_turns": 5}
+        body = {
+            "alias": "support-bot",
+            "channel_ids": ["C1"],
+            "visibility": "private",
+            "max_turns": 5,
+        }
         result = client.set_slack_trigger_config("a1", "t1", body)
         assert seen["method"] == "PUT"
         assert seen["path"] == "/agents/a1/triggers/t1/slack-config"
@@ -5036,6 +5048,170 @@ class TestAgentSlackTriggers:
         assert seen["path"] == "/agents/a1/triggers/t1/slack-config"
         assert seen["body"] == {"allow_dms": True}
         assert result == _SLACK_CONFIG
+
+    def test_deprecated_input_is_still_sent(self) -> None:
+        # `input` was dropped from the API, which now ignores it. The method
+        # passes the body through untouched, so a caller that still sets it
+        # keeps working rather than failing client-side.
+        seen: dict[str, Any] = {}
+        client = _sync_client(_recording_handler(seen, _SLACK_CONFIG))
+        client.set_slack_trigger_config("a1", "t1", {"input": "{{metadata.q}}"})
+        assert seen["body"] == {"input": "{{metadata.q}}"}
+
+
+# ---------------------------------------------------------------------------
+# 2026-11-04 sync: trigger metadata keys, knowledge-base metadata-key stats
+# ---------------------------------------------------------------------------
+
+_METADATA_KEYS = [
+    {"key": "topic", "origin": "custom", "required": True},
+    {"key": "trigger_type", "origin": "system", "required": False},
+]
+
+_METADATA_KEYS_RESPONSE = {
+    "agent_id": "0b6f2a4e-3c1d-4e5f-8a9b-1c2d3e4f5a6b",
+    "trigger_id": "7d8e9f0a-1b2c-4d3e-9f4a-5b6c7d8e9f0a",
+    "metadata_keys": _METADATA_KEYS,
+    "declarable_keys": [
+        {"key": "trigger_type", "origin": "system", "always_present": True}
+    ],
+    "accepts_any_source_key": False,
+    "warnings": [],
+}
+
+_KB_METADATA_KEY_STATS = {
+    "knowledge_base_id": "kb1",
+    "windows": [
+        {
+            "window": "all_time",
+            "since": None,
+            "total_items": 12,
+            "keys": [
+                {
+                    "key": "author",
+                    "items": 10,
+                    "distinct_values": 2,
+                    "top_values": [{"value": "Ada", "items": 7}],
+                }
+            ],
+        },
+        {
+            "window": "last_7_days",
+            "since": "2026-10-29T00:00:00+00:00",
+            "total_items": 0,
+            "keys": [],
+        },
+    ],
+}
+
+_METADATA_KEY_CALLS: list[
+    tuple[str, tuple[Any, ...], str, str, Any, dict[str, Any], type[Any]]
+] = [
+    (
+        "get_metadata_keys",
+        ("a1", "t1"),
+        "GET",
+        "/agents/a1/triggers/t1/metadata-keys",
+        None,
+        _METADATA_KEYS_RESPONSE,
+        MetadataKeysResponse,
+    ),
+    (
+        "set_metadata_keys",
+        ("a1", "t1", _METADATA_KEYS),
+        "PUT",
+        "/agents/a1/triggers/t1/metadata-keys",
+        {"metadata_keys": _METADATA_KEYS},
+        _METADATA_KEYS_RESPONSE,
+        MetadataKeysResponse,
+    ),
+    (
+        # An empty declaration is sent as an empty list, not dropped.
+        "set_metadata_keys",
+        ("a1", "t1", []),
+        "PUT",
+        "/agents/a1/triggers/t1/metadata-keys",
+        {"metadata_keys": []},
+        {**_METADATA_KEYS_RESPONSE, "metadata_keys": []},
+        MetadataKeysResponse,
+    ),
+    (
+        "get_knowledge_base_metadata_key_stats",
+        ("kb1",),
+        "GET",
+        "/knowledge_bases/kb1/metadata-key-stats",
+        None,
+        _KB_METADATA_KEY_STATS,
+        KnowledgeBaseMetadataKeyStats,
+    ),
+]
+
+
+class TestMetadataKeys:
+    @pytest.mark.parametrize(
+        ("name", "args", "verb", "path", "body", "response", "model"),
+        _METADATA_KEY_CALLS,
+    )
+    def test_request(
+        self,
+        name: str,
+        args: tuple[Any, ...],
+        verb: str,
+        path: str,
+        body: Any,
+        response: dict[str, Any],
+        model: type[Any],
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _sync_client(_recording_handler(seen, response))
+        result = getattr(client, name)(*args)
+        assert seen == {"method": verb, "path": path, "query": [], "body": body}
+        assert isinstance(result, model)
+        assert result.to_dict() == response
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("name", "args", "verb", "path", "body", "response", "model"),
+        _METADATA_KEY_CALLS,
+    )
+    async def test_request_async(
+        self,
+        name: str,
+        args: tuple[Any, ...],
+        verb: str,
+        path: str,
+        body: Any,
+        response: dict[str, Any],
+        model: type[Any],
+    ) -> None:
+        seen: dict[str, Any] = {}
+        client = _async_client(_recording_handler(seen, response))
+        result = await getattr(client, name)(*args)
+        assert seen == {"method": verb, "path": path, "query": [], "body": body}
+        assert isinstance(result, model)
+        assert result.to_dict() == response
+
+    def test_typed_fields(self) -> None:
+        client = _sync_client(lambda req: _json_response(_METADATA_KEYS_RESPONSE))
+        keys = client.get_metadata_keys("a1", "t1")
+        assert keys.metadata_keys[0].key == "topic"
+        assert keys.metadata_keys[0].origin == MetadataOrigin.CUSTOM
+        assert keys.metadata_keys[0].required is True
+        assert keys.declarable_keys[0].always_present is True
+
+        client = _sync_client(lambda req: _json_response(_KB_METADATA_KEY_STATS))
+        stats = client.get_knowledge_base_metadata_key_stats("kb1")
+        assert stats.windows[0].since is None
+        assert stats.windows[0].keys[0].top_values[0].value == "Ada"
+        assert stats.windows[1].since is not None
+
+    @pytest.mark.asyncio
+    async def test_async_undecodable_body_raises_seclai_error(self) -> None:
+        from seclai import SeclaiError
+
+        client = _async_client(lambda req: _json_response({"agent_id": "a1"}))
+        with pytest.raises(SeclaiError):
+            await client.set_metadata_keys("a1", "t1", [])
 
 
 # Each declared query filter: (method, positional args, kwargs, path, the query
@@ -5354,3 +5530,255 @@ class TestDeclaredQueryFilters:
         await client.get_non_manual_evaluation_summary()
         assert seen["path"] == "/agents/evaluation-results/non-manual-summary"
         assert dict(seen["query"]) == {}
+
+
+# ---------------------------------------------------------------------------
+# Read-modify-write: the setters take the models their getters return
+# ---------------------------------------------------------------------------
+
+
+class TestSettersAcceptModels:
+    def test_set_metadata_keys_round_trip(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            if req.method == "GET":
+                return _json_response(_METADATA_KEYS_RESPONSE)
+            response: httpx.Response = _recording_handler(
+                seen, _METADATA_KEYS_RESPONSE
+            )(req)
+            return response
+
+        client = _sync_client(handler)
+        keys = client.get_metadata_keys("a1", "t1")
+        keys.metadata_keys[0].required = False
+        updated = client.set_metadata_keys("a1", "t1", keys.metadata_keys)
+        # The README's check, with `Unset` from the public package.
+        assert {"Unset", "UNSET"} <= set(seclai.__all__)
+        assert not isinstance(updated.warnings, seclai.Unset)
+        assert seen["body"] == {
+            "metadata_keys": [
+                {"key": "topic", "origin": "custom", "required": False},
+                {"key": "trigger_type", "origin": "system", "required": False},
+            ]
+        }
+
+    @pytest.mark.asyncio
+    async def test_set_metadata_keys_round_trip_async(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            if req.method == "GET":
+                return _json_response(_METADATA_KEYS_RESPONSE)
+            response: httpx.Response = _recording_handler(
+                seen, _METADATA_KEYS_RESPONSE
+            )(req)
+            return response
+
+        client = _async_client(handler)
+        keys = await client.get_metadata_keys("a1", "t1")
+        await client.set_metadata_keys("a1", "t1", keys.metadata_keys)
+        assert seen["body"] == {"metadata_keys": _METADATA_KEYS}
+
+    def test_set_accepted_attachments_round_trip(self) -> None:
+        response = {
+            "agent_id": "0b6f2a4e-3c1d-4e5f-8a9b-1c2d3e4f5a6b",
+            "trigger_id": "7d8e9f0a-1b2c-4d3e-9f4a-5b6c7d8e9f0a",
+            "accepted_attachments": [{"name": "invoice", "min": 1}],
+        }
+        seen: dict[str, Any] = {}
+        client = _sync_client(_recording_handler(seen, response))
+        first = client.set_accepted_attachments("a1", "t1", [{"name": "invoice"}])
+        client.set_accepted_attachments("a1", "t1", first.accepted_attachments)
+        assert seen["body"] == {
+            "accepted_attachments": [
+                first.accepted_attachments[0].to_dict(),
+            ]
+        }
+        assert seen["body"]["accepted_attachments"][0]["name"] == "invoice"
+
+    @pytest.mark.asyncio
+    async def test_set_accepted_attachments_round_trip_async(self) -> None:
+        response = {
+            "agent_id": "0b6f2a4e-3c1d-4e5f-8a9b-1c2d3e4f5a6b",
+            "trigger_id": "7d8e9f0a-1b2c-4d3e-9f4a-5b6c7d8e9f0a",
+            "accepted_attachments": [{"name": "invoice", "min": 1}],
+        }
+        seen: dict[str, Any] = {}
+        client = _async_client(_recording_handler(seen, response))
+        first = await client.set_accepted_attachments("a1", "t1", [{"name": "invoice"}])
+        await client.set_accepted_attachments("a1", "t1", first.accepted_attachments)
+        assert seen["body"]["accepted_attachments"][0]["name"] == "invoice"
+
+
+# ---------------------------------------------------------------------------
+# run_agent_and_poll(return_on_result=...)
+# ---------------------------------------------------------------------------
+
+
+def _run(status: str, *, reported: bool) -> dict[str, Any]:
+    return {
+        "attempts": [],
+        "credits": None,
+        "error_count": 0,
+        "input": None,
+        "output": "answer" if reported else None,
+        "priority": False,
+        "run_id": "run_1",
+        "status": status,
+        "result_reported_at": "2026-11-05T00:00:00Z" if reported else None,
+    }
+
+
+def _poll_handler(polls: list[dict[str, Any]], seen: list[str]) -> Any:
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(f"{req.method} {req.url.path}")
+        if req.method == "POST":
+            return _json_response(_run("pending", reported=False))
+        return _json_response(polls.pop(0))
+
+    return handler
+
+
+_POLLS = [
+    _run("processing", reported=True),
+    _run("completed", reported=True),
+]
+
+
+class TestRunAgentAndPollReturnOnResult:
+    def test_returns_on_result(self) -> None:
+        seen: list[str] = []
+        client = _sync_client(_poll_handler(list(_POLLS), seen))
+        run = client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), poll_interval=0, return_on_result=True
+        )
+        assert run.status == "processing"
+        assert run.output == "answer"
+        assert seen == ["POST /agents/a1/runs", "GET /agents/runs/run_1"]
+
+    def test_default_waits_for_terminal_status(self) -> None:
+        seen: list[str] = []
+        client = _sync_client(_poll_handler(list(_POLLS), seen))
+        run = client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), poll_interval=0
+        )
+        assert run.status == "completed"
+        assert len(seen) == 3
+
+    @staticmethod
+    def _terminal_at_once(seen: list[str]) -> Any:
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.append(f"{req.method} {req.url.path}?{req.url.query.decode()}")
+            run = _run("completed", reported=True)
+            if req.method == "GET":
+                run["output"] = "with steps"
+            return _json_response(run)
+
+        return handler
+
+    @pytest.mark.parametrize("return_on_result", [False, True])
+    def test_step_outputs_fetch_the_run_even_if_the_start_is_terminal(
+        self, return_on_result: bool
+    ) -> None:
+        seen: list[str] = []
+        client = _sync_client(self._terminal_at_once(seen))
+        run = client.run_agent_and_poll(
+            "a1",
+            AgentRunRequest(input_="hi"),
+            poll_interval=0,
+            include_step_outputs=True,
+            return_on_result=return_on_result,
+        )
+        assert run.output == "with steps"
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
+
+    def test_without_step_outputs_a_terminal_start_ends_the_poll(self) -> None:
+        seen: list[str] = []
+        client = _sync_client(self._terminal_at_once(seen))
+        run = client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), poll_interval=0
+        )
+        assert run.output == "answer"
+        assert seen == ["POST /agents/a1/runs?"]
+
+    @staticmethod
+    def _pending_start(seen: list[str]) -> Any:
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.append(f"{req.method} {req.url.path}?{req.url.query.decode()}")
+            if req.method == "POST":
+                return _json_response(_run("pending", reported=False))
+            return _json_response(_run("completed", reported=True))
+
+        return handler
+
+    def test_step_outputs_add_no_fetch_when_the_start_is_pending(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: list[str] = []
+        monkeypatch.setattr(time, "sleep", lambda s: seen.append("sleep"))
+        client = _sync_client(self._pending_start(seen))
+        run = client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), include_step_outputs=True
+        )
+        assert run.status == "completed"
+        # The loop's own fetch, after the first interval; none before it.
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "sleep",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_step_outputs_add_no_fetch_when_the_start_is_pending_async(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: list[str] = []
+
+        async def fake_sleep(seconds: float) -> None:
+            seen.append("sleep")
+
+        monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+        client = _async_client(self._pending_start(seen))
+        run = await client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), include_step_outputs=True
+        )
+        assert run.status == "completed"
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "sleep",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("return_on_result", [False, True])
+    async def test_step_outputs_fetch_the_run_even_if_the_start_is_terminal_async(
+        self, return_on_result: bool
+    ) -> None:
+        seen: list[str] = []
+        client = _async_client(self._terminal_at_once(seen))
+        run = await client.run_agent_and_poll(
+            "a1",
+            AgentRunRequest(input_="hi"),
+            poll_interval=0,
+            include_step_outputs=True,
+            return_on_result=return_on_result,
+        )
+        assert run.output == "with steps"
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_returns_on_result_async(self) -> None:
+        seen: list[str] = []
+        client = _async_client(_poll_handler(list(_POLLS), seen))
+        run = await client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), poll_interval=0, return_on_result=True
+        )
+        assert run.status == "processing"
+        assert seen == ["POST /agents/a1/runs", "GET /agents/runs/run_1"]

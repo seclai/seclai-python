@@ -36,24 +36,24 @@ class AgentSummaryResponse:
         disabled (bool | Unset): Whether the agent is paused (disabled). Default: False.
         disabled_at (None | str | Unset): ISO 8601 timestamp the agent was paused.
         disabled_reason (None | str | Unset): Why the agent is paused: 'manual' or 'email_overload'.
-        evaluation_mode (str | Unset): Evaluation mode: output_expectation, eval_and_retry, or sample_and_flag. Default:
-            'eval_and_retry'.
+        evaluation_mode (str | Unset): Evaluation mode: output_expectation or sample_and_flag. Default:
+            'sample_and_flag'.
         import_warnings (list[ImportSkipResponse] | None | Unset): One entry per item dropped or substituted during
             import. Present only on endpoints that accept agent_definition; null on non-import calls; [] when the import had
             no skips.
         max_credits_per_period (float | None | Unset): Credit limit per billing period; null when none.
         max_credits_per_run (float | None | Unset): Credit limit per run; null when none.
-        max_retries (int | Unset): Max retries for eval_and_retry mode. Default: 3.
+        max_retries (int | Unset): Deprecated: has no effect. Default: 3.
         max_runs_per_day (int | None | Unset): Runs per day limit; null when none.
         max_runs_per_hour (int | None | Unset): Runs per hour limit; null when none.
         max_runs_total (int | None | Unset): Limit on runs in total; null when none.
         prompt_model_auto_rollback_enabled (bool | Unset): Whether automatic rollback is enabled for upgraded models.
             Default: False.
         prompt_model_auto_rollback_triggers (list[str] | None | Unset): Failure signals that trigger rollback. Defaults
-            to agent_eval_fail, governance_block, agent_run_failed when null.
+            to governance_block, agent_run_failed when null.
         prompt_model_auto_upgrade_strategy (str | Unset): Auto-upgrade strategy: none, early_adopter, middle_of_road,
             cautious_adopter. Default: 'none'.
-        retry_on_failure (bool | Unset): Whether to retry on evaluation failure. Default: True.
+        retry_on_failure (bool | Unset): Deprecated: has no effect. Default: True.
         sampling_config (AgentSummaryResponseSamplingConfigType0 | None | Unset): Sampling configuration for
             sample_and_flag mode.
         solution_id (None | str | Unset): On a create from an `agent_template` that created resources: the solution
@@ -73,7 +73,7 @@ class AgentSummaryResponse:
     disabled: bool | Unset = False
     disabled_at: None | str | Unset = UNSET
     disabled_reason: None | str | Unset = UNSET
-    evaluation_mode: str | Unset = "eval_and_retry"
+    evaluation_mode: str | Unset = "sample_and_flag"
     import_warnings: list[ImportSkipResponse] | None | Unset = UNSET
     max_credits_per_period: float | None | Unset = UNSET
     max_credits_per_run: float | None | Unset = UNSET

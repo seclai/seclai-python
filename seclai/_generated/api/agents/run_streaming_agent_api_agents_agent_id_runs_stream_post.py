@@ -114,6 +114,8 @@ def sync_detailed(
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
     reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
     Reasoning is never part of `output`.
+    - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
+    is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -127,12 +129,9 @@ def sync_detailed(
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
-    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
-    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
-    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
-    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
-    the streamed text is already the run's output when the stream ends, so a run that FAILED its
-    validation step still carries that raw text in `output`.
+    - `stream_token` events carry the model's raw output: render them live, but take the answer from the
+    `result` event. `done.status` says whether the whole run succeeded, which can still fail after its
+    result.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -194,6 +193,8 @@ def sync(
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
     reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
     Reasoning is never part of `output`.
+    - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
+    is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -207,12 +208,9 @@ def sync(
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
-    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
-    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
-    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
-    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
-    the streamed text is already the run's output when the stream ends, so a run that FAILED its
-    validation step still carries that raw text in `output`.
+    - `stream_token` events carry the model's raw output: render them live, but take the answer from the
+    `result` event. `done.status` says whether the whole run succeeded, which can still fail after its
+    result.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -265,6 +263,8 @@ async def asyncio_detailed(
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
     reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
     Reasoning is never part of `output`.
+    - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
+    is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -278,12 +278,9 @@ async def asyncio_detailed(
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
-    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
-    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
-    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
-    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
-    the streamed text is already the run's output when the stream ends, so a run that FAILED its
-    validation step still carries that raw text in `output`.
+    - `stream_token` events carry the model's raw output: render them live, but take the answer from the
+    `result` event. `done.status` says whether the whole run succeeded, which can still fail after its
+    result.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's
@@ -343,6 +340,8 @@ async def asyncio(
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
     reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
     Reasoning is never part of `output`.
+    - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
+    is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
     available).
 
@@ -356,12 +355,9 @@ async def asyncio(
     - Keep the connection open and handle keepalive comments.
     - On `timeout` or `error`, the payload includes `run_id` so clients can resume by polling `GET
     /agents/runs/{run_id}`.
-    - `stream_token` events carry the model's raw output. When the agent pairs `streaming_result` with a
-    sibling `extract_content`/`display_result` branch, that branch's `display_result` takes precedence
-    over the stream, so the `done` snapshot's `output` is the validated payload and the tokens are a
-    progress channel — render tokens live, but read the result from `done`. Check `done.status` first:
-    the streamed text is already the run's output when the stream ends, so a run that FAILED its
-    validation step still carries that raw text in `output`.
+    - `stream_token` events carry the model's raw output: render them live, but take the answer from the
+    `result` event. `done.status` says whether the whole run succeeded, which can still fail after its
+    result.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. All resources are scoped to the caller's

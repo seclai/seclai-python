@@ -42,7 +42,14 @@ import logging
 import mimetypes
 import os
 import time
-from collections.abc import AsyncGenerator, Awaitable, Callable, Generator, Mapping
+from collections.abc import (
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Generator,
+    Mapping,
+    Sequence,
+)
 from dataclasses import dataclass
 from http import HTTPStatus
 from io import BytesIO
@@ -62,6 +69,7 @@ from typing import (
 import httpx
 
 from seclai._generated.client import Client as GeneratedClient
+from seclai._generated.models.accepted_attachment_slot import AcceptedAttachmentSlot
 from seclai._generated.models.accepted_attachments_response import (
     AcceptedAttachmentsResponse,
 )
@@ -83,6 +91,11 @@ from seclai._generated.models.email_source_rejection_list_response import (
 )
 from seclai._generated.models.file_upload_response import FileUploadResponse
 from seclai._generated.models.http_validation_error import HTTPValidationError
+from seclai._generated.models.knowledge_base_metadata_key_stats import (
+    KnowledgeBaseMetadataKeyStats,
+)
+from seclai._generated.models.metadata_key_declaration import MetadataKeyDeclaration
+from seclai._generated.models.metadata_keys_response import MetadataKeysResponse
 from seclai._generated.models.source_list_response import SourceListResponse
 from seclai._generated.types import UNSET, Unset
 from seclai._generated.types import Response as OpenAPIResponse
@@ -418,16 +431,31 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
 class SeclaiStreamingError(SeclaiError):
     """Raised when an error event is received during a streaming agent run.
 
+    ``run_streaming_agent_and_wait`` also raises it when the run did not
+    finish: on its timeout, and with ``raise_on_incomplete`` when the stream
+    ends or is cut before the ``done`` event. ``run`` then holds the latest
+    snapshot.
+
     Attributes:
         message: Human-readable error message from the stream.
         run_id: Agent run identifier, if available.
+        run: The latest run snapshot received before the stream stopped: the
+            ``result`` one if it arrived (its ``output`` is the answer), else
+            the ``init`` one, else ``None``.
     """
 
-    def __init__(self, message: str, *, run_id: str | None = None) -> None:
-        """Initialize with stream error message and optional run ID."""
+    def __init__(
+        self,
+        message: str,
+        *,
+        run_id: str | None = None,
+        run: AgentRunResponse | None = None,
+    ) -> None:
+        """Initialize with stream error message, optional run ID and snapshot."""
         super().__init__(message)
         self.message = message
         self.run_id = run_id
+        self.run = run
 
 
 def _guess_mime_type(file_name: str | None) -> str | None:
@@ -1208,30 +1236,61 @@ class Seclai(_SeclaiBase):
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
+        return_on_result: bool = False,
+        raise_on_incomplete: bool = False,
     ) -> AgentRunResponse:
         """Run an agent via SSE streaming and block until completion.
 
-        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
-        The method returns when an `event: done` message is received. Every event
-        but `init` and `done` is discarded, so `include_reasoning` is removed
-        from the body before it is sent: reasoning events would only add
-        traffic and count against `timeout`. Use `run_streaming_agent` to
-        receive `stream_reasoning` events.
+        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent
+        Events (SSE). The method returns the run from the ``done`` event, or,
+        with ``return_on_result``, the snapshot from the ``result`` event.
+
+        By default, when the stream ends before ``done`` it returns the latest
+        snapshot, which may be a run that has not finished: check ``status``
+        and ``result_reported_at``. A connection cut mid-stream raises the
+        ``httpx`` error. Pass ``raise_on_incomplete=True`` (recommended; the
+        default in the next major version) to raise
+        :class:`SeclaiStreamingError` instead, with the latest snapshot in
+        ``run`` (the ``result`` one if it arrived, so its ``output`` is the
+        answer). On ``timeout`` it raises :class:`SeclaiStreamingError` with
+        ``run`` either way.
+
+        Every event but ``init``, ``result`` and ``done`` is discarded, so
+        ``include_reasoning`` is removed from the body before it is sent:
+        reasoning events would only add traffic and count against
+        ``timeout``. Use ``run_streaming_agent`` to receive
+        ``stream_reasoning`` events.
 
         Args:
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
-            timeout: Max time (seconds) to wait for the final result (client-side). Defaults to this
-                client's configured timeout.
+            timeout: Max time (seconds) to wait for the final result
+                (client-side). Defaults to this client's configured timeout.
             headers: Optional extra headers for this request.
+            return_on_result: Return the ``result`` snapshot as soon as it
+                arrives, without waiting for ``done``. That run may still be
+                in progress: its ``status`` may not be terminal and it can
+                still fail, so check ``result_reported_at``, not ``status``.
+            raise_on_incomplete: Raise :class:`SeclaiStreamingError` when the
+                stream ends or is cut before ``done``, rather than returning
+                the latest snapshot or letting the ``httpx`` error through.
+                Becomes the default in the next major version.
 
         Returns:
-            The final agent run payload from the `done` event.
+            The run from the ``done`` event, or with ``return_on_result`` the
+            ``result`` snapshot. Without ``raise_on_incomplete``, the latest
+            snapshot when the stream ends before ``done``.
 
         Raises:
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
-            SeclaiError: If the stream ends early or times out.
+            SeclaiStreamingError: If ``timeout`` passes before the run
+                finished, or the stream ends with no snapshot; with
+                ``raise_on_incomplete``, also if the stream ends or is cut
+                before ``done``. ``run`` holds the latest snapshot, or
+                ``None`` if none arrived.
+            httpx.TransportError: Without ``raise_on_incomplete``, if the
+                connection is cut mid-stream.
         """
         import json as _json
         import time as _time
@@ -1246,8 +1305,42 @@ class Seclai(_SeclaiBase):
         _setdefault_header(merged_headers, "accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
+        timed_out = f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete"
         start = _time.monotonic()
+        current_event: str | None = None
+        data_lines: list[str] = []
+        last_seen: AgentRunResponse | None = None
+        result_seen: AgentRunResponse | None = None
 
+        def dispatch() -> AgentRunResponse | None:
+            """Handle the buffered event; return the run to return, if any."""
+            nonlocal current_event, data_lines, last_seen, result_seen
+            if current_event is None and not data_lines:
+                return None
+            data = "\n".join(data_lines)
+            evt = current_event
+            current_event = None
+            data_lines = []
+            if not data:
+                return None
+            if evt not in {"init", "result", "done"}:
+                return None
+            try:
+                parsed_dict = cast(dict[str, Any], _json.loads(data))
+                parsed = AgentRunResponse.from_dict(parsed_dict)
+            except Exception:
+                return None
+            last_seen = parsed
+            if evt == "result":
+                result_seen = parsed
+                if return_on_result:
+                    return parsed
+            if evt == "done":
+                return parsed
+            return None
+
+        ending: str | None = None  # None: the stream ended
+        cause: httpx.TransportError | None = None
         try:
             with self._client.stream(
                 "POST",
@@ -1259,63 +1352,54 @@ class Seclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so the error carries
                 # its text and a 422 its field-level detail.
                 _raise_for_unread_status(response)
-
-                current_event: str | None = None
-                data_lines: list[str] = []
-                last_seen: AgentRunResponse | None = None
-
-                def dispatch() -> AgentRunResponse | None:
-                    nonlocal current_event, data_lines, last_seen
-                    if current_event is None and not data_lines:
-                        return None
-                    data = "\n".join(data_lines)
-                    evt = current_event
-                    current_event = None
-                    data_lines = []
-                    if not data:
-                        return None
-                    if evt not in {"init", "done"}:
-                        return None
-                    try:
-                        parsed_dict = cast(dict[str, Any], _json.loads(data))
-                        parsed = AgentRunResponse.from_dict(parsed_dict)
-                        last_seen = parsed
-                        if evt == "done":
-                            return parsed
-                    except Exception:
-                        return None
-                    return None
-
-                for line in response.iter_lines():
-                    if _time.monotonic() - start > timeout_seconds:
-                        raise SeclaiError(
-                            f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-                        )
-
-                    if line == "":
-                        done = dispatch()
-                        if done is not None:
-                            return done
-                        continue
-                    if line.startswith(":"):
-                        continue
-                    if line.startswith("event:"):
-                        current_event = line[len("event:") :].strip() or None
-                        continue
-                    if line.startswith("data:"):
-                        data_lines.append(line[len("data:") :].lstrip())
-                        continue
-
-                done = dispatch()
-                if done is not None:
-                    return done
-                if last_seen is not None:
-                    return last_seen
-                raise SeclaiError("Stream ended before receiving a 'done' event.")
+                try:
+                    for line in response.iter_lines():
+                        if line == "":
+                            run = dispatch()
+                            if run is not None:
+                                return run
+                        elif line.startswith("event:"):
+                            current_event = line[len("event:") :].strip() or None
+                        elif line.startswith("data:"):
+                            data_lines.append(line[len("data:") :].lstrip())
+                        # Checked after every line is handled; the event
+                        # buffered so far is dispatched below, so a `done`
+                        # whose lines were read by the deadline still counts.
+                        if _time.monotonic() - start > timeout_seconds:
+                            ending = timed_out
+                            break
+                except httpx.TransportError as e:
+                    if not raise_on_incomplete and not isinstance(
+                        e, httpx.TimeoutException
+                    ):
+                        raise  # as released: the cut surfaces raw
+                    cause = e
+                    ending = (
+                        timed_out
+                        if isinstance(e, httpx.TimeoutException)
+                        else f"The stream was cut ({type(e).__name__}: {e})"
+                    )
         except httpx.TimeoutException as e:
-            raise SeclaiError(
-                f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-            ) from e
+            cause = e
+            ending = timed_out
+
+        # An event whose blank line never came (EOF, timeout) still counts.
+        run = dispatch()
+        if run is not None:
+            return run
+        if ending is None and not raise_on_incomplete and last_seen is not None:
+            return last_seen  # as released
+        snapshot = result_seen if result_seen is not None else last_seen
+        outcome = (
+            "the run had reported its result; read it from the error's `run`"
+            if result_seen is not None
+            else "the run had not reported a result"
+        )
+        raise SeclaiStreamingError(
+            f"{ending or 'The stream ended'} before the 'done' event: {outcome}.",
+            run_id=snapshot.run_id if snapshot is not None else None,
+            run=snapshot,
+        ) from cause
 
     def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -3391,10 +3475,18 @@ class Seclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             trigger_id: Trigger identifier.
-            body: Fields to set (mcp_client_id, form, scope, channel_ids,
-                allow_dms, activation, visibility, start_without_form, input,
-                turns_enabled, turns_anyone, max_turns, include_invoker_email,
-                notify_failure_after_answer). Omitted fields are unchanged.
+            body: Fields to set (mcp_client_id, alias, form, scope,
+                channel_ids, allow_dms, activation, visibility,
+                start_without_form, turns_enabled, turns_anyone, max_turns,
+                include_invoker_email, notify_failure_after_answer). Omitted
+                fields are unchanged. ``alias`` is the name people type after
+                ``/seclai`` to run this agent; it is generated from the agent's
+                name when not set. A run's input is the text after
+                ``/seclai <alias>``, or the message the shortcut was used on;
+                form values reach it as ``{{metadata.<key>}}``.
+                Deprecated: ``input``, the trigger's input template; the API
+                ignores it. A body that still sets it is sent as given, so
+                existing callers keep working.
 
         Returns:
             The trigger's Slack config, with ``missing_scopes`` listing what the
@@ -3413,7 +3505,9 @@ class Seclai(_SeclaiBase):
         self,
         agent_id: str,
         trigger_id: str,
-        accepted_attachments: list[dict[str, Any]] | None,
+        accepted_attachments: (
+            Sequence[AcceptedAttachmentSlot | Mapping[str, Any]] | None
+        ),
     ) -> AcceptedAttachmentsResponse:
         """Declare the input attachments a trigger accepts.
 
@@ -3428,8 +3522,9 @@ class Seclai(_SeclaiBase):
             trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
             accepted_attachments: The attachments, each with a ``name`` and
                 optional ``label``, ``content_types``, ``name_pattern``, ``min``
-                and ``max``. ``None`` accepts any files, as one attachment named
-                ``files``. Sent as given, so ``None`` is sent as ``null``.
+                and ``max``, as dicts or as the ``AcceptedAttachmentSlot``
+                models a response returns. ``None`` accepts any files, as one
+                attachment named ``files``, and is sent as ``null``.
 
         Returns:
             The trigger's ``accepted_attachments`` with its ``agent_id`` and
@@ -3440,13 +3535,106 @@ class Seclai(_SeclaiBase):
             SeclaiAPIStatusError: If the API returns a non-success status code.
             SeclaiError: If the response body does not decode as the model.
         """
-        body: dict[str, Any] = {"accepted_attachments": accepted_attachments}
+        body: dict[str, Any] = {
+            "accepted_attachments": (
+                None
+                if accepted_attachments is None
+                else [
+                    (
+                        slot.to_dict()
+                        if isinstance(slot, AcceptedAttachmentSlot)
+                        else dict(slot)
+                    )
+                    for slot in accepted_attachments
+                ]
+            )
+        }
         payload = self.request(
             "PUT",
             f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
             json=body,
         )
         return _parse_model(payload, AcceptedAttachmentsResponse)
+
+    def get_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+    ) -> MetadataKeysResponse:
+        """Get the run metadata keys a trigger declares.
+
+        Steps reference a declared key as ``{{metadata.<key>}}``. ``system``
+        and ``source`` keys are written by the platform and are never required;
+        ``custom`` keys are sent by the caller. A run you start is refused with
+        a 400 when it lacks a required key or sends a custom key the trigger
+        does not declare.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+
+        Returns:
+            The trigger's ``metadata_keys``, the ``declarable_keys`` its type
+            offers, and ``accepts_any_source_key``. ``warnings`` is always
+            empty here.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = self.request(
+            "GET",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+        )
+        return _parse_model(payload, MetadataKeysResponse)
+
+    def set_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        metadata_keys: Sequence[MetadataKeyDeclaration | Mapping[str, Any]],
+    ) -> MetadataKeysResponse:
+        """Declare the run metadata keys a trigger accepts.
+
+        Replaces the trigger's whole declaration. The API answers 400 when the
+        agent references a key that no trigger of its branch then declares.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+            metadata_keys: The keys, each with a ``key``, an ``origin``
+                (``system``, ``source`` or ``custom``) and an optional
+                ``required`` (default ``False``; only a ``custom`` key can be
+                required), as dicts or as the ``MetadataKeyDeclaration``
+                models :meth:`get_metadata_keys` returns, so its
+                ``metadata_keys`` can be edited and sent back. ``[]`` declares
+                none.
+
+        Returns:
+            The new declaration, as :meth:`get_metadata_keys` returns it.
+            ``warnings``, when the API sends it, names agents whose
+            ``call_agent`` mapping no longer fits it; it is ``UNSET`` when
+            omitted, so check ``isinstance(result.warnings, Unset)`` first
+            (``from seclai import Unset``).
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        body: dict[str, Any] = {
+            "metadata_keys": [
+                key.to_dict() if isinstance(key, MetadataKeyDeclaration) else dict(key)
+                for key in metadata_keys
+            ]
+        }
+        payload = self.request(
+            "PUT",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+            json=body,
+        )
+        return _parse_model(payload, MetadataKeysResponse)
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
@@ -3540,6 +3728,34 @@ class Seclai(_SeclaiBase):
             knowledge_base_id: Knowledge base identifier.
         """
         self.request("DELETE", f"/knowledge_bases/{knowledge_base_id}")
+
+    def get_knowledge_base_metadata_key_stats(
+        self, knowledge_base_id: str
+    ) -> KnowledgeBaseMetadataKeyStats:
+        """Count the item-metadata keys on a knowledge base's content.
+
+        For choosing the keys a content trigger declares
+        (:meth:`set_metadata_keys`). Each item is counted once, at its latest
+        version; a null value counts as absent, and reserved and
+        platform-set keys are left out.
+
+        Args:
+            knowledge_base_id: Knowledge base identifier.
+
+        Returns:
+            One entry in ``windows`` per window (``all_time``,
+            ``last_30_days``, ``last_7_days``), each with ``total_items`` and
+            its ``keys``, most frequent first, with their top values.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = self.request(
+            "GET", f"/knowledge_bases/{knowledge_base_id}/metadata-key-stats"
+        )
+        return _parse_model(payload, KnowledgeBaseMetadataKeyStats)
 
     # ── Memory Banks ──────────────────────────────────────────────────────────
 
@@ -5678,27 +5894,48 @@ class Seclai(_SeclaiBase):
         *,
         poll_interval: float = 2.0,
         include_step_outputs: bool = False,
+        return_on_result: bool = False,
     ) -> AgentRunResponse:
         """Run an agent and poll until it reaches a terminal status.
 
         Starts the agent run and then repeatedly polls ``get_agent_run`` until
-        the status is ``"completed"`` or ``"failed"``.
+        the status is ``"completed"`` or ``"failed"``, or, with
+        ``return_on_result``, until the run has reported its result.
 
         Args:
             agent_id: Agent identifier.
             body: Agent run request payload.
             poll_interval: Seconds between poll attempts (default 2.0).
-            include_step_outputs: Include per-step outputs when polling.
+            include_step_outputs: Include per-step outputs when polling. When
+                the ``run_agent`` response would already end the poll, the
+                run is fetched once more with them, since that response
+                carries no step outputs.
+            return_on_result: Return as soon as a snapshot has
+                ``result_reported_at`` set: its ``output`` is the answer, and
+                for an agent whose ``report_success`` is ``on_result`` that can
+                be before later steps finish. The run's ``status`` may then
+                still be ``"processing"``, and the run can still fail after
+                its result. A terminal status is returned at once either way.
 
         Returns:
-            The final agent run (completed or failed).
+            The final agent run (completed or failed), or with
+            ``return_on_result`` the first snapshot that reported its result.
 
         Raises:
             SeclaiAPIValidationError: If the API returns a validation error.
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
         run = self.run_agent(agent_id, body)
-        while run.status not in ("completed", "failed"):
+        if include_step_outputs and (
+            run.status in ("completed", "failed")
+            or (return_on_result and run.result_reported_at)
+        ):
+            # The run_agent response carries no step outputs, so it must not
+            # end the poll: fetch the run with them and check that instead.
+            run = self.get_agent_run(run.run_id, include_step_outputs=True)
+        while run.status not in ("completed", "failed") and not (
+            return_on_result and run.result_reported_at
+        ):
             time.sleep(poll_interval)
             run = self.get_agent_run(
                 run.run_id, include_step_outputs=include_step_outputs
@@ -5716,7 +5953,13 @@ class Seclai(_SeclaiBase):
         """Run an agent via SSE streaming, yielding events as they arrive.
 
         This is a generator that yields ``(event_type, data)`` tuples for each
-        SSE event received. Event types include ``"init"`` and ``"done"``.
+        SSE event received. Event types include ``"init"`` (the first run
+        snapshot), ``"result"`` (the snapshot once the run has reported its
+        result: ``result_reported_at`` is set and ``output`` is the answer; it
+        can arrive while later steps still run) and ``"done"`` (the terminal
+        snapshot). Callers who only need the answer can stop at ``"result"``;
+        ``"done"`` says whether the whole run succeeded, which can still fail
+        after its result.
 
         Args:
             agent_id: Agent identifier.
@@ -6077,15 +6320,61 @@ class AsyncSeclai(_SeclaiBase):
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
+        return_on_result: bool = False,
+        raise_on_incomplete: bool = False,
     ) -> AgentRunResponse:
         """Run an agent via SSE streaming and block until completion (async).
 
-        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent Events (SSE).
-        The method returns when an `event: done` message is received. Every event
-        but `init` and `done` is discarded, so `include_reasoning` is removed
-        from the body before it is sent: reasoning events would only add
-        traffic and count against `timeout`. Use `run_streaming_agent` to
-        receive `stream_reasoning` events.
+        This uses POST /agents/{agent_id}/runs/stream and consumes Server-Sent
+        Events (SSE). The method returns the run from the ``done`` event, or,
+        with ``return_on_result``, the snapshot from the ``result`` event.
+
+        By default, when the stream ends before ``done`` it returns the latest
+        snapshot, which may be a run that has not finished: check ``status``
+        and ``result_reported_at``. A connection cut mid-stream raises the
+        ``httpx`` error. Pass ``raise_on_incomplete=True`` (recommended; the
+        default in the next major version) to raise
+        :class:`SeclaiStreamingError` instead, with the latest snapshot in
+        ``run`` (the ``result`` one if it arrived, so its ``output`` is the
+        answer). On ``timeout`` it raises :class:`SeclaiStreamingError` with
+        ``run`` either way.
+
+        Every event but ``init``, ``result`` and ``done`` is discarded, so
+        ``include_reasoning`` is removed from the body before it is sent:
+        reasoning events would only add traffic and count against
+        ``timeout``. Use ``run_streaming_agent`` to receive
+        ``stream_reasoning`` events.
+
+        Args:
+            agent_id: Agent identifier.
+            body: Streaming agent run request payload.
+            timeout: Max time (seconds) to wait for the final result
+                (client-side). Defaults to this client's configured timeout.
+            headers: Optional extra headers for this request.
+            return_on_result: Return the ``result`` snapshot as soon as it
+                arrives, without waiting for ``done``. That run may still be
+                in progress: its ``status`` may not be terminal and it can
+                still fail, so check ``result_reported_at``, not ``status``.
+            raise_on_incomplete: Raise :class:`SeclaiStreamingError` when the
+                stream ends or is cut before ``done``, rather than returning
+                the latest snapshot or letting the ``httpx`` error through.
+                Becomes the default in the next major version.
+
+        Returns:
+            The run from the ``done`` event, or with ``return_on_result`` the
+            ``result`` snapshot. Without ``raise_on_incomplete``, the latest
+            snapshot when the stream ends before ``done``.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiStreamingError: If ``timeout`` passes before the run
+                finished, or the stream ends with no snapshot; with
+                ``raise_on_incomplete``, also if the stream ends or is cut
+                before ``done``. ``run`` holds the latest snapshot, or
+                ``None`` if none arrived.
+            httpx.TransportError: Without ``raise_on_incomplete``, if the
+                connection is cut mid-stream.
         """
         import json as _json
         import time as _time
@@ -6100,8 +6389,42 @@ class AsyncSeclai(_SeclaiBase):
         _setdefault_header(merged_headers, "accept", "text/event-stream")
 
         timeout_seconds = self._options.timeout if timeout is None else timeout
+        timed_out = f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete"
         start = _time.monotonic()
+        current_event: str | None = None
+        data_lines: list[str] = []
+        last_seen: AgentRunResponse | None = None
+        result_seen: AgentRunResponse | None = None
 
+        def dispatch() -> AgentRunResponse | None:
+            """Handle the buffered event; return the run to return, if any."""
+            nonlocal current_event, data_lines, last_seen, result_seen
+            if current_event is None and not data_lines:
+                return None
+            data = "\n".join(data_lines)
+            evt = current_event
+            current_event = None
+            data_lines = []
+            if not data:
+                return None
+            if evt not in {"init", "result", "done"}:
+                return None
+            try:
+                parsed_dict = cast(dict[str, Any], _json.loads(data))
+                parsed = AgentRunResponse.from_dict(parsed_dict)
+            except Exception:
+                return None
+            last_seen = parsed
+            if evt == "result":
+                result_seen = parsed
+                if return_on_result:
+                    return parsed
+            if evt == "done":
+                return parsed
+            return None
+
+        ending: str | None = None  # None: the stream ended
+        cause: httpx.TransportError | None = None
         try:
             async with self._client.stream(
                 "POST",
@@ -6113,63 +6436,54 @@ class AsyncSeclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so the error carries
                 # its text and a 422 its field-level detail.
                 await _araise_for_unread_status(response)
-
-                current_event: str | None = None
-                data_lines: list[str] = []
-                last_seen: AgentRunResponse | None = None
-
-                def dispatch() -> AgentRunResponse | None:
-                    nonlocal current_event, data_lines, last_seen
-                    if current_event is None and not data_lines:
-                        return None
-                    data = "\n".join(data_lines)
-                    evt = current_event
-                    current_event = None
-                    data_lines = []
-                    if not data:
-                        return None
-                    if evt not in {"init", "done"}:
-                        return None
-                    try:
-                        parsed_dict = cast(dict[str, Any], _json.loads(data))
-                        parsed = AgentRunResponse.from_dict(parsed_dict)
-                        last_seen = parsed
-                        if evt == "done":
-                            return parsed
-                    except Exception:
-                        return None
-                    return None
-
-                async for line in response.aiter_lines():
-                    if _time.monotonic() - start > timeout_seconds:
-                        raise SeclaiError(
-                            f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-                        )
-
-                    if line == "":
-                        done = dispatch()
-                        if done is not None:
-                            return done
-                        continue
-                    if line.startswith(":"):
-                        continue
-                    if line.startswith("event:"):
-                        current_event = line[len("event:") :].strip() or None
-                        continue
-                    if line.startswith("data:"):
-                        data_lines.append(line[len("data:") :].lstrip())
-                        continue
-
-                done = dispatch()
-                if done is not None:
-                    return done
-                if last_seen is not None:
-                    return last_seen
-                raise SeclaiError("Stream ended before receiving a 'done' event.")
+                try:
+                    async for line in response.aiter_lines():
+                        if line == "":
+                            run = dispatch()
+                            if run is not None:
+                                return run
+                        elif line.startswith("event:"):
+                            current_event = line[len("event:") :].strip() or None
+                        elif line.startswith("data:"):
+                            data_lines.append(line[len("data:") :].lstrip())
+                        # Checked after every line is handled; the event
+                        # buffered so far is dispatched below, so a `done`
+                        # whose lines were read by the deadline still counts.
+                        if _time.monotonic() - start > timeout_seconds:
+                            ending = timed_out
+                            break
+                except httpx.TransportError as e:
+                    if not raise_on_incomplete and not isinstance(
+                        e, httpx.TimeoutException
+                    ):
+                        raise  # as released: the cut surfaces raw
+                    cause = e
+                    ending = (
+                        timed_out
+                        if isinstance(e, httpx.TimeoutException)
+                        else f"The stream was cut ({type(e).__name__}: {e})"
+                    )
         except httpx.TimeoutException as e:
-            raise SeclaiError(
-                f"Timed out after {timeout_seconds}s waiting for streaming agent run to complete."
-            ) from e
+            cause = e
+            ending = timed_out
+
+        # An event whose blank line never came (EOF, timeout) still counts.
+        run = dispatch()
+        if run is not None:
+            return run
+        if ending is None and not raise_on_incomplete and last_seen is not None:
+            return last_seen  # as released
+        snapshot = result_seen if result_seen is not None else last_seen
+        outcome = (
+            "the run had reported its result; read it from the error's `run`"
+            if result_seen is not None
+            else "the run had not reported a result"
+        )
+        raise SeclaiStreamingError(
+            f"{ending or 'The stream ended'} before the 'done' event: {outcome}.",
+            run_id=snapshot.run_id if snapshot is not None else None,
+            run=snapshot,
+        ) from cause
 
     async def list_agent_runs(
         self, agent_id: str, *, page: int = 1, limit: int = 50
@@ -8265,10 +8579,18 @@ class AsyncSeclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             trigger_id: Trigger identifier.
-            body: Fields to set (mcp_client_id, form, scope, channel_ids,
-                allow_dms, activation, visibility, start_without_form, input,
-                turns_enabled, turns_anyone, max_turns, include_invoker_email,
-                notify_failure_after_answer). Omitted fields are unchanged.
+            body: Fields to set (mcp_client_id, alias, form, scope,
+                channel_ids, allow_dms, activation, visibility,
+                start_without_form, turns_enabled, turns_anyone, max_turns,
+                include_invoker_email, notify_failure_after_answer). Omitted
+                fields are unchanged. ``alias`` is the name people type after
+                ``/seclai`` to run this agent; it is generated from the agent's
+                name when not set. A run's input is the text after
+                ``/seclai <alias>``, or the message the shortcut was used on;
+                form values reach it as ``{{metadata.<key>}}``.
+                Deprecated: ``input``, the trigger's input template; the API
+                ignores it. A body that still sets it is sent as given, so
+                existing callers keep working.
 
         Returns:
             The trigger's Slack config, with ``missing_scopes`` listing what the
@@ -8287,7 +8609,9 @@ class AsyncSeclai(_SeclaiBase):
         self,
         agent_id: str,
         trigger_id: str,
-        accepted_attachments: list[dict[str, Any]] | None,
+        accepted_attachments: (
+            Sequence[AcceptedAttachmentSlot | Mapping[str, Any]] | None
+        ),
     ) -> AcceptedAttachmentsResponse:
         """Declare the input attachments a trigger accepts.
 
@@ -8302,8 +8626,9 @@ class AsyncSeclai(_SeclaiBase):
             trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
             accepted_attachments: The attachments, each with a ``name`` and
                 optional ``label``, ``content_types``, ``name_pattern``, ``min``
-                and ``max``. ``None`` accepts any files, as one attachment named
-                ``files``. Sent as given, so ``None`` is sent as ``null``.
+                and ``max``, as dicts or as the ``AcceptedAttachmentSlot``
+                models a response returns. ``None`` accepts any files, as one
+                attachment named ``files``, and is sent as ``null``.
 
         Returns:
             The trigger's ``accepted_attachments`` with its ``agent_id`` and
@@ -8314,13 +8639,106 @@ class AsyncSeclai(_SeclaiBase):
             SeclaiAPIStatusError: If the API returns a non-success status code.
             SeclaiError: If the response body does not decode as the model.
         """
-        body: dict[str, Any] = {"accepted_attachments": accepted_attachments}
+        body: dict[str, Any] = {
+            "accepted_attachments": (
+                None
+                if accepted_attachments is None
+                else [
+                    (
+                        slot.to_dict()
+                        if isinstance(slot, AcceptedAttachmentSlot)
+                        else dict(slot)
+                    )
+                    for slot in accepted_attachments
+                ]
+            )
+        }
         payload = await self.request(
             "PUT",
             f"/agents/{agent_id}/triggers/{trigger_id}/accepted-attachments",
             json=body,
         )
         return _parse_model(payload, AcceptedAttachmentsResponse)
+
+    async def get_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+    ) -> MetadataKeysResponse:
+        """Get the run metadata keys a trigger declares.
+
+        Steps reference a declared key as ``{{metadata.<key>}}``. ``system``
+        and ``source`` keys are written by the platform and are never required;
+        ``custom`` keys are sent by the caller. A run you start is refused with
+        a 400 when it lacks a required key or sends a custom key the trigger
+        does not declare.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+
+        Returns:
+            The trigger's ``metadata_keys``, the ``declarable_keys`` its type
+            offers, and ``accepts_any_source_key``. ``warnings`` is always
+            empty here.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = await self.request(
+            "GET",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+        )
+        return _parse_model(payload, MetadataKeysResponse)
+
+    async def set_metadata_keys(
+        self,
+        agent_id: str,
+        trigger_id: str,
+        metadata_keys: Sequence[MetadataKeyDeclaration | Mapping[str, Any]],
+    ) -> MetadataKeysResponse:
+        """Declare the run metadata keys a trigger accepts.
+
+        Replaces the trigger's whole declaration. The API answers 400 when the
+        agent references a key that no trigger of its branch then declares.
+
+        Args:
+            agent_id: Agent identifier.
+            trigger_id: Trigger identifier, as :meth:`get_agent` returns it.
+            metadata_keys: The keys, each with a ``key``, an ``origin``
+                (``system``, ``source`` or ``custom``) and an optional
+                ``required`` (default ``False``; only a ``custom`` key can be
+                required), as dicts or as the ``MetadataKeyDeclaration``
+                models :meth:`get_metadata_keys` returns, so its
+                ``metadata_keys`` can be edited and sent back. ``[]`` declares
+                none.
+
+        Returns:
+            The new declaration, as :meth:`get_metadata_keys` returns it.
+            ``warnings``, when the API sends it, names agents whose
+            ``call_agent`` mapping no longer fits it; it is ``UNSET`` when
+            omitted, so check ``isinstance(result.warnings, Unset)`` first
+            (``from seclai import Unset``).
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        body: dict[str, Any] = {
+            "metadata_keys": [
+                key.to_dict() if isinstance(key, MetadataKeyDeclaration) else dict(key)
+                for key in metadata_keys
+            ]
+        }
+        payload = await self.request(
+            "PUT",
+            f"/agents/{agent_id}/triggers/{trigger_id}/metadata-keys",
+            json=body,
+        )
+        return _parse_model(payload, MetadataKeysResponse)
 
     # ── Knowledge Bases ───────────────────────────────────────────────────────
 
@@ -8416,6 +8834,34 @@ class AsyncSeclai(_SeclaiBase):
             knowledge_base_id: Knowledge base identifier.
         """
         await self.request("DELETE", f"/knowledge_bases/{knowledge_base_id}")
+
+    async def get_knowledge_base_metadata_key_stats(
+        self, knowledge_base_id: str
+    ) -> KnowledgeBaseMetadataKeyStats:
+        """Count the item-metadata keys on a knowledge base's content.
+
+        For choosing the keys a content trigger declares
+        (:meth:`set_metadata_keys`). Each item is counted once, at its latest
+        version; a null value counts as absent, and reserved and
+        platform-set keys are left out.
+
+        Args:
+            knowledge_base_id: Knowledge base identifier.
+
+        Returns:
+            One entry in ``windows`` per window (``all_time``,
+            ``last_30_days``, ``last_7_days``), each with ``total_items`` and
+            its ``keys``, most frequent first, with their top values.
+
+        Raises:
+            SeclaiAPIValidationError: If the API returns a validation error.
+            SeclaiAPIStatusError: If the API returns a non-success status code.
+            SeclaiError: If the response body does not decode as the model.
+        """
+        payload = await self.request(
+            "GET", f"/knowledge_bases/{knowledge_base_id}/metadata-key-stats"
+        )
+        return _parse_model(payload, KnowledgeBaseMetadataKeyStats)
 
     # ── Memory Banks ──────────────────────────────────────────────────────────
 
@@ -10596,20 +11042,32 @@ class AsyncSeclai(_SeclaiBase):
         *,
         poll_interval: float = 2.0,
         include_step_outputs: bool = False,
+        return_on_result: bool = False,
     ) -> AgentRunResponse:
         """Run an agent and poll until it reaches a terminal status.
 
         Starts the agent run and then repeatedly polls ``get_agent_run`` until
-        the status is ``"completed"`` or ``"failed"``.
+        the status is ``"completed"`` or ``"failed"``, or, with
+        ``return_on_result``, until the run has reported its result.
 
         Args:
             agent_id: Agent identifier.
             body: Agent run request payload.
             poll_interval: Seconds between poll attempts (default 2.0).
-            include_step_outputs: Include per-step outputs when polling.
+            include_step_outputs: Include per-step outputs when polling. When
+                the ``run_agent`` response would already end the poll, the
+                run is fetched once more with them, since that response
+                carries no step outputs.
+            return_on_result: Return as soon as a snapshot has
+                ``result_reported_at`` set: its ``output`` is the answer, and
+                for an agent whose ``report_success`` is ``on_result`` that can
+                be before later steps finish. The run's ``status`` may then
+                still be ``"processing"``, and the run can still fail after
+                its result. A terminal status is returned at once either way.
 
         Returns:
-            The final agent run (completed or failed).
+            The final agent run (completed or failed), or with
+            ``return_on_result`` the first snapshot that reported its result.
 
         Raises:
             SeclaiAPIValidationError: If the API returns a validation error.
@@ -10618,7 +11076,16 @@ class AsyncSeclai(_SeclaiBase):
         import asyncio
 
         run = await self.run_agent(agent_id, body)
-        while run.status not in ("completed", "failed"):
+        if include_step_outputs and (
+            run.status in ("completed", "failed")
+            or (return_on_result and run.result_reported_at)
+        ):
+            # The run_agent response carries no step outputs, so it must not
+            # end the poll: fetch the run with them and check that instead.
+            run = await self.get_agent_run(run.run_id, include_step_outputs=True)
+        while run.status not in ("completed", "failed") and not (
+            return_on_result and run.result_reported_at
+        ):
             await asyncio.sleep(poll_interval)
             run = await self.get_agent_run(
                 run.run_id, include_step_outputs=include_step_outputs
@@ -10636,7 +11103,14 @@ class AsyncSeclai(_SeclaiBase):
         """Run an agent via SSE streaming and yield events as they arrive.
 
         Use ``async for event_type, data in client.run_streaming_agent(...)`` to
-        process events lazily without buffering the entire stream.
+        process events lazily without buffering the entire stream. Event types
+        include ``"init"`` (the first run
+        snapshot), ``"result"`` (the snapshot once the run has reported its
+        result: ``result_reported_at`` is set and ``output`` is the answer; it
+        can arrive while later steps still run) and ``"done"`` (the terminal
+        snapshot). Callers who only need the answer can stop at ``"result"``;
+        ``"done"`` says whether the whole run succeeded, which can still fail
+        after its result.
 
         Args:
             agent_id: Agent identifier.

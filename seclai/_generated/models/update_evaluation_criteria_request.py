@@ -22,7 +22,7 @@ T = TypeVar("T", bound="UpdateEvaluationCriteriaRequest")
 class UpdateEvaluationCriteriaRequest:
     """Request body for updating an evaluation criteria.
 
-    Retry settings and sample frequency are set at the agent level.
+    The evaluation mode and sample frequency are set at the agent level.
 
         Attributes:
             description (None | str | Unset):

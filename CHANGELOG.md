@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.10.0] - 2026-11-05
+
+### Changed
+
+- Sync the bundled OpenAPI spec, adding 2 paths and 9 schemas. The typed models gain `result_reported_at` on an agent run and `alias` on the Slack trigger config and its update body
+- Move `LATEST_API_VERSION` to `2026-11-04`. A client built with `api_version=LATEST_API_VERSION` also opts into `2026-11-02` and `2026-11-04`, which refuse requests that were accepted before: an agent-definition or sampling-rule write that references a metadata key no trigger declares is refused rather than declaring the key optional (400 from `update_agent_definition()`, 422 from `update_agent()` setting `sampling_config`); and each with a 400, `create_evaluation_result()` refuses `retry_triggered: true`, `update_agent()` refuses `evaluation_mode` `eval_and_retry`, and a new or changed evaluation criterion's `step_id` must name a `display_result` or `streaming_result` step
+- Deprecate `input` in the `set_slack_trigger_config()` body. The API ignores the trigger's input template; a run's input is the text after `/seclai <alias>`, or the message the shortcut was used on. A body that still sets `input` is sent as before, and the generated `SetSlackTriggerConfigApiRequest` model keeps its `input_` attribute, documented as ignored
+- Default `evaluation_mode` on the generated `AgentSummaryResponse` to `sample_and_flag`, as the API now declares, rather than `eval_and_retry`. A model built, or parsed from a payload, without `evaluation_mode` reports `sample_and_flag`
+- Note API behavior that changed on every API version, whatever `Seclai-Version` a client sends: a run whose `metadata` has a custom key the trigger does not declare, or lacks a required one, is refused with a 400; an agent definition holding a `gate` or `retry` step is rejected (use `if_else`, or `repeat_until` to run steps again); the `agent_eval_fail` rollback trigger is accepted, never fires, and is no longer in the default rollback triggers (`governance_block` and `agent_run_failed` when none are set); and `max_retries` and `retry_on_failure` are accepted and have no effect
+- Accept the generated `AcceptedAttachmentSlot` models, as well as dicts, in `set_accepted_attachments()`, so the slots a previous call returned can be edited and sent back
+- Return the `result` snapshot from `run_streaming_agent_and_wait()` when the stream ends after the `event: result` the API now sends but before `done`, as the latest snapshot, rather than the `init` one
+
+### Added
+
+- Add `get_metadata_keys()` and `set_metadata_keys()` to read and replace the run metadata keys an agent trigger declares, returning `MetadataKeysResponse`. `set_metadata_keys()` takes dicts or the `MetadataKeyDeclaration` models `get_metadata_keys()` returns
+- Add `get_knowledge_base_metadata_key_stats()` to count the item-metadata keys on a knowledge base's content per time window, returning `KnowledgeBaseMetadataKeyStats`
+- Document `alias` in the `set_slack_trigger_config()` body, the name people type after `/seclai` to run the agent
+- Add `ApiVersion` members for `2026-11-02` and `2026-11-04`, so each can be selected without `allow_unknown_api_version`
+- Add `return_on_result` to `run_agent_and_poll()` and `run_streaming_agent_and_wait()`, to return as soon as a run reports its result (`result_reported_at` is set, or the `result` event arrives) instead of waiting for a terminal status or `done`. That run may still be in progress and can still fail
+- Add `raise_on_incomplete` to `run_streaming_agent_and_wait()`. It raises `SeclaiStreamingError` when the stream ends, or is cut by a transport error such as `httpx.ReadError`, before the `done` event, instead of returning a run that has not finished or letting the `httpx` error through, with the latest snapshot in the error's `run`. It will become the default in the next major version
+- Add `run` to `SeclaiStreamingError`, the latest run snapshot when `run_streaming_agent_and_wait()` times out, or with `raise_on_incomplete` gives up before `done`. The timeout error of `run_streaming_agent_and_wait()` is now this `SeclaiError` subclass; `run_streaming_agent()` still raises `SeclaiError`
+- Export `Unset` and `UNSET` from `seclai`, to test for a response field the API omitted without importing a private module
+
+### Fixed
+
+- Return the run from a `done` event whose `event:` and `data:` lines `run_streaming_agent_and_wait()` had read when its `timeout` passed, even though the closing blank line had not arrived, rather than raising a timeout error
+- Fetch the run with its step outputs in `run_agent_and_poll()` with `include_step_outputs=True` when the `run_agent()` response would already end the poll. A response that was already terminal was returned as is, without the step outputs asked for
+
 ## [1.9.0] - 2026-10-31
 
 ### Changed
@@ -255,6 +283,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.10.0]: https://github.com/seclai/seclai-python/releases/tag/1.10.0
 [1.9.0]: https://github.com/seclai/seclai-python/releases/tag/1.9.0
 [1.8.0]: https://github.com/seclai/seclai-python/releases/tag/1.8.0
 [1.7.2]: https://github.com/seclai/seclai-python/releases/tag/1.7.2

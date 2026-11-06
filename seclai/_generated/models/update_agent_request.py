@@ -39,13 +39,13 @@ class UpdateAgentRequest:
         description (None | str | Unset): New description for the agent.
         entity_remap (None | Unset | UpdateAgentRequestEntityRemapType0): Optional UUID-substitution map applied to the
             imported workflow before save (same shape as on POST /agents).
-        evaluation_mode (None | str | Unset): Evaluation mode: 'output_expectation', 'eval_and_retry', or
-            'sample_and_flag'.
+        evaluation_mode (None | str | Unset): Evaluation mode: 'output_expectation' or 'sample_and_flag'. From Seclai-
+            Version 2026-11-04 'eval_and_retry' returns 400; earlier versions store it as 'sample_and_flag'.
         max_credits_per_period (float | None | Unset): Credit limit per billing period of the paying account: once
             reached, runs stop at their next step and new runs are refused.
         max_credits_per_run (float | None | Unset): Credit limit per run: a run that reaches it is stopped before its
             next step.
-        max_retries (int | None | Unset): Max retries for eval_and_retry mode (1-10).
+        max_retries (int | None | Unset): Deprecated: accepted and has no effect.
         max_runs_per_day (int | None | Unset): Runs per day; at most the plan's run quota.
         max_runs_per_hour (int | None | Unset): Runs per hour; at most the plan's run quota.
         max_runs_total (int | None | Unset): Runs in total; once reached, new runs are refused.
@@ -53,10 +53,11 @@ class UpdateAgentRequest:
         prompt_model_auto_rollback_enabled (bool | None | Unset): Enable or disable automatic rollback for upgraded
             models.
         prompt_model_auto_rollback_triggers (list[str] | None | Unset): Failure signals that trigger rollback:
-            agent_eval_fail, governance_flag, governance_block, agent_run_failed.
+            governance_flag, governance_block, agent_run_failed. agent_eval_fail is accepted and never fires; in the list, a
+            run with a failed evaluation is never picked as the rollback target.
         prompt_model_auto_upgrade_strategy (None | PromptModelAutoUpgradeStrategy | Unset): Auto-upgrade strategy: none,
             early_adopter, middle_of_road, cautious_adopter.
-        retry_on_failure (bool | None | Unset): Whether to retry on evaluation failure.
+        retry_on_failure (bool | None | Unset): Deprecated: accepted and has no effect.
         sampling_config (None | Unset | UpdateAgentRequestSamplingConfigType0): Sampling configuration for
             sample_and_flag mode. Format: {combinator: 'and'|'or', rules: [...]}.
         set_default_evaluation_tier (bool | Unset): When true and default_evaluation_tier is omitted, clears the tier to

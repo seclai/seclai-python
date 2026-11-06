@@ -31,8 +31,8 @@ class EvaluationResultWithCriteriaResponse:
         evaluated_at (str):
         flagged (bool): True when the result was flagged for human review.
         id (UUID):
-        retry_count (int):
-        retry_triggered (bool):
+        retry_count (int): Deprecated.
+        retry_triggered (bool): Deprecated.
         status (str): Outcome status: pending, passed, failed, skipped, or error.
         step_id (None | str):
         details (EvaluationResultWithCriteriaResponseDetailsType0 | None | Unset): Evaluation details including

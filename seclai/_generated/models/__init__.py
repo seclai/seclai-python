@@ -156,6 +156,7 @@ from .create_knowledge_base_body import CreateKnowledgeBaseBody
 from .create_memory_bank_body import CreateMemoryBankBody
 from .create_solution_request import CreateSolutionRequest
 from .create_source_body import CreateSourceBody
+from .declarable_metadata_key import DeclarableMetadataKey
 from .dmarc_failing_source_response import DmarcFailingSourceResponse
 from .dmarc_summary_response import DmarcSummaryResponse
 from .dmarc_summary_response_dispositions import DmarcSummaryResponseDispositions
@@ -274,6 +275,7 @@ from .insufficient_credits_detail import InsufficientCreditsDetail
 from .insufficient_credits_response import InsufficientCreditsResponse
 from .knowledge_base import KnowledgeBase
 from .knowledge_base_list_response_model import KnowledgeBaseListResponseModel
+from .knowledge_base_metadata_key_stats import KnowledgeBaseMetadataKeyStats
 from .link_resources_request import LinkResourcesRequest
 from .mark_ai_suggestion_request import MarkAiSuggestionRequest
 from .mark_conversation_turn_request import MarkConversationTurnRequest
@@ -292,6 +294,13 @@ from .memory_bank_conversation_turn_response_resulting_config_type_0 import (
 )
 from .memory_bank_last_conversation_response import MemoryBankLastConversationResponse
 from .memory_bank_list_response_model import MemoryBankListResponseModel
+from .metadata_key_count_response import MetadataKeyCountResponse
+from .metadata_key_declaration import MetadataKeyDeclaration
+from .metadata_key_window_response import MetadataKeyWindowResponse
+from .metadata_key_window_response_window import MetadataKeyWindowResponseWindow
+from .metadata_keys_response import MetadataKeysResponse
+from .metadata_origin import MetadataOrigin
+from .metadata_value_count_response import MetadataValueCountResponse
 from .modality_rate_response import ModalityRateResponse
 from .model_alert_list_response import ModelAlertListResponse
 from .model_alert_response import ModelAlertResponse
@@ -351,6 +360,7 @@ from .service_unavailable_error_error_code import ServiceUnavailableErrorErrorCo
 from .set_accepted_attachments_request import SetAcceptedAttachmentsRequest
 from .set_auto_block_mode_request import SetAutoBlockModeRequest
 from .set_email_trigger_config_request import SetEmailTriggerConfigRequest
+from .set_metadata_keys_request import SetMetadataKeysRequest
 from .set_slack_trigger_config_api_request import SetSlackTriggerConfigApiRequest
 from .set_slack_trigger_config_api_request_form_type_0_item import (
     SetSlackTriggerConfigApiRequestFormType0Item,
@@ -541,6 +551,7 @@ __all__ = (
     "CreateMemoryBankBody",
     "CreateSolutionRequest",
     "CreateSourceBody",
+    "DeclarableMetadataKey",
     "DmarcFailingSourceResponse",
     "DmarcSummaryResponse",
     "DmarcSummaryResponseDispositions",
@@ -621,6 +632,7 @@ __all__ = (
     "InsufficientCreditsResponse",
     "KnowledgeBase",
     "KnowledgeBaseListResponseModel",
+    "KnowledgeBaseMetadataKeyStats",
     "LinkResourcesRequest",
     "MarkAiSuggestionRequest",
     "MarkConversationTurnRequest",
@@ -635,6 +647,13 @@ __all__ = (
     "MemoryBankLastConversationResponse",
     "MemoryBankListResponseModel",
     "MeResponse",
+    "MetadataKeyCountResponse",
+    "MetadataKeyDeclaration",
+    "MetadataKeysResponse",
+    "MetadataKeyWindowResponse",
+    "MetadataKeyWindowResponseWindow",
+    "MetadataOrigin",
+    "MetadataValueCountResponse",
     "ModalityRateResponse",
     "ModelAlertListResponse",
     "ModelAlertResponse",
@@ -678,6 +697,7 @@ __all__ = (
     "SetAcceptedAttachmentsRequest",
     "SetAutoBlockModeRequest",
     "SetEmailTriggerConfigRequest",
+    "SetMetadataKeysRequest",
     "SetSlackTriggerConfigApiRequest",
     "SetSlackTriggerConfigApiRequestFormType0Item",
     "SkippedAttachmentReason",

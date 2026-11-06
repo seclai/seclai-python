@@ -129,10 +129,14 @@ def sync_detailed(
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
-    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+    - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
+    /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
+    lacks a required one, is refused with HTTP 400.
 
     After starting:
-    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in
+    `output`) or `status` is `failed`; poll on until `status` is `completed` or `failed` if you need to
+    know that every step finished.
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:
@@ -202,10 +206,14 @@ def sync(
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
-    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+    - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
+    /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
+    lacks a required one, is refused with HTTP 400.
 
     After starting:
-    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in
+    `output`) or `status` is `failed`; poll on until `status` is `completed` or `failed` if you need to
+    know that every step finished.
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:
@@ -269,10 +277,14 @@ async def asyncio_detailed(
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
-    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+    - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
+    /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
+    lacks a required one, is refused with HTTP 400.
 
     After starting:
-    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in
+    `output`) or `status` is `failed`; poll on until `status` is `completed` or `failed` if you need to
+    know that every step finished.
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:
@@ -340,10 +352,14 @@ async def asyncio(
     - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
     step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
     without live token streaming.
-    - `metadata`: a JSON object that becomes available to agent steps for string substitution.
+    - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
+    /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
+    lacks a required one, is refused with HTTP 400.
 
     After starting:
-    - Poll `GET /agents/runs/{run_id}` until `status` is `completed` or `failed`.
+    - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in
+    `output`) or `status` is `failed`; poll on until `status` is `completed` or `failed` if you need to
+    know that every step finished.
     - Use `include_step_outputs=true` to include per-step outputs, timing, and credits.
 
     Auth & scoping:

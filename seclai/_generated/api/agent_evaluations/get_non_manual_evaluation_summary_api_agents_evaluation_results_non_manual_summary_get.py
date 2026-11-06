@@ -125,8 +125,7 @@ def sync_detailed(
 
      Get an evaluation summary for API key clients.
 
-    Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
-    sample_and_flag).
+    Returns aggregated pass/fail/flagged counts and pass rates for each automatic evaluation mode.
 
     With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
     verdict) are left out of ``failed``, and the rates are over passed and
@@ -190,8 +189,7 @@ def sync(
 
      Get an evaluation summary for API key clients.
 
-    Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
-    sample_and_flag).
+    Returns aggregated pass/fail/flagged counts and pass rates for each automatic evaluation mode.
 
     With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
     verdict) are left out of ``failed``, and the rates are over passed and
@@ -247,8 +245,7 @@ async def asyncio_detailed(
 
      Get an evaluation summary for API key clients.
 
-    Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
-    sample_and_flag).
+    Returns aggregated pass/fail/flagged counts and pass rates for each automatic evaluation mode.
 
     With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
     verdict) are left out of ``failed``, and the rates are over passed and
@@ -310,8 +307,7 @@ async def asyncio(
 
      Get an evaluation summary for API key clients.
 
-    Returns aggregated pass/fail/flagged counts and pass rates for each evaluation mode (eval_and_retry,
-    sample_and_flag).
+    Returns aggregated pass/fail/flagged counts and pass rates for each automatic evaluation mode.
 
     With ``2026-10-21`` or later, ``error`` results (the evaluator returned no
     verdict) are left out of ``failed``, and the rates are over passed and

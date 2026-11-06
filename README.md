@@ -245,6 +245,8 @@ client decodes:
 | `2026-10-19` | `create_source()` refuses `polling_max_items` with a 400 on any source other than an RSS feed |
 | `2026-10-21` | An evaluation result whose evaluator returned no verdict (`error`) is left out of `failed` and of the pass and failure rates in `get_non_manual_evaluation_summary()`; `get_evaluation_criteria_summary()`'s `average_score` averages only passed and failed results; `test_draft_evaluation()` returns `score` and `passed` as `None` for an `error` result instead of 0.5 and `False` |
 | `2026-10-28` | An `if_else` or `switch` step's `output` is the result of the arm it took (its input when that arm is empty or it took none), rather than the `{"branch": ...}` marker with no `attachments`. The arm is in the step's `decision` on every version |
+| `2026-11-02` | An agent-definition or sampling-rule write (other than an import) that references a metadata key no trigger declares is refused, rather than the key being declared optional: `update_agent_definition()` answers 400, and `update_agent()` setting `sampling_config` answers 422 |
+| `2026-11-04` | `create_evaluation_result()` refuses `retry_triggered: true`, and `update_agent()` refuses `evaluation_mode` `eval_and_retry` (earlier versions store it as `sample_and_flag`), each with a 400; a new or changed evaluation criterion's `step_id` must name a `display_result` or `streaming_result` step |
 
 Moving to a later version can still change a value your code branches on, or
 reject a request that used to work. From `2026-10-05`, a content item held for
@@ -258,7 +260,9 @@ as a bool, or does arithmetic on its `score`, gets `None` when `status` is
 `error`, and `get_non_manual_evaluation_summary()`'s `failed` no longer counts
 those results: read its `error` count. From `2026-10-28`, code that parses an
 `if_else` or `switch` step's `output` for the `{"branch": ...}` marker gets the
-arm's result instead: read `decision`. Passing
+arm's result instead: read `decision`. `2026-11-02` and `2026-11-04` turn
+requests that were accepted before into 400s: declare metadata keys with
+`set_metadata_keys()` before referencing them. Passing
 `api_version=LATEST_API_VERSION` opts into all of these at once.
 
 ## Resources
@@ -364,17 +368,44 @@ client.cancel_agent_run("run_id")
 
 The SDK provides two streaming patterns over the SSE `/runs/stream` endpoint.
 
-**Block until done** — returns the final `done` payload or raises on timeout:
+**Block until done** — returns the run from the `done` event. Pass
+`raise_on_incomplete=True` (recommended; it becomes the default in the next
+major version) so a run that has not finished is never returned:
 
 ```python
-from seclai import AgentRunStreamRequest
+from seclai import AgentRunStreamRequest, SeclaiStreamingError
 
-run = client.run_streaming_agent_and_wait(
-    "agent_id",
-    body=AgentRunStreamRequest(input="Hello from streaming", metadata={}),
-    timeout=60.0,
-)
+try:
+    run = client.run_streaming_agent_and_wait(
+        "agent_id",
+        body=AgentRunStreamRequest(input="Hello from streaming", metadata={}),
+        timeout=60.0,
+        raise_on_incomplete=True,
+    )
+except SeclaiStreamingError as e:
+    # Timed out, or the stream ended or was cut, before `done`. `e.run` is the
+    # latest snapshot: the `result` one if it arrived, so its `output` is the
+    # answer even though the run had not finished.
+    if e.run is not None and e.run.result_reported_at:
+        print(e.run.output)
+    else:
+        raise
 ```
+
+With `raise_on_incomplete=True`, on `timeout`, or when the stream ends or is
+cut before `done`, it raises `SeclaiStreamingError` with the latest snapshot
+in `e.run` (or `None` if none arrived).
+
+By default it behaves as in earlier releases: when the stream ends before
+`done` it returns the latest snapshot, which may be a run that has not
+finished, so check `status` and `result_reported_at`; a connection cut
+mid-stream raises the `httpx` error (such as `httpx.ReadError`). On `timeout`
+it raises `SeclaiStreamingError`, with `e.run`, either way.
+
+Pass `return_on_result=True` to return the `result` snapshot as soon as it
+arrives, without waiting for `done`. That run may still be in progress: its
+`status` may not be terminal and it can still fail. Check
+`result_reported_at`, not `status`.
 
 **Generator-based** — yields every SSE event as `(event_type, data)` tuples:
 
@@ -389,8 +420,8 @@ for event_type, data in client.run_streaming_agent(
 Set `include_reasoning=True` in the request to also receive `stream_reasoning`
 events with the model's reasoning, for a `streaming_result` step whose author
 enabled `show_reasoning`. `run_streaming_agent_and_wait()` keeps only the
-`init` and `done` events, so it removes `include_reasoning` from the body
-before sending.
+`init`, `result` and `done` events, so it removes `include_reasoning` from the
+body before sending.
 
 Every key of `AgentRunStreamRequest` is optional, so a run on an uploaded file
 can send just `AgentRunStreamRequest(input_upload_id=upload["upload_id"])`.
@@ -419,6 +450,11 @@ result = client.run_agent_and_poll(
 )
 ```
 
+It returns once the run's status is `completed` or `failed`. With
+`return_on_result=True` it returns the first snapshot with
+`result_reported_at` set; that run may still be in progress and can still
+fail, so check `result_reported_at`, not `status`.
+
 ### Agent input uploads
 
 ```python
@@ -444,6 +480,39 @@ upload = client.upload_agent_input("agent_id", file=b"data", file_name="input.pd
 # From api_version 2026-10-16 an upload of any type is ready at once. Before
 # that, only listed types are accepted: poll until status is "ready".
 status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
+```
+
+### Trigger metadata keys
+
+Declare custom keys with `set_metadata_keys()` before sending them in a run's
+`metadata`.
+
+```python
+from seclai import Unset
+
+# The run metadata keys a trigger declares. Steps reference one as
+# {{metadata.<key>}}; a run you start is refused with a 400 when it lacks a
+# required key or sends a custom key the trigger does not declare.
+keys = client.get_metadata_keys("agent_id", "trigger_id")
+print([k.key for k in keys.metadata_keys])
+print([k.key for k in keys.declarable_keys])  # system/source keys on offer
+
+# Replace the whole declaration. Only a custom key can be required. The API
+# answers 400 if the agent references a key no trigger of its branch declares.
+updated = client.set_metadata_keys(
+    "agent_id",
+    "trigger_id",
+    [
+        {"key": "topic", "origin": "custom", "required": True},
+        {"key": "trigger_type", "origin": "system"},
+    ],
+)
+if not isinstance(updated.warnings, Unset):
+    print(updated.warnings)  # agents whose call_agent mapping no longer fits
+
+# Or edit what get_metadata_keys() returned and send its models back.
+keys.metadata_keys[0].required = False
+client.set_metadata_keys("agent_id", "trigger_id", keys.metadata_keys)
 ```
 
 ### Agent run attachments
@@ -516,6 +585,12 @@ kb = client.create_knowledge_base({"name": "My KB"})
 fetched = client.get_knowledge_base("kb_id")
 client.update_knowledge_base("kb_id", {"name": "Renamed"})
 client.delete_knowledge_base("kb_id")
+
+# How often each item-metadata key appears on the KB's content, for choosing
+# the keys a content trigger declares (set_metadata_keys)
+stats = client.get_knowledge_base_metadata_key_stats("kb_id")
+for window in stats.windows:  # all_time, last_30_days, last_7_days
+    print(window.window, window.total_items, [k.key for k in window.keys])
 ```
 
 ### Memory banks
@@ -790,6 +865,7 @@ config = client.set_slack_trigger_config(
     "trigger_id",
     {
         "mcp_client_id": "mcp_client_id",  # the account's connected Slack MCP client
+        "alias": "support",  # run as /seclai support; defaults from the agent name
         "scope": "selected_channels",
         "channel_ids": ["C0123456789"],
         "activation": "channel_opt_in",  # or "everywhere" in scope
@@ -801,6 +877,10 @@ config = client.set_slack_trigger_config(
 )
 print(config["missing_scopes"])  # Slack scopes needed for optional features
 ```
+
+A run's input is the text after `/seclai <alias>`, or the message the shortcut
+was used on; form values reach it as `{{metadata.<key>}}`. The `input` field
+(the trigger's input template) is deprecated: the API ignores it if sent.
 
 ### Agent email governance
 
@@ -976,7 +1056,7 @@ except SeclaiConfigurationError as e:
 | `SeclaiConfigurationError` | Missing API key, invalid configuration |
 | `SeclaiAPIStatusError` | Non-2xx HTTP response |
 | `SeclaiAPIValidationError` | HTTP 422 (inherits `SeclaiAPIStatusError`) |
-| `SeclaiStreamingError` | SSE stream error event received |
+| `SeclaiStreamingError` | SSE stream error event received; `run_streaming_agent_and_wait()` timed out, or, with `raise_on_incomplete=True`, its stream ended or was cut before `done` (`e.run` holds the latest snapshot) |
 
 ## Low-level access
 
