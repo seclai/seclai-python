@@ -132,3 +132,129 @@ def test_run_streaming_agent_and_wait_times_out() -> None:
     finally:
         server.shutdown()
         server.server_close()
+
+
+def _reported(status: str) -> dict[str, Any]:
+    payload = _agent_run_payload(status, output="answer")
+    payload["result_reported_at"] = "2026-11-05T00:00:00Z"
+    return payload
+
+
+def _sse(*events: tuple[str, dict[str, Any]]) -> bytes:
+    return b"".join(
+        f"event: {name}\ndata: {json.dumps(data)}\n\n".encode() for name, data in events
+    )
+
+
+def _stream_response(content: bytes) -> httpx.Response:
+    return httpx.Response(
+        status_code=200, headers={"content-type": "text/event-stream"}, content=content
+    )
+
+
+def test_run_streaming_agent_and_wait_returns_result_when_stream_ends() -> None:
+    content = _sse(
+        ("init", _agent_run_payload("processing")),
+        ("result", _reported("processing")),
+    )
+    http_client = httpx.Client(
+        base_url="https://example.invalid",
+        transport=httpx.MockTransport(lambda req: _stream_response(content)),
+    )
+    client = Seclai(api_key="test", http_client=http_client)
+    res = client.run_streaming_agent_and_wait(
+        "agent_1", body=AgentRunStreamRequest(input="hi")
+    )
+    assert res.output == "answer"
+    assert res.result_reported_at
+
+
+def test_run_streaming_agent_and_wait_prefers_done_over_result() -> None:
+    content = _sse(
+        ("init", _agent_run_payload("processing")),
+        ("result", _reported("processing")),
+        ("done", _reported("failed")),
+    )
+    http_client = httpx.Client(
+        base_url="https://example.invalid",
+        transport=httpx.MockTransport(lambda req: _stream_response(content)),
+    )
+    client = Seclai(api_key="test", http_client=http_client)
+    res = client.run_streaming_agent_and_wait(
+        "agent_1", body=AgentRunStreamRequest(input="hi")
+    )
+    assert res.status == "failed"
+
+
+@pytest.mark.asyncio
+async def test_async_run_streaming_agent_and_wait_returns_result_when_stream_ends() -> (
+    None
+):
+    content = _sse(
+        ("init", _agent_run_payload("processing")),
+        ("result", _reported("processing")),
+    )
+    http_client = httpx.AsyncClient(
+        base_url="https://example.invalid",
+        transport=httpx.MockTransport(lambda req: _stream_response(content)),
+    )
+    async with AsyncSeclai(api_key="test", http_client=http_client) as client:
+        res = await client.run_streaming_agent_and_wait(
+            "agent_1", body=AgentRunStreamRequest(input="hi")
+        )
+    assert res.output == "answer"
+
+
+class _ResultThenHang(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    def do_POST(self) -> None:  # noqa: N802
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.end_headers()
+        self.wfile.write(
+            _sse(
+                ("init", _agent_run_payload("processing")),
+                ("result", _reported("processing")),
+            )
+        )
+        self.wfile.flush()
+        time.sleep(1.0)  # longer than the client timeout; `done` never comes
+
+    def log_message(self, format: str, *args: object) -> None:  # noqa: A003
+        return
+
+
+def test_run_streaming_agent_and_wait_returns_result_on_timeout() -> None:
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _ResultThenHang)
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+    try:
+        base_url = f"http://127.0.0.1:{server.server_address[1]}"
+        client = Seclai(api_key="test", http_client=httpx.Client(base_url=base_url))
+        res = client.run_streaming_agent_and_wait(
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
+        )
+        assert res.output == "answer"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+@pytest.mark.asyncio
+async def test_async_run_streaming_agent_and_wait_returns_result_on_timeout() -> None:
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _ResultThenHang)
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+    try:
+        base_url = f"http://127.0.0.1:{server.server_address[1]}"
+        async with AsyncSeclai(
+            api_key="test", http_client=httpx.AsyncClient(base_url=base_url)
+        ) as client:
+            res = await client.run_streaming_agent_and_wait(
+                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
+            )
+        assert res.output == "answer"
+    finally:
+        server.shutdown()
+        server.server_close()

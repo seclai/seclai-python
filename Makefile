@@ -60,7 +60,8 @@ test:
 
 generate:
 	@echo "Generating OpenAPI client into seclai/_generated..."
-	poetry run openapi-python-client generate --meta none --path openapi/seclai.openapi.json --output-path seclai/_generated --overwrite
+	poetry run python scripts/specfix.py openapi/seclai.openapi.json build/generate/seclai.openapi.json
+	poetry run openapi-python-client generate --meta none --path build/generate/seclai.openapi.json --output-path seclai/_generated --overwrite
 
 docs:
 	@echo "Generating SDK documentation into build/docs..."

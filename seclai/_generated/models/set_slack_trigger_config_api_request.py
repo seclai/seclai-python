@@ -45,6 +45,8 @@ class SetSlackTriggerConfigApiRequest:
         turns_anyone (bool | None | Unset):
         turns_enabled (bool | None | Unset):
         visibility (None | SlackReplyVisibility | Unset): `channel`, or `private` (replies in the person's DM).
+        input_ (None | str | Unset): Deprecated: the trigger's former input template. The API ignores it; set `alias` to
+            choose the name people type after `/seclai`.
     """
 
     activation: None | SlackTriggerActivation | Unset = UNSET
@@ -61,6 +63,7 @@ class SetSlackTriggerConfigApiRequest:
     turns_anyone: bool | None | Unset = UNSET
     turns_enabled: bool | None | Unset = UNSET
     visibility: None | SlackReplyVisibility | Unset = UNSET
+    input_: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -165,6 +168,12 @@ class SetSlackTriggerConfigApiRequest:
         else:
             visibility = self.visibility
 
+        input_: None | str | Unset
+        if isinstance(self.input_, Unset):
+            input_ = UNSET
+        else:
+            input_ = self.input_
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
@@ -196,6 +205,8 @@ class SetSlackTriggerConfigApiRequest:
             field_dict["turns_enabled"] = turns_enabled
         if visibility is not UNSET:
             field_dict["visibility"] = visibility
+        if input_ is not UNSET:
+            field_dict["input"] = input_
 
         return field_dict
 
@@ -400,6 +411,15 @@ class SetSlackTriggerConfigApiRequest:
 
         visibility = _parse_visibility(d.pop("visibility", UNSET))
 
+        def _parse_input_(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        input_ = _parse_input_(d.pop("input", UNSET))
+
         set_slack_trigger_config_api_request = cls(
             activation=activation,
             alias=alias,
@@ -415,6 +435,7 @@ class SetSlackTriggerConfigApiRequest:
             turns_anyone=turns_anyone,
             turns_enabled=turns_enabled,
             visibility=visibility,
+            input_=input_,
         )
 
         set_slack_trigger_config_api_request.additional_properties = d

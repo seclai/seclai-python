@@ -452,7 +452,12 @@ status = client.get_agent_input_upload_status("agent_id", upload["upload_id"])
 
 ### Trigger metadata keys
 
+Declare custom keys with `set_metadata_keys()` before sending them in a run's
+`metadata`.
+
 ```python
+from seclai._generated.types import Unset
+
 # The run metadata keys a trigger declares. Steps reference one as
 # {{metadata.<key>}}; a run you start is refused with a 400 when it lacks a
 # required key or sends a custom key the trigger does not declare.
@@ -470,7 +475,12 @@ updated = client.set_metadata_keys(
         {"key": "trigger_type", "origin": "system"},
     ],
 )
-print(updated.warnings)  # agents whose call_agent mapping no longer fits
+if not isinstance(updated.warnings, Unset):
+    print(updated.warnings)  # agents whose call_agent mapping no longer fits
+
+# Or edit what get_metadata_keys() returned and send its models back.
+keys.metadata_keys[0].required = False
+client.set_metadata_keys("agent_id", "trigger_id", keys.metadata_keys)
 ```
 
 ### Agent run attachments
@@ -838,8 +848,7 @@ print(config["missing_scopes"])  # Slack scopes needed for optional features
 
 A run's input is the text after `/seclai <alias>`, or the message the shortcut
 was used on; form values reach it as `{{metadata.<key>}}`. The `input` field
-(the trigger's input template) is deprecated: the API no longer accepts it and
-ignores it if sent.
+(the trigger's input template) is deprecated: the API ignores it if sent.
 
 ### Agent email governance
 
