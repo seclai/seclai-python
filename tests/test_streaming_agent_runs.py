@@ -324,40 +324,50 @@ async def test_async_run_streaming_agent_and_wait_raises_with_result_when_stream
     assert exc.value.run.output == "answer"
 
 
-_DONE = _sse(("done", _agent_run_payload("completed", output="final")))
+_DONE_DATA = f"data: {json.dumps(_agent_run_payload('completed', output='final'))}\n"
 
 
-class _LateDone(httpx.SyncByteStream):
+class _DoneSpanningTheDeadline(httpx.SyncByteStream):
     def __iter__(self) -> Any:
-        yield _INIT_AND_RESULT
+        yield _INIT_AND_RESULT + b"event: done\n"
         time.sleep(0.15)  # past the 0.05s deadline
-        yield _DONE
+        yield _DONE_DATA.encode()  # the closing blank line never comes
+        time.sleep(1.0)
 
 
-class _AsyncLateDone(httpx.AsyncByteStream):
+class _AsyncDoneSpanningTheDeadline(httpx.AsyncByteStream):
     async def __aiter__(self) -> Any:
-        yield _INIT_AND_RESULT
+        yield _INIT_AND_RESULT + b"event: done\n"
         await asyncio.sleep(0.15)  # past the 0.05s deadline
-        yield _DONE
+        yield _DONE_DATA.encode()  # the closing blank line never comes
+        await asyncio.sleep(1.0)
 
 
-def test_run_streaming_agent_and_wait_uses_done_read_past_the_deadline() -> None:
-    client = _sync_client(_LateDone())
+# The deadline is checked on every line, inside an event too; the event read
+# so far is dispatched when it fires, rather than waiting for the stream.
+
+
+def test_run_streaming_agent_and_wait_checks_the_deadline_inside_an_event() -> None:
+    client = _sync_client(_DoneSpanningTheDeadline())
+    start = time.monotonic()
     res = client.run_streaming_agent_and_wait(
         "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
     )
+    assert time.monotonic() - start < 0.6
     assert res.status == "completed"
     assert res.output == "final"
 
 
 @pytest.mark.asyncio
-async def test_async_run_streaming_agent_and_wait_uses_done_read_past_the_deadline() -> (
+async def test_async_run_streaming_agent_and_wait_checks_the_deadline_inside_an_event() -> (
     None
 ):
-    async with _async_client(_AsyncLateDone()) as client:
+    async with _async_client(_AsyncDoneSpanningTheDeadline()) as client:
+        start = time.monotonic()
         res = await client.run_streaming_agent_and_wait(
             "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
         )
+    assert time.monotonic() - start < 0.6
     assert res.status == "completed"
 
 

@@ -1,7 +1,11 @@
+import copy
+import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "openapi" / "seclai.openapi.json"
@@ -47,3 +51,34 @@ def test_specfix_fails_when_the_spec_declares_a_retained_field_again(
         "list: the spec declares it again; remove the entry"
     ) in result.stderr
     assert not dst.exists()
+
+
+def test_specfix_applies_no_entry_when_one_is_stale(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    spec_loader = importlib.util.spec_from_file_location("specfix", SPECFIX)
+    assert spec_loader is not None and spec_loader.loader is not None
+    specfix = importlib.util.module_from_spec(spec_loader)
+    spec_loader.loader.exec_module(specfix)
+    monkeypatch.setattr(
+        specfix,
+        "RETAINED_REQUEST_FIELDS",
+        [
+            ("Fresh", "kept", {"type": "string"}),
+            ("Stale", "back", {"type": "string"}),
+        ],
+    )
+    spec = {
+        "components": {
+            "schemas": {
+                "Fresh": {"properties": {}},
+                "Stale": {"properties": {"back": {"type": "integer"}}},
+            }
+        }
+    }
+    before = copy.deepcopy(spec)
+
+    errors = specfix.retain_removed_request_fields(spec)
+
+    assert len(errors) == 1 and "stale entry `Stale.back`" in errors[0]
+    assert spec == before

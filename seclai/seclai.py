@@ -1362,14 +1362,10 @@ class Seclai(_SeclaiBase):
                             current_event = line[len("event:") :].strip() or None
                         elif line.startswith("data:"):
                             data_lines.append(line[len("data:") :].lstrip())
-                        # Checked after the line is handled, and not inside
-                        # an event, so a `done` read just past the deadline
-                        # is still used.
-                        if (
-                            current_event is None
-                            and not data_lines
-                            and _time.monotonic() - start > timeout_seconds
-                        ):
+                        # Checked after every line is handled; the event
+                        # buffered so far is dispatched below, so a `done`
+                        # whose lines were read by the deadline still counts.
+                        if _time.monotonic() - start > timeout_seconds:
                             ending = timed_out
                             break
                 except httpx.TransportError as e:
@@ -1387,7 +1383,7 @@ class Seclai(_SeclaiBase):
             cause = e
             ending = timed_out
 
-        # An event whose blank line never came still counts.
+        # An event whose blank line never came (EOF, timeout) still counts.
         run = dispatch()
         if run is not None:
             return run
@@ -5910,9 +5906,10 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Agent run request payload.
             poll_interval: Seconds between poll attempts (default 2.0).
-            include_step_outputs: Include per-step outputs when polling. The
-                run is then fetched at least once, since the ``run_agent``
-                response carries no step outputs.
+            include_step_outputs: Include per-step outputs when polling. When
+                the ``run_agent`` response would already end the poll, the
+                run is fetched once more with them, since that response
+                carries no step outputs.
             return_on_result: Return as soon as a snapshot has
                 ``result_reported_at`` set: its ``output`` is the answer, and
                 for an agent whose ``report_success`` is ``on_result`` that can
@@ -5929,9 +5926,12 @@ class Seclai(_SeclaiBase):
             SeclaiAPIStatusError: If the API returns a non-success status code.
         """
         run = self.run_agent(agent_id, body)
-        if include_step_outputs:
+        if include_step_outputs and (
+            run.status in ("completed", "failed")
+            or (return_on_result and run.result_reported_at)
+        ):
             # The run_agent response carries no step outputs, so it must not
-            # end the poll: fetch the run once and check that instead.
+            # end the poll: fetch the run with them and check that instead.
             run = self.get_agent_run(run.run_id, include_step_outputs=True)
         while run.status not in ("completed", "failed") and not (
             return_on_result and run.result_reported_at
@@ -6446,14 +6446,10 @@ class AsyncSeclai(_SeclaiBase):
                             current_event = line[len("event:") :].strip() or None
                         elif line.startswith("data:"):
                             data_lines.append(line[len("data:") :].lstrip())
-                        # Checked after the line is handled, and not inside
-                        # an event, so a `done` read just past the deadline
-                        # is still used.
-                        if (
-                            current_event is None
-                            and not data_lines
-                            and _time.monotonic() - start > timeout_seconds
-                        ):
+                        # Checked after every line is handled; the event
+                        # buffered so far is dispatched below, so a `done`
+                        # whose lines were read by the deadline still counts.
+                        if _time.monotonic() - start > timeout_seconds:
                             ending = timed_out
                             break
                 except httpx.TransportError as e:
@@ -6471,7 +6467,7 @@ class AsyncSeclai(_SeclaiBase):
             cause = e
             ending = timed_out
 
-        # An event whose blank line never came still counts.
+        # An event whose blank line never came (EOF, timeout) still counts.
         run = dispatch()
         if run is not None:
             return run
@@ -11058,9 +11054,10 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Agent run request payload.
             poll_interval: Seconds between poll attempts (default 2.0).
-            include_step_outputs: Include per-step outputs when polling. The
-                run is then fetched at least once, since the ``run_agent``
-                response carries no step outputs.
+            include_step_outputs: Include per-step outputs when polling. When
+                the ``run_agent`` response would already end the poll, the
+                run is fetched once more with them, since that response
+                carries no step outputs.
             return_on_result: Return as soon as a snapshot has
                 ``result_reported_at`` set: its ``output`` is the answer, and
                 for an agent whose ``report_success`` is ``on_result`` that can
@@ -11079,9 +11076,12 @@ class AsyncSeclai(_SeclaiBase):
         import asyncio
 
         run = await self.run_agent(agent_id, body)
-        if include_step_outputs:
+        if include_step_outputs and (
+            run.status in ("completed", "failed")
+            or (return_on_result and run.result_reported_at)
+        ):
             # The run_agent response carries no step outputs, so it must not
-            # end the poll: fetch the run once and check that instead.
+            # end the poll: fetch the run with them and check that instead.
             run = await self.get_agent_run(run.run_id, include_step_outputs=True)
         while run.status not in ("completed", "failed") and not (
             return_on_result and run.result_reported_at

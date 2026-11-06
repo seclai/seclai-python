@@ -20,13 +20,13 @@
 - Add `ApiVersion` members for `2026-11-02` and `2026-11-04`, so each can be selected without `allow_unknown_api_version`
 - Add `return_on_result` to `run_agent_and_poll()` and `run_streaming_agent_and_wait()`, to return as soon as a run reports its result (`result_reported_at` is set, or the `result` event arrives) instead of waiting for a terminal status or `done`. That run may still be in progress and can still fail
 - Add `raise_on_incomplete` to `run_streaming_agent_and_wait()`. It raises `SeclaiStreamingError` when the stream ends, or is cut by a transport error such as `httpx.ReadError`, before the `done` event, instead of returning a run that has not finished or letting the `httpx` error through, with the latest snapshot in the error's `run`. It will become the default in the next major version
-- Add `run` to `SeclaiStreamingError`, the latest run snapshot when `run_streaming_agent_and_wait()` times out, or with `raise_on_incomplete` gives up before `done`. Its timeout error is now this `SeclaiError` subclass
+- Add `run` to `SeclaiStreamingError`, the latest run snapshot when `run_streaming_agent_and_wait()` times out, or with `raise_on_incomplete` gives up before `done`. The timeout error of `run_streaming_agent_and_wait()` is now this `SeclaiError` subclass; `run_streaming_agent()` still raises `SeclaiError`
 - Export `Unset` and `UNSET` from `seclai`, to test for a response field the API omitted without importing a private module
 
 ### Fixed
 
-- Return the run from a `done` event that `run_streaming_agent_and_wait()` reads just past its `timeout`, rather than raising a timeout error
-- Fetch the run at least once in `run_agent_and_poll()` with `include_step_outputs=True`. When the `run_agent()` response was already terminal it was returned as is, without the step outputs asked for
+- Return the run from a `done` event whose `event:` and `data:` lines `run_streaming_agent_and_wait()` had read when its `timeout` passed, even though the closing blank line had not arrived, rather than raising a timeout error
+- Fetch the run with its step outputs in `run_agent_and_poll()` with `include_step_outputs=True` when the `run_agent()` response would already end the poll. A response that was already terminal was returned as is, without the step outputs asked for
 
 ## [1.9.0] - 2026-10-31
 

@@ -6,8 +6,10 @@ query parameters, and JSON body are sent via ``MockTransport``.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import pathlib
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -5702,6 +5704,54 @@ class TestRunAgentAndPollReturnOnResult:
         )
         assert run.output == "answer"
         assert seen == ["POST /agents/a1/runs?"]
+
+    @staticmethod
+    def _pending_start(seen: list[str]) -> Any:
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.append(f"{req.method} {req.url.path}?{req.url.query.decode()}")
+            if req.method == "POST":
+                return _json_response(_run("pending", reported=False))
+            return _json_response(_run("completed", reported=True))
+
+        return handler
+
+    def test_step_outputs_add_no_fetch_when_the_start_is_pending(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: list[str] = []
+        monkeypatch.setattr(time, "sleep", lambda s: seen.append("sleep"))
+        client = _sync_client(self._pending_start(seen))
+        run = client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), include_step_outputs=True
+        )
+        assert run.status == "completed"
+        # The loop's own fetch, after the first interval; none before it.
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "sleep",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_step_outputs_add_no_fetch_when_the_start_is_pending_async(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: list[str] = []
+
+        async def fake_sleep(seconds: float) -> None:
+            seen.append("sleep")
+
+        monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+        client = _async_client(self._pending_start(seen))
+        run = await client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), include_step_outputs=True
+        )
+        assert run.status == "completed"
+        assert seen == [
+            "POST /agents/a1/runs?",
+            "sleep",
+            "GET /agents/runs/run_1?include_step_outputs=true",
+        ]
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("return_on_result", [False, True])

@@ -10,7 +10,8 @@ the API. Remove an entry at the next major version.
 
 Exits non-zero when an entry is stale: its schema, or the schema's
 ``properties``, is missing, or the spec already declares the property again.
-A stale entry must be removed or updated rather than silently skipped.
+A stale entry must be removed or updated rather than silently skipped. Every
+entry is checked first, so on an error none is applied and nothing is written.
 """
 
 from __future__ import annotations
@@ -42,25 +43,28 @@ RETAINED_REQUEST_FIELDS: list[tuple[str, str, dict[str, Any]]] = [
 
 
 def retain_removed_request_fields(spec: dict[str, Any]) -> list[str]:
-    """Add each retained field to its schema; return the errors found."""
+    """Add each retained field to its schema; return the errors found.
+
+    Every entry is checked before any is applied, so on an error the spec is
+    left unchanged.
+    """
     errors: list[str] = []
     schemas = spec.get("components", {}).get("schemas", {})
-    for schema_name, prop, definition in RETAINED_REQUEST_FIELDS:
+    for schema_name, prop, _ in RETAINED_REQUEST_FIELDS:
         schema = schemas.get(schema_name)
         if not isinstance(schema, dict):
             errors.append(f"schema {schema_name!r} not found")
-            continue
-        props = schema.get("properties")
-        if not isinstance(props, dict):
+        elif not isinstance(schema.get("properties"), dict):
             errors.append(f"schema {schema_name!r} has no properties")
-            continue
-        if prop in props:
+        elif prop in schema["properties"]:
             errors.append(
                 f"stale entry `{schema_name}.{prop}` in the retained-fields "
                 "list: the spec declares it again; remove the entry"
             )
-            continue
-        props[prop] = dict(definition)
+    if errors:
+        return errors
+    for schema_name, prop, definition in RETAINED_REQUEST_FIELDS:
+        schemas[schema_name]["properties"][prop] = dict(definition)
     return errors
 
 
