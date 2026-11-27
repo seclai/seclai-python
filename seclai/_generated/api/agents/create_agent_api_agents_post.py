@@ -118,11 +118,14 @@ def sync_detailed(
     - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
     - Bind the template's resource slots to existing resources with `resource_bindings`, or set
     `create_missing_resources` to have the creatable ones created.
+    - The agent names the files its steps produce by step: a step `gen` names its images `gen.1.png`,
+    `gen.2.png`, and so on.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
     suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
     items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - The imported definition keeps its own `file_names` setting.
     - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
     banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
     target_uuid}` on this call to substitute them before save.
@@ -184,11 +187,14 @@ def sync(
     - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
     - Bind the template's resource slots to existing resources with `resource_bindings`, or set
     `create_missing_resources` to have the creatable ones created.
+    - The agent names the files its steps produce by step: a step `gen` names its images `gen.1.png`,
+    `gen.2.png`, and so on.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
     suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
     items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - The imported definition keeps its own `file_names` setting.
     - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
     banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
     target_uuid}` on this call to substitute them before save.
@@ -244,11 +250,14 @@ async def asyncio_detailed(
     - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
     - Bind the template's resource slots to existing resources with `resource_bindings`, or set
     `create_missing_resources` to have the creatable ones created.
+    - The agent names the files its steps produce by step: a step `gen` names its images `gen.1.png`,
+    `gen.2.png`, and so on.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
     suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
     items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - The imported definition keeps its own `file_names` setting.
     - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
     banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
     target_uuid}` on this call to substitute them before save.
@@ -308,11 +317,14 @@ async def asyncio(
     - Pass a `key` from `GET /agents/examples` as `agent_template`, or `blank` for an empty agent.
     - Bind the template's resource slots to existing resources with `resource_bindings`, or set
     `create_missing_resources` to have the creatable ones created.
+    - The agent names the files its steps produce by step: a step `gen` names its images `gen.1.png`,
+    `gen.2.png`, and so on.
 
     Importing an existing agent:
     - Pass `agent_definition` with the JSON shape produced by `GET /agents/{id}/export`. The full extras
     suite (alert_configs, evaluation_criteria, governance_policies, schedules, solutions) is applied;
     items that don't resolve in this account are reported in the response's `import_warnings` array.
+    - The imported definition keeps its own `file_names` setting.
     - Use `POST /agents/preview-import` first to surface `unresolved_refs` (workflow refs to KBs, memory
     banks, source connections, sub-agents that don't exist here). Then pass `entity_remap: {source_uuid:
     target_uuid}` on this call to substitute them before save.

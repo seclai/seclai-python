@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from io import BytesIO
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 from uuid import UUID
 
@@ -18,10 +18,14 @@ def _get_kwargs(
     attachment_id: str,
     *,
     download_name: None | str | Unset = UNSET,
+    range_: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(range_, Unset):
+        headers["Range"] = range_
+
     if not isinstance(x_account_id, Unset):
         headers["X-Account-Id"] = x_account_id
 
@@ -54,11 +58,20 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> File | HTTPValidationError | ServiceUnavailableError | None:
+) -> Any | File | HTTPValidationError | ServiceUnavailableError | None:
     if response.status_code == 200:
         response_200 = File(payload=BytesIO(response.content))
 
         return response_200
+
+    if response.status_code == 206:
+        response_206 = File(payload=BytesIO(response.content))
+
+        return response_206
+
+    if response.status_code == 416:
+        response_416 = cast(Any, None)
+        return response_416
 
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
@@ -78,7 +91,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
+) -> Response[Any | File | HTTPValidationError | ServiceUnavailableError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -93,9 +106,10 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
+    range_: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
+) -> Response[Any | File | HTTPValidationError | ServiceUnavailableError]:
     """Download an agent-run attachment
 
      Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
@@ -114,10 +128,18 @@ def sync_detailed(
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
+    Byte ranges:
+    - Every 200 and 206 carries ``Accept-Ranges: bytes`` and ``Content-Length``.
+    - One range of a non-empty file (``bytes=start-end``, ``bytes=start-`` or ``bytes=-suffix`` with a
+    positive suffix) is answered with 206 and ``Content-Range``, or with 416 and ``Content-Range: bytes
+    */<size>`` when it starts at or past the end of the file or ends before it starts.
+    - Any other ``Range``, including more than one range, is ignored and the whole file is served.
+
     Args:
         run_id (UUID):
         attachment_id (str):
         download_name (None | str | Unset):
+        range_ (None | str | Unset):
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
@@ -126,13 +148,14 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[File | HTTPValidationError | ServiceUnavailableError]
+        Response[Any | File | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
         run_id=run_id,
         attachment_id=attachment_id,
         download_name=download_name,
+        range_=range_,
         x_account_id=x_account_id,
         seclai_version=seclai_version,
     )
@@ -150,9 +173,10 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
+    range_: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> File | HTTPValidationError | ServiceUnavailableError | None:
+) -> Any | File | HTTPValidationError | ServiceUnavailableError | None:
     """Download an agent-run attachment
 
      Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
@@ -171,10 +195,18 @@ def sync(
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
+    Byte ranges:
+    - Every 200 and 206 carries ``Accept-Ranges: bytes`` and ``Content-Length``.
+    - One range of a non-empty file (``bytes=start-end``, ``bytes=start-`` or ``bytes=-suffix`` with a
+    positive suffix) is answered with 206 and ``Content-Range``, or with 416 and ``Content-Range: bytes
+    */<size>`` when it starts at or past the end of the file or ends before it starts.
+    - Any other ``Range``, including more than one range, is ignored and the whole file is served.
+
     Args:
         run_id (UUID):
         attachment_id (str):
         download_name (None | str | Unset):
+        range_ (None | str | Unset):
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
@@ -183,7 +215,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        File | HTTPValidationError | ServiceUnavailableError
+        Any | File | HTTPValidationError | ServiceUnavailableError
     """
 
     return sync_detailed(
@@ -191,6 +223,7 @@ def sync(
         attachment_id=attachment_id,
         client=client,
         download_name=download_name,
+        range_=range_,
         x_account_id=x_account_id,
         seclai_version=seclai_version,
     ).parsed
@@ -202,9 +235,10 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
+    range_: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> Response[File | HTTPValidationError | ServiceUnavailableError]:
+) -> Response[Any | File | HTTPValidationError | ServiceUnavailableError]:
     """Download an agent-run attachment
 
      Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
@@ -223,10 +257,18 @@ async def asyncio_detailed(
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
+    Byte ranges:
+    - Every 200 and 206 carries ``Accept-Ranges: bytes`` and ``Content-Length``.
+    - One range of a non-empty file (``bytes=start-end``, ``bytes=start-`` or ``bytes=-suffix`` with a
+    positive suffix) is answered with 206 and ``Content-Range``, or with 416 and ``Content-Range: bytes
+    */<size>`` when it starts at or past the end of the file or ends before it starts.
+    - Any other ``Range``, including more than one range, is ignored and the whole file is served.
+
     Args:
         run_id (UUID):
         attachment_id (str):
         download_name (None | str | Unset):
+        range_ (None | str | Unset):
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
@@ -235,13 +277,14 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[File | HTTPValidationError | ServiceUnavailableError]
+        Response[Any | File | HTTPValidationError | ServiceUnavailableError]
     """
 
     kwargs = _get_kwargs(
         run_id=run_id,
         attachment_id=attachment_id,
         download_name=download_name,
+        range_=range_,
         x_account_id=x_account_id,
         seclai_version=seclai_version,
     )
@@ -257,9 +300,10 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     download_name: None | str | Unset = UNSET,
+    range_: None | str | Unset = UNSET,
     x_account_id: UUID | Unset = UNSET,
     seclai_version: str | Unset = UNSET,
-) -> File | HTTPValidationError | ServiceUnavailableError | None:
+) -> Any | File | HTTPValidationError | ServiceUnavailableError | None:
     """Download an agent-run attachment
 
      Streams the bytes of a file of the given agent run: one a step emitted, or one the run started with.
@@ -278,10 +322,18 @@ async def asyncio(
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
+    Byte ranges:
+    - Every 200 and 206 carries ``Accept-Ranges: bytes`` and ``Content-Length``.
+    - One range of a non-empty file (``bytes=start-end``, ``bytes=start-`` or ``bytes=-suffix`` with a
+    positive suffix) is answered with 206 and ``Content-Range``, or with 416 and ``Content-Range: bytes
+    */<size>`` when it starts at or past the end of the file or ends before it starts.
+    - Any other ``Range``, including more than one range, is ignored and the whole file is served.
+
     Args:
         run_id (UUID):
         attachment_id (str):
         download_name (None | str | Unset):
+        range_ (None | str | Unset):
         x_account_id (UUID | Unset):
         seclai_version (str | Unset):
 
@@ -290,7 +342,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        File | HTTPValidationError | ServiceUnavailableError
+        Any | File | HTTPValidationError | ServiceUnavailableError
     """
 
     return (
@@ -299,6 +351,7 @@ async def asyncio(
             attachment_id=attachment_id,
             client=client,
             download_name=download_name,
+            range_=range_,
             x_account_id=x_account_id,
             seclai_version=seclai_version,
         )

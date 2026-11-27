@@ -96,12 +96,27 @@ def sync_detailed(
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
     `regex_replace`, `evaluate_step`, `extract_data`, `extract_content`, `add_chat_turn`,
-    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `streaming_result`, `send_email`,
-    `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
-    `load_content_attachment`, `load_content`, `display_result`, `join`, `merge`, `text`, `for_each`,
-    `repeat_until`, `if_else`, and `switch`. Non-composite step types (`display_result`, `join`,
-    `streaming_result`) cannot contain child steps. A definition holding a `gate` or `retry` step is
-    rejected: use `if_else`, or `repeat_until` to run steps again until a condition holds.
+    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `send_email`, `webhook_call`,
+    `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
+    `load_content_attachment`, `load_content`, `text`, `for_each`, `repeat_until`, `if_else`, `switch`
+    and `parallel`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step. A list
+    of more than one step is stored as a `parallel` block with one lane per step, which no later step
+    reads.
+
+    **parallel** starts every lane in `lanes` with the block's input, and the step after it starts once
+    every lane has finished. Its output is a JSON object keyed by lane name, or its `output_template`,
+    where `{{lane.<name>}}` is a lane's result.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     **repeat_until** runs its `body[]`, then tests its `conditions` against the iteration's verdict
     (`verdict_template`, else the iteration's value); it repeats until they match or `max_iterations` is
@@ -166,12 +181,27 @@ def sync(
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
     `regex_replace`, `evaluate_step`, `extract_data`, `extract_content`, `add_chat_turn`,
-    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `streaming_result`, `send_email`,
-    `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
-    `load_content_attachment`, `load_content`, `display_result`, `join`, `merge`, `text`, `for_each`,
-    `repeat_until`, `if_else`, and `switch`. Non-composite step types (`display_result`, `join`,
-    `streaming_result`) cannot contain child steps. A definition holding a `gate` or `retry` step is
-    rejected: use `if_else`, or `repeat_until` to run steps again until a condition holds.
+    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `send_email`, `webhook_call`,
+    `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
+    `load_content_attachment`, `load_content`, `text`, `for_each`, `repeat_until`, `if_else`, `switch`
+    and `parallel`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step. A list
+    of more than one step is stored as a `parallel` block with one lane per step, which no later step
+    reads.
+
+    **parallel** starts every lane in `lanes` with the block's input, and the step after it starts once
+    every lane has finished. Its output is a JSON object keyed by lane name, or its `output_template`,
+    where `{{lane.<name>}}` is a lane's result.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     **repeat_until** runs its `body[]`, then tests its `conditions` against the iteration's verdict
     (`verdict_template`, else the iteration's value); it repeats until they match or `max_iterations` is
@@ -231,12 +261,27 @@ async def asyncio_detailed(
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
     `regex_replace`, `evaluate_step`, `extract_data`, `extract_content`, `add_chat_turn`,
-    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `streaming_result`, `send_email`,
-    `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
-    `load_content_attachment`, `load_content`, `display_result`, `join`, `merge`, `text`, `for_each`,
-    `repeat_until`, `if_else`, and `switch`. Non-composite step types (`display_result`, `join`,
-    `streaming_result`) cannot contain child steps. A definition holding a `gate` or `retry` step is
-    rejected: use `if_else`, or `repeat_until` to run steps again until a condition holds.
+    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `send_email`, `webhook_call`,
+    `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
+    `load_content_attachment`, `load_content`, `text`, `for_each`, `repeat_until`, `if_else`, `switch`
+    and `parallel`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step. A list
+    of more than one step is stored as a `parallel` block with one lane per step, which no later step
+    reads.
+
+    **parallel** starts every lane in `lanes` with the block's input, and the step after it starts once
+    every lane has finished. Its output is a JSON object keyed by lane name, or its `output_template`,
+    where `{{lane.<name>}}` is a lane's result.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     **repeat_until** runs its `body[]`, then tests its `conditions` against the iteration's verdict
     (`verdict_template`, else the iteration's value); it repeats until they match or `max_iterations` is
@@ -299,12 +344,27 @@ async def asyncio(
 
     The definition contains the agent's step workflow. Step types include `prompt_call`, `retrieval`,
     `regex_replace`, `evaluate_step`, `extract_data`, `extract_content`, `add_chat_turn`,
-    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `streaming_result`, `send_email`,
-    `webhook_call`, `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
-    `load_content_attachment`, `load_content`, `display_result`, `join`, `merge`, `text`, `for_each`,
-    `repeat_until`, `if_else`, and `switch`. Non-composite step types (`display_result`, `join`,
-    `streaming_result`) cannot contain child steps. A definition holding a `gate` or `retry` step is
-    rejected: use `if_else`, or `repeat_until` to run steps again until a condition holds.
+    `load_chat_history`, `add_memory`, `search_memory`, `load_memory`, `send_email`, `webhook_call`,
+    `write_aws_s3_object`, `call_agent`, `write_metadata`, `write_content_attachment`,
+    `load_content_attachment`, `load_content`, `text`, `for_each`, `repeat_until`, `if_else`, `switch`
+    and `parallel`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step. A list
+    of more than one step is stored as a `parallel` block with one lane per step, which no later step
+    reads.
+
+    **parallel** starts every lane in `lanes` with the block's input, and the step after it starts once
+    every lane has finished. Its output is a JSON object keyed by lane name, or its `output_template`,
+    where `{{lane.<name>}}` is a lane's result.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     **repeat_until** runs its `body[]`, then tests its `conditions` against the iteration's verdict
     (`verdict_template`, else the iteration's value); it repeats until they match or `max_iterations` is

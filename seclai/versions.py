@@ -34,13 +34,17 @@ class ApiVersion(StrEnum):
     V2026_10_28 = "2026-10-28"
     V2026_11_02 = "2026-11-02"
     V2026_11_04 = "2026-11-04"
+    V2026_11_08 = "2026-11-08"
+    V2026_11_09 = "2026-11-09"
+    V2026_11_14 = "2026-11-14"
+    V2026_11_19 = "2026-11-19"
 
 
 #: Baseline applied to an unpinned, header-less caller.
 DEFAULT_API_VERSION = ApiVersion.V2026_07_01
 
 #: Newest version known to this SDK release. May lag the server.
-LATEST_API_VERSION = ApiVersion.V2026_11_04
+LATEST_API_VERSION = ApiVersion.V2026_11_19
 
 
 def validate_api_version(version: str | None, *, allow_unknown: bool) -> str | None:

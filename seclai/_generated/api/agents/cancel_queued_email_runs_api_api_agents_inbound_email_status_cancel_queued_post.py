@@ -70,8 +70,9 @@ def sync_detailed(
 ) -> Response[CancelQueuedRunsResponse | ServiceUnavailableError]:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
-    consumed no quota, so this merely fails them. Returns the count cancelled.
+     Cancel all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota or credits. Each ends `cancelled` (`failed` with `Seclai-Version` before
+    `2026-11-08`). Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.
@@ -108,8 +109,9 @@ def sync(
 ) -> CancelQueuedRunsResponse | ServiceUnavailableError | None:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
-    consumed no quota, so this merely fails them. Returns the count cancelled.
+     Cancel all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota or credits. Each ends `cancelled` (`failed` with `Seclai-Version` before
+    `2026-11-08`). Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.
@@ -141,8 +143,9 @@ async def asyncio_detailed(
 ) -> Response[CancelQueuedRunsResponse | ServiceUnavailableError]:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
-    consumed no quota, so this merely fails them. Returns the count cancelled.
+     Cancel all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota or credits. Each ends `cancelled` (`failed` with `Seclai-Version` before
+    `2026-11-08`). Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.
@@ -177,8 +180,9 @@ async def asyncio(
 ) -> CancelQueuedRunsResponse | ServiceUnavailableError | None:
     """Cancel all queued inbound-email runs
 
-     Fail all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
-    consumed no quota, so this merely fails them. Returns the count cancelled.
+     Cancel all of the account's QUEUED (over-quota parked) inbound-email runs at once. A queued run has
+    consumed no quota or credits. Each ends `cancelled` (`failed` with `Seclai-Version` before
+    `2026-11-08`). Returns the count cancelled.
 
     Auth & scoping: requires `X-API-Key` header or OAuth Bearer token for an account owner/admin; scoped
     to the key's account.

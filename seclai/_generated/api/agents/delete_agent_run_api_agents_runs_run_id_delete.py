@@ -81,12 +81,20 @@ def sync_detailed(
 ) -> Response[AgentRunResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel an agent run
 
-     Cancel an in-flight (`processing`) or queued (`queued`) agent run.
+     Cancel an agent run that has not ended: `queued`, `pending`, `processing`, `waiting_human` or
+    `waiting_scheduled`.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; it has consumed no quota.
+    dispatched; it has consumed no quota. A waiting run's open approval request is cancelled with it,
+    and its reviewers are told.
 
-    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+    If the run was started by another agent's `call_agent` step that is still waiting for its result,
+    the cancel ends the outermost such calling run, and every run below it that has not reported its
+    result.
+
+    The run ends `cancelled`. With `Seclai-Version` before `2026-11-08` it shows `failed`.
+
+    If the run has already ended (`completed`, `failed` or `cancelled`), cancellation is rejected.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your
@@ -127,12 +135,20 @@ def sync(
 ) -> AgentRunResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel an agent run
 
-     Cancel an in-flight (`processing`) or queued (`queued`) agent run.
+     Cancel an agent run that has not ended: `queued`, `pending`, `processing`, `waiting_human` or
+    `waiting_scheduled`.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; it has consumed no quota.
+    dispatched; it has consumed no quota. A waiting run's open approval request is cancelled with it,
+    and its reviewers are told.
 
-    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+    If the run was started by another agent's `call_agent` step that is still waiting for its result,
+    the cancel ends the outermost such calling run, and every run below it that has not reported its
+    result.
+
+    The run ends `cancelled`. With `Seclai-Version` before `2026-11-08` it shows `failed`.
+
+    If the run has already ended (`completed`, `failed` or `cancelled`), cancellation is rejected.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your
@@ -168,12 +184,20 @@ async def asyncio_detailed(
 ) -> Response[AgentRunResponse | HTTPValidationError | ServiceUnavailableError]:
     """Cancel an agent run
 
-     Cancel an in-flight (`processing`) or queued (`queued`) agent run.
+     Cancel an agent run that has not ended: `queued`, `pending`, `processing`, `waiting_human` or
+    `waiting_scheduled`.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; it has consumed no quota.
+    dispatched; it has consumed no quota. A waiting run's open approval request is cancelled with it,
+    and its reviewers are told.
 
-    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+    If the run was started by another agent's `call_agent` step that is still waiting for its result,
+    the cancel ends the outermost such calling run, and every run below it that has not reported its
+    result.
+
+    The run ends `cancelled`. With `Seclai-Version` before `2026-11-08` it shows `failed`.
+
+    If the run has already ended (`completed`, `failed` or `cancelled`), cancellation is rejected.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your
@@ -212,12 +236,20 @@ async def asyncio(
 ) -> AgentRunResponse | HTTPValidationError | ServiceUnavailableError | None:
     """Cancel an agent run
 
-     Cancel an in-flight (`processing`) or queued (`queued`) agent run.
+     Cancel an agent run that has not ended: `queued`, `pending`, `processing`, `waiting_human` or
+    `waiting_scheduled`.
 
     A `queued` run is an inbound-email run parked by the per-plan rate quota that has not yet been
-    dispatched; it has consumed no quota.
+    dispatched; it has consumed no quota. A waiting run's open approval request is cancelled with it,
+    and its reviewers are told.
 
-    If the run is already in a terminal state (`completed` or `failed`), cancellation will be rejected.
+    If the run was started by another agent's `call_agent` step that is still waiting for its result,
+    the cancel ends the outermost such calling run, and every run below it that has not reported its
+    result.
+
+    The run ends `cancelled`. With `Seclai-Version` before `2026-11-08` it shows `failed`.
+
+    If the run has already ended (`completed`, `failed` or `cancelled`), cancellation is rejected.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only cancel runs belonging to your

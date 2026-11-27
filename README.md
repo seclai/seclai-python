@@ -246,7 +246,11 @@ client decodes:
 | `2026-10-21` | An evaluation result whose evaluator returned no verdict (`error`) is left out of `failed` and of the pass and failure rates in `get_non_manual_evaluation_summary()`; `get_evaluation_criteria_summary()`'s `average_score` averages only passed and failed results; `test_draft_evaluation()` returns `score` and `passed` as `None` for an `error` result instead of 0.5 and `False` |
 | `2026-10-28` | An `if_else` or `switch` step's `output` is the result of the arm it took (its input when that arm is empty or it took none), rather than the `{"branch": ...}` marker with no `attachments`. The arm is in the step's `decision` on every version |
 | `2026-11-02` | An agent-definition or sampling-rule write (other than an import) that references a metadata key no trigger declares is refused, rather than the key being declared optional: `update_agent_definition()` answers 400, and `update_agent()` setting `sampling_config` answers 422 |
-| `2026-11-04` | `create_evaluation_result()` refuses `retry_triggered: true`, and `update_agent()` refuses `evaluation_mode` `eval_and_retry` (earlier versions store it as `sample_and_flag`), each with a 400; a new or changed evaluation criterion's `step_id` must name a `display_result` or `streaming_result` step |
+| `2026-11-04` | `create_evaluation_result()` refuses `retry_triggered: true`, and `update_agent()` refuses `evaluation_mode` `eval_and_retry` (earlier versions store it as `sample_and_flag`), each with a 400; a new or changed evaluation criterion's `step_id` must name the step carrying `run_result`, the run's answer |
+| `2026-11-08` | A run cancelled with `cancel_agent_run()` or `cancel_queued_email_runs()` ends with status `cancelled` rather than `failed` |
+| `2026-11-09` | `list_agent_examples()` reads `query` as what the agent should do and ranks entries by how well they match its words and meaning, best first, rather than listing only entries containing every word; a query of several words that are all filler ("create an agent") counts as no query |
+| `2026-11-14` | `run_agent()`, `run_streaming_agent()` and the helpers built on them answer 409 and start no run for an agent whose definition fails to validate, rather than returning the run already failed with the validation error as its cause |
+| `2026-11-19` | `create_alert_config()` accepts the agent alert type `step_failure_continued` |
 
 Moving to a later version can still change a value your code branches on, or
 reject a request that used to work. From `2026-10-05`, a content item held for
@@ -262,7 +266,10 @@ those results: read its `error` count. From `2026-10-28`, code that parses an
 `if_else` or `switch` step's `output` for the `{"branch": ...}` marker gets the
 arm's result instead: read `decision`. `2026-11-02` and `2026-11-04` turn
 requests that were accepted before into 400s: declare metadata keys with
-`set_metadata_keys()` before referencing them. Passing
+`set_metadata_keys()` before referencing them. From `2026-11-08`, code that
+reads `failed` to find cancelled runs must also read `cancelled`, and from
+`2026-11-14` starting a run of an agent with an invalid definition raises
+`SeclaiAPIStatusError` with status 409 instead of returning a failed run. Passing
 `api_version=LATEST_API_VERSION` opts into all of these at once.
 
 ## Resources
@@ -418,10 +425,14 @@ for event_type, data in client.run_streaming_agent(
 ```
 
 Set `include_reasoning=True` in the request to also receive `stream_reasoning`
-events with the model's reasoning, for a `streaming_result` step whose author
-enabled `show_reasoning`. `run_streaming_agent_and_wait()` keeps only the
-`init`, `result` and `done` events, so it removes `include_reasoning` from the
-body before sending.
+events with the model's reasoning, for a `prompt_call` whose `run_result`
+enables `show_reasoning`. Set `include_commentary=True` to receive
+`stream_commentary` events (with `phase`, `message` and `text`) carrying the
+text a model on OpenAI's Responses API writes outside its final answer, for a
+`prompt_call` whose `run_result` enables `show_commentary`. Neither is ever
+part of `output`. `run_streaming_agent_and_wait()` keeps only the `init`,
+`result` and `done` events, so it removes both keys from the body before
+sending.
 
 Every key of `AgentRunStreamRequest` is optional, so a run on an uploaded file
 can send just `AgentRunStreamRequest(input_upload_id=upload["upload_id"])`.
@@ -450,7 +461,7 @@ result = client.run_agent_and_poll(
 )
 ```
 
-It returns once the run's status is `completed` or `failed`. With
+It returns once the run's status is `completed`, `failed` or `cancelled`. With
 `return_on_result=True` it returns the first snapshot with
 `result_reported_at` set; that run may still be in progress and can still
 fail, so check `result_reported_at`, not `status`.
@@ -518,15 +529,35 @@ client.set_metadata_keys("agent_id", "trigger_id", keys.metadata_keys)
 ### Agent run attachments
 
 ```python
-# Download a file emitted by a step in an agent run. attachment_id is the
-# URL-safe-base64 storage_key surfaced in run output manifests / webhooks.
+# Download a file of an agent run. attachment_id is the `id` of an entry in the
+# run's or a step's `attachments`, or the URL-safe-base64 storage key that
+# webhook and email links carry.
 response = client.download_agent_run_attachment("run_id", "attachment_id")  # raw httpx.Response
 try:
     for chunk in response.iter_bytes():
         ...  # write to disk
 finally:
     response.close()
+
+# Fetch one byte range: bytes 0-1023 here. range_start alone reads to the end
+# of the file, and range_suffix=500 reads the last 500 bytes.
+response = client.download_agent_run_attachment(
+    "run_id", "attachment_id", range_start=0, range_end=1023
+)
+try:
+    print(response.status_code, response.headers.get("content-range"))  # 206 bytes 0-1023/<size>
+    data = response.read()
+finally:
+    response.close()
 ```
+
+A range is answered with 206 and `Content-Range`. An empty file comes back
+whole, with 200. A range that starts at or past the end of a non-empty file
+raises `SeclaiAPIStatusError` with status 416. A combination that is not one
+byte range (`range_end` without `range_start`, `range_suffix` with either, a
+negative value, a `range_suffix` of 0, an end before the start, or a value
+that is not an `int`, a `bool` included) raises `ValueError` without sending
+anything.
 
 ### Agent AI assistant
 
@@ -902,7 +933,7 @@ rejections = client.list_inbound_email_rejections(agent_id="agent_id")
 
 # Account-wide overload circuit breaker
 status = client.get_inbound_email_status()  # {"paused": ..., "queued_backlog": ...}
-client.cancel_queued_email_runs()  # fail all QUEUED (over-quota parked) runs
+client.cancel_queued_email_runs()  # cancel all QUEUED (over-quota parked) runs
 client.resume_inbound_email()      # one-shot; re-arms if still overloaded
 ```
 

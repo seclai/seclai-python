@@ -74,9 +74,10 @@ def sync_detailed(
 
     On a prompt_call's `media_generation` tool — and the dedicated generate_* steps via tier routing —
     the author/LLM chooses a *tier* (fast/balanced/thorough), never a model. This is the surface that
-    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, and a
-    human-readable scaled `price_label`. Global routing/pricing (the same for every account); read-only.
-    REST parity with the `list_generation_tiers` MCP tool.
+    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, a
+    human-readable scaled `price_label`, and for image tiers the `aspect_ratios` an image generator may
+    be pinned to. Global routing/pricing (the same for every account); read-only. REST parity with the
+    `list_generation_tiers` MCP tool.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -117,9 +118,10 @@ def sync(
 
     On a prompt_call's `media_generation` tool — and the dedicated generate_* steps via tier routing —
     the author/LLM chooses a *tier* (fast/balanced/thorough), never a model. This is the surface that
-    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, and a
-    human-readable scaled `price_label`. Global routing/pricing (the same for every account); read-only.
-    REST parity with the `list_generation_tiers` MCP tool.
+    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, a
+    human-readable scaled `price_label`, and for image tiers the `aspect_ratios` an image generator may
+    be pinned to. Global routing/pricing (the same for every account); read-only. REST parity with the
+    `list_generation_tiers` MCP tool.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -155,9 +157,10 @@ async def asyncio_detailed(
 
     On a prompt_call's `media_generation` tool — and the dedicated generate_* steps via tier routing —
     the author/LLM chooses a *tier* (fast/balanced/thorough), never a model. This is the surface that
-    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, and a
-    human-readable scaled `price_label`. Global routing/pricing (the same for every account); read-only.
-    REST parity with the `list_generation_tiers` MCP tool.
+    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, a
+    human-readable scaled `price_label`, and for image tiers the `aspect_ratios` an image generator may
+    be pinned to. Global routing/pricing (the same for every account); read-only. REST parity with the
+    `list_generation_tiers` MCP tool.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.
@@ -196,9 +199,10 @@ async def asyncio(
 
     On a prompt_call's `media_generation` tool — and the dedicated generate_* steps via tier routing —
     the author/LLM chooses a *tier* (fast/balanced/thorough), never a model. This is the surface that
-    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, and a
-    human-readable scaled `price_label`. Global routing/pricing (the same for every account); read-only.
-    REST parity with the `list_generation_tiers` MCP tool.
+    maps each `(modality, tier)` to its concrete generator, raw `credits_per_unit`, `unit_label`, a
+    human-readable scaled `price_label`, and for image tiers the `aspect_ratios` an image generator may
+    be pinned to. Global routing/pricing (the same for every account); read-only. REST parity with the
+    `list_generation_tiers` MCP tool.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token.

@@ -88,7 +88,7 @@ def sync_detailed(
     Agent alert types: run_failed, consecutive_failures, error_rate_spike, run_burst, slow_run,
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
-    model_deprecated, model_sunset.
+    model_deprecated, model_sunset, step_failure_continued (from Seclai-Version 2026-11-19).
     Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
     source_spend_limit_reached (needs source_connection_id).
 
@@ -138,7 +138,7 @@ def sync(
     Agent alert types: run_failed, consecutive_failures, error_rate_spike, run_burst, slow_run,
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
-    model_deprecated, model_sunset.
+    model_deprecated, model_sunset, step_failure_continued (from Seclai-Version 2026-11-19).
     Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
     source_spend_limit_reached (needs source_connection_id).
 
@@ -183,7 +183,7 @@ async def asyncio_detailed(
     Agent alert types: run_failed, consecutive_failures, error_rate_spike, run_burst, slow_run,
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
-    model_deprecated, model_sunset.
+    model_deprecated, model_sunset, step_failure_continued (from Seclai-Version 2026-11-19).
     Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
     source_spend_limit_reached (needs source_connection_id).
 
@@ -231,7 +231,7 @@ async def asyncio(
     Agent alert types: run_failed, consecutive_failures, error_rate_spike, run_burst, slow_run,
     credits_low_threshold, credits_runout_prediction, credits_usage_spike, non_manual_eval_failed,
     non_manual_eval_flagged, governance_flagged, governance_blocked, model_newer_available,
-    model_deprecated, model_sunset.
+    model_deprecated, model_sunset, step_failure_continued (from Seclai-Version 2026-11-19).
     Source alert types: pull_failed, consecutive_pull_failures, pull_error_rate_spike,
     source_spend_limit_reached (needs source_connection_id).
 

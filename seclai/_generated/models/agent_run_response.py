@@ -57,11 +57,11 @@ class AgentRunResponse:
             `output`); the same files are in `attachments` on every version, each with a `download_url`.  Null on runs that
             produced no terminal output or that pre-date this column.
         result_reported_at (datetime.datetime | None | Unset): When the run reported success: for an agent whose
-            `report_success` is `on_result`, once its result step published, or once its run started if it has no result
-            step; else when the run completed.  From then on `output` is the run's answer and never changes; stop polling
-            here if you only need the answer.  `status` still follows every step, so a run can report success and later
-            fail.  Null until the run reports, for a run that failed before reporting, and for runs that ended before this
-            field existed.
+            `report_success` is `on_result`, once the step carrying `run_result` published, or once its run started if no
+            step carries it; else when the run completed.  From then on `output` is the run's answer and never changes; stop
+            polling here if you only need the answer.  `status` still follows every step, so a run can report success and
+            later fail.  Null until the run reports, for a run that failed before reporting, and for runs that ended before
+            this field existed.
         scan_wait_ms (int | None | Unset): Milliseconds spent waiting for prompt injection scan.
         steps (list[AgentRunStepResponse] | None | Unset): Step outputs and per-step timing/credits. Only included when
             requested.

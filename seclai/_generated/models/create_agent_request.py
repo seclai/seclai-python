@@ -38,7 +38,8 @@ class CreateAgentRequest:
             metadata/trigger fields the request does not specify explicitly. Validation errors include line/column
             references against a canonical pretty-printed echo of the supplied payload.
         agent_template (None | str | Unset): Agent gallery entry to start from: a `key` from GET /agents/examples, or
-            `blank`. The keys retrieval_example and simple_qa remain accepted for their gallery entries.
+            `blank`. The keys retrieval_example and simple_qa remain accepted for their gallery entries. An entry's safety
+            policies, which its summary may describe, are not created on an agent created here.
         create_missing_resources (bool | Unset): For an `agent_template`: create each creatable resource slot left out
             of `resource_bindings`, and group the agent with them in a new solution. When false, an unbound slot the
             template needs is an error. Default: False.

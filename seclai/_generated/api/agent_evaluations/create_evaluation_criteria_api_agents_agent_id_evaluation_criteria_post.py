@@ -94,8 +94,8 @@ def sync_detailed(
 
      Create new step evaluation settings for an agent.
 
-    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
-    `streaming_result` step, the run's published result; another step returns 400.
+    From Seclai-Version 2026-11-04, `step_id` must name the step carrying
+    `run_result`, the run's published result; another step returns 400.
     The evaluation mode and sample frequency are the agent's.
 
     Args:
@@ -104,7 +104,7 @@ def sync_detailed(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            step_id names the display_result or streaming_result step to score. The
+            step_id names the step carrying run_result, the run's answer, to score. The
             evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 
@@ -142,8 +142,8 @@ def sync(
 
      Create new step evaluation settings for an agent.
 
-    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
-    `streaming_result` step, the run's published result; another step returns 400.
+    From Seclai-Version 2026-11-04, `step_id` must name the step carrying
+    `run_result`, the run's published result; another step returns 400.
     The evaluation mode and sample frequency are the agent's.
 
     Args:
@@ -152,7 +152,7 @@ def sync(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            step_id names the display_result or streaming_result step to score. The
+            step_id names the step carrying run_result, the run's answer, to score. The
             evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 
@@ -187,8 +187,8 @@ async def asyncio_detailed(
 
      Create new step evaluation settings for an agent.
 
-    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
-    `streaming_result` step, the run's published result; another step returns 400.
+    From Seclai-Version 2026-11-04, `step_id` must name the step carrying
+    `run_result`, the run's published result; another step returns 400.
     The evaluation mode and sample frequency are the agent's.
 
     Args:
@@ -197,7 +197,7 @@ async def asyncio_detailed(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            step_id names the display_result or streaming_result step to score. The
+            step_id names the step carrying run_result, the run's answer, to score. The
             evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 
@@ -233,8 +233,8 @@ async def asyncio(
 
      Create new step evaluation settings for an agent.
 
-    From Seclai-Version 2026-11-04, `step_id` must name a `display_result` or
-    `streaming_result` step, the run's published result; another step returns 400.
+    From Seclai-Version 2026-11-04, `step_id` must name the step carrying
+    `run_result`, the run's published result; another step returns 400.
     The evaluation mode and sample frequency are the agent's.
 
     Args:
@@ -243,7 +243,7 @@ async def asyncio(
         seclai_version (str | Unset):
         body (CreateEvaluationCriteriaRequest): Request body for creating an evaluation criteria.
 
-            step_id names the display_result or streaming_result step to score. The
+            step_id names the step carrying run_result, the run's answer, to score. The
             evaluation mode and sample frequency are set at the
             agent level, not per-criteria.
 

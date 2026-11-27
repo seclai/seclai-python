@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.11.0] - 2026-11-27
+
+### Changed
+
+- Sync the bundled OpenAPI spec. It adds no paths or schemas; the generated models gain `include_commentary` on `AgentRunStreamRequest`, `aspect_ratios` on `GenerationTierResponse`, and the `cancelled` member of `PendingProcessingCompletedFailedStatus`, the `status` of an agent run, its steps and its attempts
+- Move `LATEST_API_VERSION` to `2026-11-19`. A client built with `api_version=LATEST_API_VERSION` also opts into `2026-11-08` to `2026-11-19`: a run cancelled with `cancel_agent_run()` or `cancel_queued_email_runs()` ends with status `cancelled` rather than `failed`; `list_agent_examples()` reads `query` as what the agent should do and ranks entries by how well they match its words and meaning, best first, rather than listing only entries containing every word; `run_agent()`, `run_streaming_agent()` and the helpers built on them raise `SeclaiAPIStatusError` with status 409, and start no run, for an agent whose definition fails to validate, rather than returning the run already failed with the validation error as its cause; and `create_alert_config()` accepts the agent alert type `step_failure_continued`
+- Stop `run_agent_and_poll()` at status `cancelled`, as it stops at `completed` and `failed`
+- Note API behavior that changed on every API version, whatever `Seclai-Version` a client sends: `cancel_agent_run()` also cancels a `pending`, `waiting_human` or `waiting_scheduled` run, and cancelling a run started by another agent's `call_agent` step that is still waiting for it ends the outermost calling run, and every run below it that has not reported its result
+- Describe a run's answer as the output of the step carrying `run_result`, as the API reference now does, in place of a `streaming_result` or `display_result` step: `include_reasoning` and `include_commentary` apply to a `prompt_call` whose `run_result` enables `show_reasoning` or `show_commentary`, and from `2026-11-04` a new or changed evaluation criterion's `step_id` must name the step carrying `run_result`
+
+### Added
+
+- Add `include_commentary` as an optional key of `AgentRunStreamRequest`, to receive `stream_commentary` events from `run_streaming_agent()` carrying the text a model on OpenAI's Responses API writes outside its final answer, for a `prompt_call` whose `run_result` enables `show_commentary`. `run_streaming_agent_and_wait()`, which keeps only the `init`, `result` and `done` events, removes it from the body before sending, as it does `include_reasoning`
+- Add `range_start`, `range_end` and `range_suffix` to `download_agent_run_attachment()`, to fetch one byte range of the file, answered with 206 and `Content-Range`. A combination that is not one byte range (`range_end` without `range_start`, `range_suffix` with either, a negative value, a `range_suffix` of 0, an end before the start, or a value that is not an `int`, a `bool` included) raises `ValueError` without sending a request; a range that starts at or past the end of a non-empty file raises `SeclaiAPIStatusError` with status 416
+- Add `ApiVersion` members for `2026-11-08`, `2026-11-09`, `2026-11-14` and `2026-11-19`, so each can be selected without `allow_unknown_api_version`
+
+### Fixed
+
+- Decode an agent run, step or attempt whose `status` is `cancelled`. An account pinned server-side to API version `2026-11-08` or later, or a client built with `allow_unknown_api_version=True`, got a `ValueError` from `get_agent_run()`, `run_agent_and_poll()` and the other methods returning one
+
 ## [1.10.0] - 2026-11-05
 
 ### Changed
@@ -283,6 +303,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.11.0]: https://github.com/seclai/seclai-python/releases/tag/1.11.0
 [1.10.0]: https://github.com/seclai/seclai-python/releases/tag/1.10.0
 [1.9.0]: https://github.com/seclai/seclai-python/releases/tag/1.9.0
 [1.8.0]: https://github.com/seclai/seclai-python/releases/tag/1.8.0

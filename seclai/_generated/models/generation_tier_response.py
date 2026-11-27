@@ -6,6 +6,8 @@ from typing import Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 T = TypeVar("T", bound="GenerationTierResponse")
 
 
@@ -20,6 +22,9 @@ class GenerationTierResponse:
         price_label (None | str):
         tier (str):
         unit_label (None | str):
+        aspect_ratios (list[str] | Unset): The aspect ratios the tier's model can be asked for, and so the values a
+            media_generation image generator's aspect_ratio pin may take. Empty for audio and video tiers and for an image
+            model that takes no ratio.
     """
 
     credits_per_unit: int | None
@@ -29,6 +34,7 @@ class GenerationTierResponse:
     price_label: None | str
     tier: str
     unit_label: None | str
+    aspect_ratios: list[str] | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -49,6 +55,10 @@ class GenerationTierResponse:
         unit_label: None | str
         unit_label = self.unit_label
 
+        aspect_ratios: list[str] | Unset = UNSET
+        if not isinstance(self.aspect_ratios, Unset):
+            aspect_ratios = self.aspect_ratios
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
@@ -62,6 +72,8 @@ class GenerationTierResponse:
                 "unit_label": unit_label,
             }
         )
+        if aspect_ratios is not UNSET:
+            field_dict["aspect_ratios"] = aspect_ratios
 
         return field_dict
 
@@ -98,6 +110,8 @@ class GenerationTierResponse:
 
         unit_label = _parse_unit_label(d.pop("unit_label"))
 
+        aspect_ratios = cast(list[str], d.pop("aspect_ratios", UNSET))
+
         generation_tier_response = cls(
             credits_per_unit=credits_per_unit,
             modality=modality,
@@ -106,6 +120,7 @@ class GenerationTierResponse:
             price_label=price_label,
             tier=tier,
             unit_label=unit_label,
+            aspect_ratios=aspect_ratios,
         )
 
         generation_tier_response.additional_properties = d

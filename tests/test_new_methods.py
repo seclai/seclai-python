@@ -4847,10 +4847,10 @@ _INSUFFICIENT_CREDITS_402 = {
 }
 
 
-class TestLatestApiVersion20261104:
-    def test_latest_is_2026_11_04(self) -> None:
+class TestLatestApiVersion20261119:
+    def test_latest_is_2026_11_19(self) -> None:
         assert (
-            seclai_versions.LATEST_API_VERSION is seclai_versions.ApiVersion.V2026_11_04
+            seclai_versions.LATEST_API_VERSION is seclai_versions.ApiVersion.V2026_11_19
         )
 
     def test_latest_is_sent_as_the_header(self) -> None:
@@ -4862,7 +4862,7 @@ class TestLatestApiVersion20261104:
 
         client = _sync_client(handler, api_version=seclai_versions.LATEST_API_VERSION)
         client.list_agents()
-        assert seen["version"] == "2026-11-04"
+        assert seen["version"] == "2026-11-19"
 
 
 class TestInsufficientCredits402:
@@ -5782,3 +5782,266 @@ class TestRunAgentAndPollReturnOnResult:
         )
         assert run.status == "processing"
         assert seen == ["POST /agents/a1/runs", "GET /agents/runs/run_1"]
+
+
+# ---------------------------------------------------------------------------
+# 2026-11-19 sync: include_commentary, and the cancelled run status
+# ---------------------------------------------------------------------------
+
+
+class TestIncludeCommentary:
+    def test_stream_request_sends_include_commentary(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return httpx.Response(
+                status_code=200,
+                content=b"event: stream_commentary\n"
+                b'data: {"phase": "commentary", "message": 1, "text": "Looking"}\n\n'
+                b'event: done\ndata: {"run_id": "r1"}\n\n',
+                headers={"content-type": "text/event-stream"},
+            )
+
+        client = _sync_client(handler)
+        events = list(
+            client.run_streaming_agent(
+                "a1", AgentRunStreamRequest(input="hi", include_commentary=True)
+            )
+        )
+        assert seen["body"] == {"input": "hi", "include_commentary": True}
+        assert events == [
+            (
+                "stream_commentary",
+                {"phase": "commentary", "message": 1, "text": "Looking"},
+            ),
+            ("done", {"run_id": "r1"}),
+        ]
+
+    def test_sync_wait_drops_include_commentary(self) -> None:
+        seen: dict[str, Any] = {}
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return httpx.Response(
+                status_code=200,
+                content=TestStreamAndWaitDropsReasoning._DONE,
+                headers={"content-type": "text/event-stream"},
+            )
+
+        client = _sync_client(handler)
+        body = AgentRunStreamRequest(
+            input="hi", include_commentary=True, include_reasoning=True
+        )
+        run = client.run_streaming_agent_and_wait("a1", body)
+        assert run.run_id == "r1"
+        assert seen["body"] == {"input": "hi"}
+        assert body["include_commentary"] is True
+
+    @pytest.mark.asyncio
+    async def test_async_wait_drops_include_commentary(self) -> None:
+        seen: dict[str, Any] = {}
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(req.content)
+            return httpx.Response(
+                status_code=200,
+                content=TestStreamAndWaitDropsReasoning._DONE,
+                headers={"content-type": "text/event-stream"},
+            )
+
+        client = _async_client(handler)
+        body = AgentRunStreamRequest(
+            input="hi", include_commentary=True, include_reasoning=True
+        )
+        run = await client.run_streaming_agent_and_wait("a1", body)
+        assert run.run_id == "r1"
+        assert seen["body"] == {"input": "hi"}
+        assert body["include_commentary"] is True
+
+
+class TestRunAgentAndPollCancelled:
+    # A second GET would pop from an empty list and fail the test, so these
+    # also prove the poll stops at "cancelled" rather than polling on.
+    def test_cancelled_ends_the_poll(self) -> None:
+        seen: list[str] = []
+        client = _sync_client(_poll_handler([_run("cancelled", reported=False)], seen))
+        run = client.run_agent_and_poll(
+            "a1", AgentRunRequest(input_="hi"), poll_interval=0
+        )
+        assert run.status == "cancelled"
+        assert seen == ["POST /agents/a1/runs", "GET /agents/runs/run_1"]
+
+    @pytest.mark.asyncio
+    async def test_cancelled_ends_the_poll_async(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async def fake_sleep(seconds: float) -> None:
+            return None
+
+        monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+        seen: list[str] = []
+        client = _async_client(_poll_handler([_run("cancelled", reported=False)], seen))
+        run = await client.run_agent_and_poll("a1", AgentRunRequest(input_="hi"))
+        assert run.status == "cancelled"
+        assert seen == ["POST /agents/a1/runs", "GET /agents/runs/run_1"]
+
+    @pytest.mark.parametrize("return_on_result", [False, True])
+    def test_a_cancelled_start_with_step_outputs_is_fetched_once(
+        self, return_on_result: bool
+    ) -> None:
+        seen: list[str] = []
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            seen.append(f"{req.method} {req.url.path}")
+            # Fail rather than loop if the poll does not stop at "cancelled".
+            assert len(seen) <= 2, seen
+            return _json_response(_run("cancelled", reported=False))
+
+        client = _sync_client(handler)
+        run = client.run_agent_and_poll(
+            "a1",
+            AgentRunRequest(input_="hi"),
+            poll_interval=0,
+            include_step_outputs=True,
+            return_on_result=return_on_result,
+        )
+        assert run.status == "cancelled"
+        assert seen == ["POST /agents/a1/runs", "GET /agents/runs/run_1"]
+
+
+# ---------------------------------------------------------------------------
+# download_agent_run_attachment byte ranges
+# ---------------------------------------------------------------------------
+
+_RANGE_FORMS = [
+    ({"range_start": 0, "range_end": 1023}, "bytes=0-1023"),
+    ({"range_start": 5, "range_end": 5}, "bytes=5-5"),
+    ({"range_start": 1024}, "bytes=1024-"),
+    ({"range_suffix": 500}, "bytes=-500"),
+]
+
+_BAD_RANGES = [
+    {"range_end": 10},
+    {"range_start": 10, "range_end": 9},
+    {"range_start": -1},
+    {"range_suffix": 0},
+    {"range_suffix": -5},
+    {"range_suffix": 5, "range_start": 0},
+    {"range_suffix": 5, "range_end": 9},
+    {"range_start": True},
+    {"range_start": 1.5},
+]
+
+
+def _range_handler(seen: list[httpx.Request], status: int = 206) -> Any:
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(req)
+        if status == 416:
+            return httpx.Response(
+                416, headers={"content-range": "bytes */10"}, content=b""
+            )
+        headers = {"accept-ranges": "bytes"}
+        if status == 206:
+            headers["content-range"] = "bytes 0-3/10"
+        return httpx.Response(status, headers=headers, content=b"abcd")
+
+    return handler
+
+
+class TestDownloadAgentRunAttachmentRange:
+    @pytest.mark.parametrize(("kwargs", "header"), _RANGE_FORMS)
+    def test_sends_one_byte_range(
+        self, kwargs: dict[str, Any], header: str | None
+    ) -> None:
+        seen: list[httpx.Request] = []
+        client = _sync_client(_range_handler(seen))
+        resp = client.download_agent_run_attachment("r1", "att1", **kwargs)
+        try:
+            assert resp.status_code == 206
+            assert resp.read() == b"abcd"
+        finally:
+            resp.close()
+        assert seen[0].url.path == "/v2/agent-runs/r1/attachments/att1"
+        assert seen[0].headers.get("range") == header
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(("kwargs", "header"), _RANGE_FORMS)
+    async def test_sends_one_byte_range_async(
+        self, kwargs: dict[str, Any], header: str | None
+    ) -> None:
+        seen: list[httpx.Request] = []
+        client = _async_client(_range_handler(seen))
+        resp = await client.download_agent_run_attachment("r1", "att1", **kwargs)
+        try:
+            assert resp.status_code == 206
+            assert await resp.aread() == b"abcd"
+        finally:
+            await resp.aclose()
+        assert seen[0].headers.get("range") == header
+
+    @pytest.mark.parametrize("kwargs", _BAD_RANGES)
+    def test_refuses_an_invalid_range_without_sending(
+        self, kwargs: dict[str, Any]
+    ) -> None:
+        seen: list[httpx.Request] = []
+        client = _sync_client(_range_handler(seen))
+        with pytest.raises(ValueError):
+            client.download_agent_run_attachment("r1", "att1", **kwargs)
+        assert seen == []
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("kwargs", _BAD_RANGES)
+    async def test_refuses_an_invalid_range_without_sending_async(
+        self, kwargs: dict[str, Any]
+    ) -> None:
+        seen: list[httpx.Request] = []
+        client = _async_client(_range_handler(seen))
+        with pytest.raises(ValueError):
+            await client.download_agent_run_attachment("r1", "att1", **kwargs)
+        assert seen == []
+
+    def test_unsatisfiable_range_raises_416(self) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        seen: list[httpx.Request] = []
+        client = _sync_client(_range_handler(seen, status=416))
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            client.download_agent_run_attachment("r1", "att1", range_start=10)
+        assert exc.value.status_code == 416
+
+    @pytest.mark.asyncio
+    async def test_unsatisfiable_range_raises_416_async(self) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        seen: list[httpx.Request] = []
+        client = _async_client(_range_handler(seen, status=416))
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            await client.download_agent_run_attachment("r1", "att1", range_start=10)
+        assert exc.value.status_code == 416
+
+    def test_no_range_arguments_add_no_range_header(self) -> None:
+        seen: list[httpx.Request] = []
+        client = _sync_client(_range_handler(seen, status=200))
+        resp = client.download_agent_run_attachment("r1", "att1")
+        resp.close()
+        assert resp.status_code == 200
+        assert "range" not in seen[0].headers
+
+    @pytest.mark.asyncio
+    async def test_no_range_arguments_add_no_range_header_async(self) -> None:
+        seen: list[httpx.Request] = []
+        client = _async_client(_range_handler(seen, status=200))
+        resp = await client.download_agent_run_attachment("r1", "att1")
+        await resp.aclose()
+        assert resp.status_code == 200
+        assert "range" not in seen[0].headers
+
+    def test_range_is_sent_with_download_name(self) -> None:
+        seen: list[httpx.Request] = []
+        client = _sync_client(_range_handler(seen))
+        client.download_agent_run_attachment(
+            "r1", "att1", download_name="a.mp4", range_start=0, range_end=3
+        ).close()
+        assert seen[0].url.params["download_name"] == "a.mp4"
+        assert seen[0].headers["range"] == "bytes=0-3"

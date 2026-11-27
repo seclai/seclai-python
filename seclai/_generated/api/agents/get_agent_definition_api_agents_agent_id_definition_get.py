@@ -116,26 +116,32 @@ def sync_detailed(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
-    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
-    second
-    - `display_result`: Show output to the user
-    - `join`: Merge parallel branches
-    - `merge`: Combine multiple inputs into a single templated output
-    - `text`: Static text literal
+    - `parallel`: Run its named `lanes` at the same time. The step after it reads their results as the
+    block's output: a JSON object keyed by lane name, or its `output_template`, where `{{lane.<name>}}`
+    is a lane's result
+    - `text`: Produce output from a template, and select files with `attachments`
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
     - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
     the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
-    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
-    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
-    `prompt_call`) and place the single `display_result` in `child_steps`.
+    (post-branch continuation chain).
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
-    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
-    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
-    `display_result` in `child_steps`.
+    step's own `child_steps`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step; steps
+    that run at the same time are a `parallel` block's lanes. A scope's result (a branch arm's, a loop
+    iteration's, a lane's) is its last step's output; an empty arm's is the branch's input, and an empty
+    lane's the block's input.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -211,26 +217,32 @@ def sync(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
-    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
-    second
-    - `display_result`: Show output to the user
-    - `join`: Merge parallel branches
-    - `merge`: Combine multiple inputs into a single templated output
-    - `text`: Static text literal
+    - `parallel`: Run its named `lanes` at the same time. The step after it reads their results as the
+    block's output: a JSON object keyed by lane name, or its `output_template`, where `{{lane.<name>}}`
+    is a lane's result
+    - `text`: Produce output from a template, and select files with `attachments`
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
     - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
     the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
-    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
-    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
-    `prompt_call`) and place the single `display_result` in `child_steps`.
+    (post-branch continuation chain).
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
-    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
-    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
-    `display_result` in `child_steps`.
+    step's own `child_steps`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step; steps
+    that run at the same time are a `parallel` block's lanes. A scope's result (a branch arm's, a loop
+    iteration's, a lane's) is its last step's output; an empty arm's is the branch's input, and an empty
+    lane's the block's input.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -301,26 +313,32 @@ async def asyncio_detailed(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
-    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
-    second
-    - `display_result`: Show output to the user
-    - `join`: Merge parallel branches
-    - `merge`: Combine multiple inputs into a single templated output
-    - `text`: Static text literal
+    - `parallel`: Run its named `lanes` at the same time. The step after it reads their results as the
+    block's output: a JSON object keyed by lane name, or its `output_template`, where `{{lane.<name>}}`
+    is a lane's result
+    - `text`: Produce output from a template, and select files with `attachments`
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
     - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
     the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
-    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
-    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
-    `prompt_call`) and place the single `display_result` in `child_steps`.
+    (post-branch continuation chain).
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
-    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
-    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
-    `display_result` in `child_steps`.
+    step's own `child_steps`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step; steps
+    that run at the same time are a `parallel` block's lanes. A scope's result (a branch arm's, a loop
+    iteration's, a lane's) is its last step's output; an empty arm's is the branch's input, and an empty
+    lane's the block's input.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your
@@ -394,26 +412,32 @@ async def asyncio(
     - `load_content`: Load the full text body of a source document (typically used with content-
     triggered agents; can also load by explicit `content_version_id`. Fields: `content_version_id`
     optional)
-    - `streaming_result`: Stream LLM tokens in real-time via SSE (must be a direct child of
-    `prompt_call`; requires `dynamic_input` or `template_input` trigger; `priority: true` enables real-
-    time streaming). An agent has at most one `streaming_result` or `display_result`; saving refuses a
-    second
-    - `display_result`: Show output to the user
-    - `join`: Merge parallel branches
-    - `merge`: Combine multiple inputs into a single templated output
-    - `text`: Static text literal
+    - `parallel`: Run its named `lanes` at the same time. The step after it reads their results as the
+    block's output: a JSON object keyed by lane name, or its `output_template`, where `{{lane.<name>}}`
+    is a lane's result
+    - `text`: Produce output from a template, and select files with `attachments`
     - `for_each`: Iterate a body over a list of items (body lives in `body[]`)
     - `if_else`: Conditional dispatch. Evaluates `conditions` and runs `then_steps` on match, otherwise
     the optional `else_steps`. The chosen branch's output flows to the if_else step's own `child_steps`
-    (post-branch continuation chain). **`display_result` and `streaming_result` are not allowed inside
-    `then_steps` / `else_steps`** — end each branch with a content-producing step (e.g. `text`,
-    `prompt_call`) and place the single `display_result` in `child_steps`.
+    (post-branch continuation chain).
     - `switch`: Single-discriminator dispatch. Renders `discriminator` (default `{{input}}`) and routes
     to the first matching `cases[]` entry (equality by default; pass a list in `match` for `$in`
     semantics) or to `else_steps` when nothing matches. The chosen case's output flows to the switch
-    step's own `child_steps`. **`display_result` and `streaming_result` are not allowed inside
-    `cases[].steps` or `else_steps`** — end each case with a content-producing step and place the single
-    `display_result` in `child_steps`.
+    step's own `child_steps`.
+
+    Each list of steps (`child_steps`, a branch arm, a loop body, a lane) holds at most one step; steps
+    that run at the same time are a `parallel` block's lanes. A scope's result (a branch arm's, a loop
+    iteration's, a lane's) is its last step's output; an empty arm's is the branch's input, and an empty
+    lane's the block's input.
+
+    `run_result` marks a step's output as the run's answer. Only a `prompt_call`, `text`, `call_agent`,
+    `generate_image`, `generate_audio` or `generate_video` step may carry it; a run reaches at most one,
+    and no loop body holds one. Plain text: a `text` or `prompt_call` step carrying it. JSON: a `text`
+    step whose template is a single placeholder naming a JSON step, or that sets `content_type`
+    `application/json`. HTML: a `text` step whose `content_type` is `text/html`. Files or generated
+    media: the flag's `attachments`, a `text` step's `attachments`, or a generate step carrying it. A
+    streamed answer: a `prompt_call` carrying it with `stream` on. No answer: no step carries it, and
+    the agent reports success at start or at completion.
 
     Auth & scoping:
     - Requires `X-API-Key` header or OAuth Bearer token. You can only access agents belonging to your

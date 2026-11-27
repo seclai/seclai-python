@@ -126,12 +126,15 @@ def sync_detailed(
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
     text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
-    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
-    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
-    without live token streaming.
+    - `priority`: set true for latency-sensitive, user-facing work. For an agent whose `prompt_call`
+    streams its answer (`run_result` with `stream` on), set `priority=true` to enable real-time token
+    streaming; otherwise the run still proceeds, but without live token streaming.
     - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
     /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
     lacks a required one, is refused with HTTP 400.
+    - An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     After starting:
     - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in
@@ -203,12 +206,15 @@ def sync(
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
     text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
-    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
-    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
-    without live token streaming.
+    - `priority`: set true for latency-sensitive, user-facing work. For an agent whose `prompt_call`
+    streams its answer (`run_result` with `stream` on), set `priority=true` to enable real-time token
+    streaming; otherwise the run still proceeds, but without live token streaming.
     - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
     /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
     lacks a required one, is refused with HTTP 400.
+    - An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     After starting:
     - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in
@@ -274,12 +280,15 @@ async def asyncio_detailed(
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
     text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
-    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
-    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
-    without live token streaming.
+    - `priority`: set true for latency-sensitive, user-facing work. For an agent whose `prompt_call`
+    streams its answer (`run_result` with `stream` on), set `priority=true` to enable real-time token
+    streaming; otherwise the run still proceeds, but without live token streaming.
     - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
     /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
     lacks a required one, is refused with HTTP 400.
+    - An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     After starting:
     - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in
@@ -349,12 +358,15 @@ async def asyncio(
     /agents/{agent_id}/upload-input`. Send them **with** `input` to pair prompt text with the files (the
     text leads, each file follows under its heading); only the two upload fields are mutually exclusive
     with each other.
-    - `priority`: set true for latency-sensitive, user-facing work. For agents with a `streaming_result`
-    step, set `priority=true` to enable real-time token streaming; otherwise the run still proceeds, but
-    without live token streaming.
+    - `priority`: set true for latency-sensitive, user-facing work. For an agent whose `prompt_call`
+    streams its answer (`run_result` with `stream` on), set `priority=true` to enable real-time token
+    streaming; otherwise the run still proceeds, but without live token streaming.
     - `metadata`: a JSON object for string substitution. Each key must be one the trigger declares (`GET
     /agents/{agent_id}/triggers/{trigger_id}/metadata-keys`); a run that sends another custom key, or
     lacks a required one, is refused with HTTP 400.
+    - An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     After starting:
     - Poll `GET /agents/runs/{run_id}` until `result_reported_at` is set (the run's answer is in

@@ -97,7 +97,7 @@ def sync_detailed(
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
     evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
-    changed `step_id` must name a `display_result` or `streaming_result` step.
+    changed `step_id` must name the step carrying `run_result`.
 
     Args:
         criteria_id (str):
@@ -144,7 +144,7 @@ def sync(
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
     evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
-    changed `step_id` must name a `display_result` or `streaming_result` step.
+    changed `step_id` must name the step carrying `run_result`.
 
     Args:
         criteria_id (str):
@@ -188,7 +188,7 @@ async def asyncio_detailed(
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
     evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
-    changed `step_id` must name a `display_result` or `streaming_result` step.
+    changed `step_id` must name the step carrying `run_result`.
 
     Args:
         criteria_id (str):
@@ -233,7 +233,7 @@ async def asyncio(
     Accepts a partial update – only the fields included in the request body
     are modified.  Use this to toggle enabled/disabled, change the
     evaluation prompt, or rename the criteria. From Seclai-Version 2026-11-04 a
-    changed `step_id` must name a `display_result` or `streaming_result` step.
+    changed `step_id` must name the step carrying `run_result`.
 
     Args:
         criteria_id (str):
