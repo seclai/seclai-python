@@ -23,8 +23,7 @@ class CreateAlertConfigRequest:
     Attributes:
         alert_type (str): Alert type
         agent_id (None | str | Unset): Agent ID (for agent alerts)
-        cooldown_minutes (int | None | Unset): Cooldown period in minutes. Omit to use the per-alert-type default (1440
-            for credit alerts, 60 otherwise).
+        cooldown_minutes (int | None | Unset): Cooldown period in minutes. Omit to use the alert type's default.
         distribution_type (str | Unset): Distribution type (owner, owner_admins, selected_members) Default: 'owner'.
         enabled (bool | Unset): Whether the alert config is enabled Default: True.
         recipient_user_ids (list[str] | None | Unset): User IDs for selected_members distribution

@@ -126,11 +126,18 @@ class AgentRunStreamRequest(TypedDict):
     input: NotRequired[str | None]
     metadata: NotRequired[dict[str, JSONValue] | None]
     #: Receive ``stream_reasoning`` events carrying the model's reasoning, for a
-    #: ``streaming_result`` step whose author enabled ``show_reasoning``. Only
+    #: ``prompt_call`` whose ``run_result`` enables ``show_reasoning``. Only
     #: :meth:`Seclai.run_streaming_agent` yields them;
     #: :meth:`Seclai.run_streaming_agent_and_wait` removes this key before
-    #: sending, since it keeps only the ``init`` and ``done`` events.
+    #: sending, since it keeps only the ``init``, ``result`` and ``done`` events.
     include_reasoning: NotRequired[bool]
+    #: Receive ``stream_commentary`` events (with ``phase``, ``message`` and
+    #: ``text``) carrying the text a model on OpenAI's Responses API writes
+    #: outside its final answer, for a ``prompt_call`` whose ``run_result``
+    #: enables ``show_commentary``. Only :meth:`Seclai.run_streaming_agent`
+    #: yields them; :meth:`Seclai.run_streaming_agent_and_wait` removes this key
+    #: before sending, as it does ``include_reasoning``.
+    include_commentary: NotRequired[bool]
     input_upload_id: NotRequired[str | None]
     input_upload_ids: NotRequired[list[str] | None]
     replay_of_run_id: NotRequired[str | None]
@@ -318,9 +325,58 @@ def _empty_page(*, page: int, limit: int) -> dict[str, Any]:
     }
 
 
-def _without_reasoning(body: AgentRunStreamRequest) -> dict[str, Any]:
-    """Return ``body`` without ``include_reasoning``, for a caller that drops reasoning events."""
-    return {k: v for k, v in body.items() if k != "include_reasoning"}
+#: Request keys that only ask for events ``run_streaming_agent_and_wait`` discards.
+_DISCARDED_EVENT_KEYS = frozenset({"include_reasoning", "include_commentary"})
+
+#: Agent run statuses that never change again. ``cancelled`` is reported from
+#: ``Seclai-Version`` 2026-11-08; earlier versions show a cancelled run as ``failed``.
+_TERMINAL_RUN_STATUSES = ("completed", "failed", "cancelled")
+
+
+def _without_discarded_events(body: AgentRunStreamRequest) -> dict[str, Any]:
+    """Return ``body`` without the keys that ask for reasoning or commentary events."""
+    return {k: v for k, v in body.items() if k not in _DISCARDED_EVENT_KEYS}
+
+
+def _byte_range_headers(
+    start: int | None, end: int | None, suffix: int | None
+) -> dict[str, str] | None:
+    """Build the ``Range`` header for one byte range, or ``None`` for the whole file.
+
+    An invalid combination raises ``ValueError`` here, before anything is sent.
+    """
+    for name, value in (
+        ("range_start", start),
+        ("range_end", end),
+        ("range_suffix", suffix),
+    ):
+        if value is not None and (
+            isinstance(value, bool) or not isinstance(value, int)
+        ):
+            raise ValueError(f"{name} must be an int, not {value!r}")
+    if suffix is not None:
+        if start is not None or end is not None:
+            raise ValueError(
+                "range_suffix cannot be combined with range_start or range_end"
+            )
+        if suffix <= 0:
+            raise ValueError(f"range_suffix must be positive, not {suffix}")
+        return {"Range": f"bytes=-{suffix}"}
+    if start is None:
+        if end is not None:
+            raise ValueError(
+                "range_end needs range_start; use range_suffix for the last bytes"
+            )
+        return None
+    if start < 0:
+        raise ValueError(f"range_start must not be negative, not {start}")
+    if end is None:
+        return {"Range": f"bytes={start}-"}
+    if end < start:
+        raise ValueError(
+            f"range_end ({end}) must not be less than range_start ({start})"
+        )
+    return {"Range": f"bytes={start}-{end}"}
 
 
 def _strip_none(params: dict[str, Any]) -> dict[str, Any]:
@@ -380,6 +436,9 @@ class SeclaiAPIStatusError(SeclaiError):
         method: HTTP method used for the request.
         url: Full request URL.
         response_text: Best-effort response body text, if available.
+        headers: The response headers, matched case-insensitively; empty when
+            unknown. A 416 from a ranged download carries the file size in
+            ``Content-Range`` (``bytes */<size>``).
     """
 
     def __init__(
@@ -390,6 +449,7 @@ class SeclaiAPIStatusError(SeclaiError):
         method: str,
         url: str,
         response_text: str | None,
+        headers: httpx.Headers | Mapping[str, str] | None = None,
     ) -> None:
         """Create a status error for a non-2xx API response."""
         super().__init__(message)
@@ -398,6 +458,7 @@ class SeclaiAPIStatusError(SeclaiError):
         self.method = method
         self.url = url
         self.response_text = response_text
+        self.headers = httpx.Headers(headers)
 
 
 class SeclaiAPIValidationError(SeclaiAPIStatusError):
@@ -416,6 +477,7 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
         url: str,
         response_text: str | None,
         validation_error: HTTPValidationError,
+        headers: httpx.Headers | Mapping[str, str] | None = None,
     ) -> None:
         """Initialize with validation error details."""
         super().__init__(
@@ -424,6 +486,7 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
             method=method,
             url=url,
             response_text=response_text,
+            headers=headers,
         )
         self.validation_error = validation_error
 
@@ -659,6 +722,7 @@ def _raise_for_status(response: httpx.Response) -> None:
                     url=str(response.request.url),
                     response_text=response_text,
                     validation_error=validation_error,
+                    headers=response.headers,
                 )
     raise SeclaiAPIStatusError(
         message=f"Request failed with status {response.status_code}",
@@ -666,6 +730,7 @@ def _raise_for_status(response: httpx.Response) -> None:
         method=response.request.method,
         url=str(response.request.url),
         response_text=response_text,
+        headers=response.headers,
     )
 
 
@@ -987,6 +1052,7 @@ class _SeclaiBase:
                 url=self._build_url(path),
                 response_text=response_text,
                 validation_error=response.parsed,
+                headers=response.headers,
             )
 
         raise SeclaiAPIStatusError(
@@ -995,6 +1061,7 @@ class _SeclaiBase:
             method=method,
             url=self._build_url(path),
             response_text=response_text,
+            headers=response.headers,
         )
 
 
@@ -1156,7 +1223,11 @@ class Seclai(_SeclaiBase):
         return response.text
 
     def _stream_get(
-        self, path: str, *, params: Mapping[str, Any] | None = None
+        self,
+        path: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
         """Send a GET and return the response unread, for the caller to stream.
 
@@ -1171,7 +1242,7 @@ class Seclai(_SeclaiBase):
             headers=_merge_request_headers(
                 options=self._options,
                 client_headers=self._client.headers,
-                request_headers=None,
+                request_headers=headers,
             ),
         )
         response = self._client.send(request, stream=True)
@@ -1213,6 +1284,7 @@ class Seclai(_SeclaiBase):
                 method="POST",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1223,6 +1295,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         # ``parsed`` can only be the success model here: _raise_for_openapi_response
         # already raised for any non-200 status, including the 402
@@ -1256,10 +1329,10 @@ class Seclai(_SeclaiBase):
         ``run`` either way.
 
         Every event but ``init``, ``result`` and ``done`` is discarded, so
-        ``include_reasoning`` is removed from the body before it is sent:
-        reasoning events would only add traffic and count against
-        ``timeout``. Use ``run_streaming_agent`` to receive
-        ``stream_reasoning`` events.
+        ``include_reasoning`` and ``include_commentary`` are removed from the
+        body before it is sent: those events would only add traffic and count
+        against ``timeout``. Use ``run_streaming_agent`` to receive
+        ``stream_reasoning`` and ``stream_commentary`` events.
 
         Args:
             agent_id: Agent identifier.
@@ -1345,7 +1418,7 @@ class Seclai(_SeclaiBase):
             with self._client.stream(
                 "POST",
                 path,
-                json=_without_reasoning(body),
+                json=_without_discarded_events(body),
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
@@ -1444,6 +1517,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1454,6 +1528,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunListResponse)
 
@@ -1518,6 +1593,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1528,6 +1604,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -1580,6 +1657,7 @@ class Seclai(_SeclaiBase):
                 method="DELETE",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1590,6 +1668,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -1640,6 +1719,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1650,6 +1730,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentDetailResponse)
 
@@ -1729,6 +1810,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1739,6 +1821,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentEmbeddingsListResponse)
 
@@ -1947,6 +2030,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1957,6 +2041,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, SourceListResponse)
 
@@ -2118,6 +2203,7 @@ class Seclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed_response = cast(
                 FileUploadResponse | HTTPValidationError, response.parsed
@@ -2130,6 +2216,7 @@ class Seclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed_response,
+                    headers=response.headers,
                 )
             if not isinstance(parsed_response, FileUploadResponse):
                 raise SeclaiAPIStatusError(
@@ -2138,6 +2225,7 @@ class Seclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             return parsed_response
         finally:
@@ -2239,6 +2327,7 @@ class Seclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed = response.parsed
             if isinstance(parsed, HTTPValidationError):
@@ -2249,6 +2338,7 @@ class Seclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed,
+                    headers=response.headers,
                 )
             return _expect_model(parsed, FileUploadResponse)
         finally:
@@ -2349,7 +2439,11 @@ class Seclai(_SeclaiBase):
         with ``resource_bindings`` for the resources it needs.
 
         Args:
-            query: Words every match must contain.
+            query: What the agent should do. From ``Seclai-Version``
+                2026-11-09 entries are ranked by how well they match its words
+                and meaning, best first, and a query of several words that are
+                all filler ("create an agent") counts as no query; before it, only
+                entries containing every word are listed.
             use_case: Only entries for this use case.
             page: Page number (1-indexed).
             limit: Items per page.
@@ -2557,11 +2651,17 @@ class Seclai(_SeclaiBase):
         )
 
     def cancel_agent_run(self, run_id: str) -> dict[str, Any]:
-        """Cancel an in-progress agent run.
+        """Cancel an agent run that has not ended.
 
         Cancellation is ``DELETE`` on the run resource — the API exposes no
         ``POST .../cancel`` route, and no operation that deletes a run.
-        Rejected when the run has already reached a terminal state.
+        A ``queued``, ``pending``, ``processing``, ``waiting_human`` or
+        ``waiting_scheduled`` run can be cancelled; one that has ended
+        (``completed``, ``failed`` or ``cancelled``) is rejected. The run ends
+        ``cancelled``, or ``failed`` with ``Seclai-Version`` before 2026-11-08.
+        Cancelling a run started by another agent's ``call_agent`` step that
+        is still waiting for it ends the outermost such calling run, and every
+        run below it that has not reported its result.
 
         Hits the same endpoint as :meth:`delete_agent_run`. Both surface a 422
         as :class:`SeclaiAPIValidationError`.
@@ -2676,8 +2776,13 @@ class Seclai(_SeclaiBase):
         attachment_id: str,
         *,
         download_name: str | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+        range_suffix: int | None = None,
     ) -> httpx.Response:
-        """Download an attachment emitted by a step in an agent run.
+        """Download a file of an agent run, or one byte range of it.
+
+        The file is one a step emitted or one the run started with.
 
         Returns a **streaming** response. The caller is responsible for
         consuming and closing the response::
@@ -2691,17 +2796,35 @@ class Seclai(_SeclaiBase):
 
         Args:
             run_id: Run identifier.
-            attachment_id: URL-safe-base64-encoded ``storage_key`` of the
-                attachment (as surfaced in webhook/email payloads and run
-                output manifests).
+            attachment_id: The ``id`` of an entry in the run's or a step's
+                ``attachments``, or the URL-safe-base64-encoded storage key
+                that webhook and email links carry.
             download_name: Optional filename hint for the download disposition.
+            range_start: First byte to fetch, counting from 0. Alone, fetches
+                from there to the end of the file.
+            range_end: Last byte to fetch, inclusive. Needs ``range_start``.
+            range_suffix: Fetch only the last this many bytes. Cannot be
+                combined with ``range_start`` or ``range_end``.
 
         Returns:
-            A streaming ``httpx.Response``. Must be closed by the caller.
+            A streaming ``httpx.Response``. Must be closed by the caller. With
+            a range, its ``status_code`` is 206 and ``Content-Range`` names the
+            bytes sent; a 200 is the whole file, which is what an empty file
+            returns.
+
+        Raises:
+            ValueError: If the range arguments are not one valid byte range;
+                nothing is sent.
+            SeclaiAPIStatusError: On an error status, including 416 when the
+                range starts at or past the end of a non-empty file; its
+                ``headers["Content-Range"]`` (``bytes */<size>``) gives the
+                file size.
         """
+        headers = _byte_range_headers(range_start, range_end, range_suffix)
         return self._stream_get(
             f"/v2/agent-runs/{run_id}/attachments/{attachment_id}",
             params=_strip_none({"download_name": download_name}),
+            headers=headers,
         )
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
@@ -3409,7 +3532,10 @@ class Seclai(_SeclaiBase):
         return cast(dict[str, Any], self.request("GET", "/agents/inbound-email-status"))
 
     def cancel_queued_email_runs(self) -> dict[str, Any]:
-        """Fail all of the account's QUEUED (over-quota parked) inbound-email runs.
+        """Cancel all of the account's QUEUED (over-quota parked) inbound-email runs.
+
+        Each ends ``cancelled``, or ``failed`` with ``Seclai-Version`` before
+        2026-11-08.
 
         Returns:
             The count cancelled.
@@ -5899,7 +6025,7 @@ class Seclai(_SeclaiBase):
         """Run an agent and poll until it reaches a terminal status.
 
         Starts the agent run and then repeatedly polls ``get_agent_run`` until
-        the status is ``"completed"`` or ``"failed"``, or, with
+        the status is ``"completed"``, ``"failed"`` or ``"cancelled"``, or, with
         ``return_on_result``, until the run has reported its result.
 
         Args:
@@ -5918,7 +6044,7 @@ class Seclai(_SeclaiBase):
                 its result. A terminal status is returned at once either way.
 
         Returns:
-            The final agent run (completed or failed), or with
+            The final agent run (completed, failed or cancelled), or with
             ``return_on_result`` the first snapshot that reported its result.
 
         Raises:
@@ -5927,13 +6053,13 @@ class Seclai(_SeclaiBase):
         """
         run = self.run_agent(agent_id, body)
         if include_step_outputs and (
-            run.status in ("completed", "failed")
+            run.status in _TERMINAL_RUN_STATUSES
             or (return_on_result and run.result_reported_at)
         ):
             # The run_agent response carries no step outputs, so it must not
             # end the poll: fetch the run with them and check that instead.
             run = self.get_agent_run(run.run_id, include_step_outputs=True)
-        while run.status not in ("completed", "failed") and not (
+        while run.status not in _TERMINAL_RUN_STATUSES and not (
             return_on_result and run.result_reported_at
         ):
             time.sleep(poll_interval)
@@ -6238,7 +6364,11 @@ class AsyncSeclai(_SeclaiBase):
         return response.text
 
     async def _stream_get(
-        self, path: str, *, params: Mapping[str, Any] | None = None
+        self,
+        path: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
         """Send a GET and return the response unread, for the caller to stream.
 
@@ -6253,7 +6383,7 @@ class AsyncSeclai(_SeclaiBase):
             headers=await _merge_request_headers_async(
                 options=self._options,
                 client_headers=self._client.headers,
-                request_headers=None,
+                request_headers=headers,
             ),
         )
         response = await self._client.send(request, stream=True)
@@ -6297,6 +6427,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="POST",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6307,6 +6438,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         # ``parsed`` can only be the success model here: _raise_for_openapi_response
         # already raised for any non-200 status, including the 402
@@ -6340,10 +6472,10 @@ class AsyncSeclai(_SeclaiBase):
         ``run`` either way.
 
         Every event but ``init``, ``result`` and ``done`` is discarded, so
-        ``include_reasoning`` is removed from the body before it is sent:
-        reasoning events would only add traffic and count against
-        ``timeout``. Use ``run_streaming_agent`` to receive
-        ``stream_reasoning`` events.
+        ``include_reasoning`` and ``include_commentary`` are removed from the
+        body before it is sent: those events would only add traffic and count
+        against ``timeout``. Use ``run_streaming_agent`` to receive
+        ``stream_reasoning`` and ``stream_commentary`` events.
 
         Args:
             agent_id: Agent identifier.
@@ -6429,7 +6561,7 @@ class AsyncSeclai(_SeclaiBase):
             async with self._client.stream(
                 "POST",
                 path,
-                json=_without_reasoning(body),
+                json=_without_discarded_events(body),
                 headers=merged_headers,
                 timeout=timeout_seconds,
             ) as response:
@@ -6528,6 +6660,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6538,6 +6671,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunListResponse)
 
@@ -6602,6 +6736,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6612,6 +6747,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -6669,6 +6805,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="DELETE",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6679,6 +6816,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -6729,6 +6867,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6739,6 +6878,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentDetailResponse)
 
@@ -6818,6 +6958,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6828,6 +6969,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentEmbeddingsListResponse)
 
@@ -7036,6 +7178,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -7046,6 +7189,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, SourceListResponse)
 
@@ -7204,6 +7348,7 @@ class AsyncSeclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed_response = cast(
                 FileUploadResponse | HTTPValidationError, response.parsed
@@ -7216,6 +7361,7 @@ class AsyncSeclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed_response,
+                    headers=response.headers,
                 )
             if not isinstance(parsed_response, FileUploadResponse):
                 raise SeclaiAPIStatusError(
@@ -7224,6 +7370,7 @@ class AsyncSeclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             return parsed_response
         finally:
@@ -7325,6 +7472,7 @@ class AsyncSeclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed = response.parsed
             if isinstance(parsed, HTTPValidationError):
@@ -7335,6 +7483,7 @@ class AsyncSeclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed,
+                    headers=response.headers,
                 )
             return _expect_model(parsed, FileUploadResponse)
         finally:
@@ -7435,7 +7584,11 @@ class AsyncSeclai(_SeclaiBase):
         with ``resource_bindings`` for the resources it needs.
 
         Args:
-            query: Words every match must contain.
+            query: What the agent should do. From ``Seclai-Version``
+                2026-11-09 entries are ranked by how well they match its words
+                and meaning, best first, and a query of several words that are
+                all filler ("create an agent") counts as no query; before it, only
+                entries containing every word are listed.
             use_case: Only entries for this use case.
             page: Page number (1-indexed).
             limit: Items per page.
@@ -7651,11 +7804,17 @@ class AsyncSeclai(_SeclaiBase):
         )
 
     async def cancel_agent_run(self, run_id: str) -> dict[str, Any]:
-        """Cancel an in-progress agent run.
+        """Cancel an agent run that has not ended.
 
         Cancellation is ``DELETE`` on the run resource — the API exposes no
         ``POST .../cancel`` route, and no operation that deletes a run.
-        Rejected when the run has already reached a terminal state.
+        A ``queued``, ``pending``, ``processing``, ``waiting_human`` or
+        ``waiting_scheduled`` run can be cancelled; one that has ended
+        (``completed``, ``failed`` or ``cancelled``) is rejected. The run ends
+        ``cancelled``, or ``failed`` with ``Seclai-Version`` before 2026-11-08.
+        Cancelling a run started by another agent's ``call_agent`` step that
+        is still waiting for it ends the outermost such calling run, and every
+        run below it that has not reported its result.
 
         Hits the same endpoint as :meth:`delete_agent_run`. Both surface a 422
         as :class:`SeclaiAPIValidationError`.
@@ -7777,8 +7936,13 @@ class AsyncSeclai(_SeclaiBase):
         attachment_id: str,
         *,
         download_name: str | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+        range_suffix: int | None = None,
     ) -> httpx.Response:
-        """Download an attachment emitted by a step in an agent run.
+        """Download a file of an agent run, or one byte range of it.
+
+        The file is one a step emitted or one the run started with.
 
         Returns a **streaming** response. The caller is responsible for
         consuming and closing the response::
@@ -7792,17 +7956,35 @@ class AsyncSeclai(_SeclaiBase):
 
         Args:
             run_id: Run identifier.
-            attachment_id: URL-safe-base64-encoded ``storage_key`` of the
-                attachment (as surfaced in webhook/email payloads and run
-                output manifests).
+            attachment_id: The ``id`` of an entry in the run's or a step's
+                ``attachments``, or the URL-safe-base64-encoded storage key
+                that webhook and email links carry.
             download_name: Optional filename hint for the download disposition.
+            range_start: First byte to fetch, counting from 0. Alone, fetches
+                from there to the end of the file.
+            range_end: Last byte to fetch, inclusive. Needs ``range_start``.
+            range_suffix: Fetch only the last this many bytes. Cannot be
+                combined with ``range_start`` or ``range_end``.
 
         Returns:
-            A streaming ``httpx.Response``. Must be closed by the caller.
+            A streaming ``httpx.Response``. Must be closed by the caller. With
+            a range, its ``status_code`` is 206 and ``Content-Range`` names the
+            bytes sent; a 200 is the whole file, which is what an empty file
+            returns.
+
+        Raises:
+            ValueError: If the range arguments are not one valid byte range;
+                nothing is sent.
+            SeclaiAPIStatusError: On an error status, including 416 when the
+                range starts at or past the end of a non-empty file; its
+                ``headers["Content-Range"]`` (``bytes */<size>``) gives the
+                file size.
         """
+        headers = _byte_range_headers(range_start, range_end, range_suffix)
         return await self._stream_get(
             f"/v2/agent-runs/{run_id}/attachments/{attachment_id}",
             params=_strip_none({"download_name": download_name}),
+            headers=headers,
         )
 
     # ── Agent AI Assistant ────────────────────────────────────────────────────
@@ -8513,7 +8695,10 @@ class AsyncSeclai(_SeclaiBase):
         )
 
     async def cancel_queued_email_runs(self) -> dict[str, Any]:
-        """Fail all of the account's QUEUED (over-quota parked) inbound-email runs.
+        """Cancel all of the account's QUEUED (over-quota parked) inbound-email runs.
+
+        Each ends ``cancelled``, or ``failed`` with ``Seclai-Version`` before
+        2026-11-08.
 
         Returns:
             The count cancelled.
@@ -11047,7 +11232,7 @@ class AsyncSeclai(_SeclaiBase):
         """Run an agent and poll until it reaches a terminal status.
 
         Starts the agent run and then repeatedly polls ``get_agent_run`` until
-        the status is ``"completed"`` or ``"failed"``, or, with
+        the status is ``"completed"``, ``"failed"`` or ``"cancelled"``, or, with
         ``return_on_result``, until the run has reported its result.
 
         Args:
@@ -11066,7 +11251,7 @@ class AsyncSeclai(_SeclaiBase):
                 its result. A terminal status is returned at once either way.
 
         Returns:
-            The final agent run (completed or failed), or with
+            The final agent run (completed, failed or cancelled), or with
             ``return_on_result`` the first snapshot that reported its result.
 
         Raises:
@@ -11077,13 +11262,13 @@ class AsyncSeclai(_SeclaiBase):
 
         run = await self.run_agent(agent_id, body)
         if include_step_outputs and (
-            run.status in ("completed", "failed")
+            run.status in _TERMINAL_RUN_STATUSES
             or (return_on_result and run.result_reported_at)
         ):
             # The run_agent response carries no step outputs, so it must not
             # end the poll: fetch the run with them and check that instead.
             run = await self.get_agent_run(run.run_id, include_step_outputs=True)
-        while run.status not in ("completed", "failed") and not (
+        while run.status not in _TERMINAL_RUN_STATUSES and not (
             return_on_result and run.result_reported_at
         ):
             await asyncio.sleep(poll_interval)

@@ -109,11 +109,15 @@ def sync_detailed(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
-    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
-    tokens (with a `token` field) and a `stream_end` event signals completion.
+    - If the agent has a `prompt_call` that streams its answer (`run_result` with `stream` on),
+    `stream_token` events deliver individual LLM tokens (with a `token` field) and a `stream_end` event
+    signals completion; their `step_id` is that `prompt_call`'s id.
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
-    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    reasoning while it thinks, when that `prompt_call`'s `run_result` enables `show_reasoning`.
     Reasoning is never part of `output`.
+    - With `include_commentary=true`, `stream_commentary` events (with `phase`, `message` and `text`
+    fields) carry the text a model on OpenAI's Responses API writes outside its final answer, when that
+    `prompt_call`'s `run_result` enables `show_commentary`. Commentary is never part of `output`.
     - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
     is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
@@ -124,6 +128,10 @@ def sync_detailed(
     - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
     /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
     files; only the two upload fields are mutually exclusive with each other.
+
+    An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.
@@ -188,11 +196,15 @@ def sync(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
-    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
-    tokens (with a `token` field) and a `stream_end` event signals completion.
+    - If the agent has a `prompt_call` that streams its answer (`run_result` with `stream` on),
+    `stream_token` events deliver individual LLM tokens (with a `token` field) and a `stream_end` event
+    signals completion; their `step_id` is that `prompt_call`'s id.
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
-    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    reasoning while it thinks, when that `prompt_call`'s `run_result` enables `show_reasoning`.
     Reasoning is never part of `output`.
+    - With `include_commentary=true`, `stream_commentary` events (with `phase`, `message` and `text`
+    fields) carry the text a model on OpenAI's Responses API writes outside its final answer, when that
+    `prompt_call`'s `run_result` enables `show_commentary`. Commentary is never part of `output`.
     - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
     is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
@@ -203,6 +215,10 @@ def sync(
     - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
     /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
     files; only the two upload fields are mutually exclusive with each other.
+
+    An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.
@@ -258,11 +274,15 @@ async def asyncio_detailed(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
-    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
-    tokens (with a `token` field) and a `stream_end` event signals completion.
+    - If the agent has a `prompt_call` that streams its answer (`run_result` with `stream` on),
+    `stream_token` events deliver individual LLM tokens (with a `token` field) and a `stream_end` event
+    signals completion; their `step_id` is that `prompt_call`'s id.
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
-    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    reasoning while it thinks, when that `prompt_call`'s `run_result` enables `show_reasoning`.
     Reasoning is never part of `output`.
+    - With `include_commentary=true`, `stream_commentary` events (with `phase`, `message` and `text`
+    fields) carry the text a model on OpenAI's Responses API writes outside its final answer, when that
+    `prompt_call`'s `run_result` enables `show_commentary`. Commentary is never part of `output`.
     - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
     is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
@@ -273,6 +293,10 @@ async def asyncio_detailed(
     - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
     /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
     files; only the two upload fields are mutually exclusive with each other.
+
+    An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.
@@ -335,11 +359,15 @@ async def asyncio(
     How it works:
     - The first `init` event contains an `AgentRunResponse` snapshot, including the `run_id`.
     - Subsequent events are forwarded from the run event stream (status changes, step events, etc).
-    - If the agent contains a `streaming_result` step, `stream_token` events deliver individual LLM
-    tokens (with a `token` field) and a `stream_end` event signals completion.
+    - If the agent has a `prompt_call` that streams its answer (`run_result` with `stream` on),
+    `stream_token` events deliver individual LLM tokens (with a `token` field) and a `stream_end` event
+    signals completion; their `step_id` is that `prompt_call`'s id.
     - With `include_reasoning=true`, `stream_reasoning` events (with a `text` field) carry the model's
-    reasoning while it thinks, when the `streaming_result` step's author enabled `show_reasoning`.
+    reasoning while it thinks, when that `prompt_call`'s `run_result` enables `show_reasoning`.
     Reasoning is never part of `output`.
+    - With `include_commentary=true`, `stream_commentary` events (with `phase`, `message` and `text`
+    fields) carry the text a model on OpenAI's Responses API writes outside its final answer, when that
+    `prompt_call`'s `run_result` enables `show_commentary`. Commentary is never part of `output`.
     - A `result` event contains the snapshot once the run has reported its result (`result_reported_at`
     is set and `output` is the answer).
     - The final `done` event contains the terminal snapshot (including `output` and `credits` when
@@ -350,6 +378,10 @@ async def asyncio(
     - `input_upload_id` / `input_upload_ids`: reference one or more files uploaded via `POST
     /agents/{agent_id}/upload-input`. Combine either with `input` to send prompt text alongside the
     files; only the two upload fields are mutually exclusive with each other.
+
+    An agent whose definition fails to validate is refused with HTTP 409 and no run (`Seclai-Version:
+    2026-11-14` and later); earlier versions get the run, already failed with the validation error as
+    its cause.
 
     Client guidance:
     - Keep the connection open and handle keepalive comments.

@@ -60,12 +60,13 @@ class PromptModelResponse:
             token). Multiply by the produced unit count (images, seconds, characters) for the run cost. None for models with
             no generation descriptor. This rate applies when the model is used in a generate_image/audio/video step; a model
             that also serves the chat path is billed per token there instead, using the input/output token rates on this
-            same record. When `generation_params.price_varies_by` is set the model has one rate per value of that option and
-            this is the **highest** of them — read `generation_credits_per_variant` for the real spread rather than
+            same record. When `generation_params.price_varies_by` is set the model has one rate per value (or combination)
+            and this is the **highest** of them — read `generation_credits_per_variant` for the real spread rather than
             presenting this as the price.
         generation_credits_per_variant (None | PromptModelResponseGenerationCreditsPerVariantType0 | Unset): Per-unit
             credit cost keyed by the value of the option named in `generation_params.price_varies_by` (e.g. `{'720p': 1330,
-            '1080p': 1995}`). None for a model with a single rate, where `generation_credits_per_unit` already describes it
+            '1080p': 1995}`); when it names several options (a list), the key joins their values with ':' in that order
+            (`'1080p:audio'`). None for a model with a single rate, where `generation_credits_per_unit` already describes it
             exactly.
         generation_params (None | PromptModelResponseGenerationParamsType0 | Unset): Media-generation descriptor
             (modality, pricing_unit, and modality-specific constraints). NULL for text LLMs; present for image/audio/video

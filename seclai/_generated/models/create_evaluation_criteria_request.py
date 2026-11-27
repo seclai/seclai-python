@@ -22,7 +22,7 @@ T = TypeVar("T", bound="CreateEvaluationCriteriaRequest")
 class CreateEvaluationCriteriaRequest:
     """Request body for creating an evaluation criteria.
 
-    step_id names the display_result or streaming_result step to score. The
+    step_id names the step carrying run_result, the run's answer, to score. The
     evaluation mode and sample frequency are set at the
     agent level, not per-criteria.
 

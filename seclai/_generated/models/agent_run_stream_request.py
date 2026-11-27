@@ -22,8 +22,12 @@ T = TypeVar("T", bound="AgentRunStreamRequest")
 class AgentRunStreamRequest:
     """
     Attributes:
+        include_commentary (bool | Unset): Receive `stream_commentary` events carrying the text a model on OpenAI's
+            Responses API writes outside its final answer, with its `phase` and `message` number. They are sent only for a
+            `prompt_call` whose `run_result` enables `show_commentary`, and never when a governance policy redacts that
+            step. Default: False.
         include_reasoning (bool | Unset): Receive `stream_reasoning` events carrying the model's reasoning while it
-            thinks. They are sent only for a `streaming_result` step whose author enabled `show_reasoning`, and never when a
+            thinks. They are sent only for a `prompt_call` whose `run_result` enables `show_reasoning`, and never when a
             governance policy redacts that step. Default: False.
         input_ (None | str | Unset): Input to provide to the agent upon running for agents with dynamic triggers.
         input_upload_id (None | Unset | UUID): ID of a previously uploaded file (via POST /{agent_id}/upload-input) to
@@ -41,6 +45,7 @@ class AgentRunStreamRequest:
             Files the trigger's ``accepted_attachments`` no longer accepts are left out.
     """
 
+    include_commentary: bool | Unset = False
     include_reasoning: bool | Unset = False
     input_: None | str | Unset = UNSET
     input_upload_id: None | Unset | UUID = UNSET
@@ -53,6 +58,8 @@ class AgentRunStreamRequest:
         from ..models.agent_run_stream_request_metadata_type_0 import (
             AgentRunStreamRequestMetadataType0,
         )
+
+        include_commentary = self.include_commentary
 
         include_reasoning = self.include_reasoning
 
@@ -101,6 +108,8 @@ class AgentRunStreamRequest:
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
+        if include_commentary is not UNSET:
+            field_dict["include_commentary"] = include_commentary
         if include_reasoning is not UNSET:
             field_dict["include_reasoning"] = include_reasoning
         if input_ is not UNSET:
@@ -123,6 +132,8 @@ class AgentRunStreamRequest:
         )
 
         d = dict(src_dict)
+        include_commentary = d.pop("include_commentary", UNSET)
+
         include_reasoning = d.pop("include_reasoning", UNSET)
 
         def _parse_input_(data: object) -> None | str | Unset:
@@ -212,6 +223,7 @@ class AgentRunStreamRequest:
         replay_of_run_id = _parse_replay_of_run_id(d.pop("replay_of_run_id", UNSET))
 
         agent_run_stream_request = cls(
+            include_commentary=include_commentary,
             include_reasoning=include_reasoning,
             input_=input_,
             input_upload_id=input_upload_id,

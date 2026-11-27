@@ -111,8 +111,14 @@ def sync_detailed(
     Pass an entry's `key` as `agent_template` on POST /agents, with `resource_bindings` for the
     resources it needs.
 
+    From `Seclai-Version: 2026-11-09`, `query` describes what the agent should do and entries are ranked
+    by how well they match its words and meaning, best first; a query of several words that are all
+    filler, such as 'create an agent', counts as no query. Without a query every version lists entries
+    by key; older versions list only entries containing every word of `query`.
+
     Args:
-        query (None | str | Unset): Words every match must contain.
+        query (None | str | Unset): What the agent should do; before 2026-11-09, words every match
+            must contain.
         use_case (None | str | Unset): Only entries for this use case.
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
@@ -159,8 +165,14 @@ def sync(
     Pass an entry's `key` as `agent_template` on POST /agents, with `resource_bindings` for the
     resources it needs.
 
+    From `Seclai-Version: 2026-11-09`, `query` describes what the agent should do and entries are ranked
+    by how well they match its words and meaning, best first; a query of several words that are all
+    filler, such as 'create an agent', counts as no query. Without a query every version lists entries
+    by key; older versions list only entries containing every word of `query`.
+
     Args:
-        query (None | str | Unset): Words every match must contain.
+        query (None | str | Unset): What the agent should do; before 2026-11-09, words every match
+            must contain.
         use_case (None | str | Unset): Only entries for this use case.
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
@@ -202,8 +214,14 @@ async def asyncio_detailed(
     Pass an entry's `key` as `agent_template` on POST /agents, with `resource_bindings` for the
     resources it needs.
 
+    From `Seclai-Version: 2026-11-09`, `query` describes what the agent should do and entries are ranked
+    by how well they match its words and meaning, best first; a query of several words that are all
+    filler, such as 'create an agent', counts as no query. Without a query every version lists entries
+    by key; older versions list only entries containing every word of `query`.
+
     Args:
-        query (None | str | Unset): Words every match must contain.
+        query (None | str | Unset): What the agent should do; before 2026-11-09, words every match
+            must contain.
         use_case (None | str | Unset): Only entries for this use case.
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
@@ -248,8 +266,14 @@ async def asyncio(
     Pass an entry's `key` as `agent_template` on POST /agents, with `resource_bindings` for the
     resources it needs.
 
+    From `Seclai-Version: 2026-11-09`, `query` describes what the agent should do and entries are ranked
+    by how well they match its words and meaning, best first; a query of several words that are all
+    filler, such as 'create an agent', counts as no query. Without a query every version lists entries
+    by key; older versions list only entries containing every word of `query`.
+
     Args:
-        query (None | str | Unset): Words every match must contain.
+        query (None | str | Unset): What the agent should do; before 2026-11-09, words every match
+            must contain.
         use_case (None | str | Unset): Only entries for this use case.
         page (int | Unset): Page number Default: 1.
         limit (int | Unset): Items per page Default: 20.
