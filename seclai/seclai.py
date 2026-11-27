@@ -436,6 +436,9 @@ class SeclaiAPIStatusError(SeclaiError):
         method: HTTP method used for the request.
         url: Full request URL.
         response_text: Best-effort response body text, if available.
+        headers: The response headers, matched case-insensitively; empty when
+            unknown. A 416 from a ranged download carries the file size in
+            ``Content-Range`` (``bytes */<size>``).
     """
 
     def __init__(
@@ -446,6 +449,7 @@ class SeclaiAPIStatusError(SeclaiError):
         method: str,
         url: str,
         response_text: str | None,
+        headers: httpx.Headers | Mapping[str, str] | None = None,
     ) -> None:
         """Create a status error for a non-2xx API response."""
         super().__init__(message)
@@ -454,6 +458,7 @@ class SeclaiAPIStatusError(SeclaiError):
         self.method = method
         self.url = url
         self.response_text = response_text
+        self.headers = httpx.Headers(headers)
 
 
 class SeclaiAPIValidationError(SeclaiAPIStatusError):
@@ -472,6 +477,7 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
         url: str,
         response_text: str | None,
         validation_error: HTTPValidationError,
+        headers: httpx.Headers | Mapping[str, str] | None = None,
     ) -> None:
         """Initialize with validation error details."""
         super().__init__(
@@ -480,6 +486,7 @@ class SeclaiAPIValidationError(SeclaiAPIStatusError):
             method=method,
             url=url,
             response_text=response_text,
+            headers=headers,
         )
         self.validation_error = validation_error
 
@@ -715,6 +722,7 @@ def _raise_for_status(response: httpx.Response) -> None:
                     url=str(response.request.url),
                     response_text=response_text,
                     validation_error=validation_error,
+                    headers=response.headers,
                 )
     raise SeclaiAPIStatusError(
         message=f"Request failed with status {response.status_code}",
@@ -722,6 +730,7 @@ def _raise_for_status(response: httpx.Response) -> None:
         method=response.request.method,
         url=str(response.request.url),
         response_text=response_text,
+        headers=response.headers,
     )
 
 
@@ -1043,6 +1052,7 @@ class _SeclaiBase:
                 url=self._build_url(path),
                 response_text=response_text,
                 validation_error=response.parsed,
+                headers=response.headers,
             )
 
         raise SeclaiAPIStatusError(
@@ -1051,6 +1061,7 @@ class _SeclaiBase:
             method=method,
             url=self._build_url(path),
             response_text=response_text,
+            headers=response.headers,
         )
 
 
@@ -1273,6 +1284,7 @@ class Seclai(_SeclaiBase):
                 method="POST",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1283,6 +1295,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         # ``parsed`` can only be the success model here: _raise_for_openapi_response
         # already raised for any non-200 status, including the 402
@@ -1504,6 +1517,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1514,6 +1528,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunListResponse)
 
@@ -1578,6 +1593,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1588,6 +1604,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -1640,6 +1657,7 @@ class Seclai(_SeclaiBase):
                 method="DELETE",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1650,6 +1668,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -1700,6 +1719,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1710,6 +1730,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentDetailResponse)
 
@@ -1789,6 +1810,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -1799,6 +1821,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentEmbeddingsListResponse)
 
@@ -2007,6 +2030,7 @@ class Seclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -2017,6 +2041,7 @@ class Seclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, SourceListResponse)
 
@@ -2178,6 +2203,7 @@ class Seclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed_response = cast(
                 FileUploadResponse | HTTPValidationError, response.parsed
@@ -2190,6 +2216,7 @@ class Seclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed_response,
+                    headers=response.headers,
                 )
             if not isinstance(parsed_response, FileUploadResponse):
                 raise SeclaiAPIStatusError(
@@ -2198,6 +2225,7 @@ class Seclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             return parsed_response
         finally:
@@ -2299,6 +2327,7 @@ class Seclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed = response.parsed
             if isinstance(parsed, HTTPValidationError):
@@ -2309,6 +2338,7 @@ class Seclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed,
+                    headers=response.headers,
                 )
             return _expect_model(parsed, FileUploadResponse)
         finally:
@@ -2786,7 +2816,9 @@ class Seclai(_SeclaiBase):
             ValueError: If the range arguments are not one valid byte range;
                 nothing is sent.
             SeclaiAPIStatusError: On an error status, including 416 when the
-                range starts at or past the end of a non-empty file.
+                range starts at or past the end of a non-empty file; its
+                ``headers["Content-Range"]`` (``bytes */<size>``) gives the
+                file size.
         """
         headers = _byte_range_headers(range_start, range_end, range_suffix)
         return self._stream_get(
@@ -6395,6 +6427,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="POST",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6405,6 +6438,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         # ``parsed`` can only be the success model here: _raise_for_openapi_response
         # already raised for any non-200 status, including the 402
@@ -6626,6 +6660,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6636,6 +6671,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunListResponse)
 
@@ -6700,6 +6736,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6710,6 +6747,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -6767,6 +6805,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="DELETE",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6777,6 +6816,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, AgentRunResponse)
 
@@ -6827,6 +6867,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6837,6 +6878,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentDetailResponse)
 
@@ -6916,6 +6958,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -6926,6 +6969,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, ContentEmbeddingsListResponse)
 
@@ -7134,6 +7178,7 @@ class AsyncSeclai(_SeclaiBase):
                 method="GET",
                 url=self._build_url(path),
                 response_text=None,
+                headers=response.headers,
             )
         parsed = response.parsed
         if isinstance(parsed, HTTPValidationError):
@@ -7144,6 +7189,7 @@ class AsyncSeclai(_SeclaiBase):
                 url=self._build_url(path),
                 response_text=None,
                 validation_error=parsed,
+                headers=response.headers,
             )
         return _expect_model(parsed, SourceListResponse)
 
@@ -7302,6 +7348,7 @@ class AsyncSeclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed_response = cast(
                 FileUploadResponse | HTTPValidationError, response.parsed
@@ -7314,6 +7361,7 @@ class AsyncSeclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed_response,
+                    headers=response.headers,
                 )
             if not isinstance(parsed_response, FileUploadResponse):
                 raise SeclaiAPIStatusError(
@@ -7322,6 +7370,7 @@ class AsyncSeclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             return parsed_response
         finally:
@@ -7423,6 +7472,7 @@ class AsyncSeclai(_SeclaiBase):
                     method="POST",
                     url=self._build_url(endpoint_path),
                     response_text=None,
+                    headers=response.headers,
                 )
             parsed = response.parsed
             if isinstance(parsed, HTTPValidationError):
@@ -7433,6 +7483,7 @@ class AsyncSeclai(_SeclaiBase):
                     url=self._build_url(endpoint_path),
                     response_text=None,
                     validation_error=parsed,
+                    headers=response.headers,
                 )
             return _expect_model(parsed, FileUploadResponse)
         finally:
@@ -7925,7 +7976,9 @@ class AsyncSeclai(_SeclaiBase):
             ValueError: If the range arguments are not one valid byte range;
                 nothing is sent.
             SeclaiAPIStatusError: On an error status, including 416 when the
-                range starts at or past the end of a non-empty file.
+                range starts at or past the end of a non-empty file; its
+                ``headers["Content-Range"]`` (``bytes */<size>``) gives the
+                file size.
         """
         headers = _byte_range_headers(range_start, range_end, range_suffix)
         return await self._stream_get(

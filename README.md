@@ -553,7 +553,9 @@ finally:
 
 A range is answered with 206 and `Content-Range`. An empty file comes back
 whole, with 200. A range that starts at or past the end of a non-empty file
-raises `SeclaiAPIStatusError` with status 416. A combination that is not one
+raises `SeclaiAPIStatusError` with status 416, whose `headers["Content-Range"]`
+(`bytes */<size>`) gives the file size, so a resumed download can tell it
+already has the whole file. A combination that is not one
 byte range (`range_end` without `range_start`, `range_suffix` with either, a
 negative value, a `range_suffix` of 0, an end before the start, or a value
 that is not an `int`, a `bool` included) raises `ValueError` without sending

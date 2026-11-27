@@ -6009,6 +6009,7 @@ class TestDownloadAgentRunAttachmentRange:
         with pytest.raises(SeclaiAPIStatusError) as exc:
             client.download_agent_run_attachment("r1", "att1", range_start=10)
         assert exc.value.status_code == 416
+        assert exc.value.headers["Content-Range"] == "bytes */10"
 
     @pytest.mark.asyncio
     async def test_unsatisfiable_range_raises_416_async(self) -> None:
@@ -6019,6 +6020,7 @@ class TestDownloadAgentRunAttachmentRange:
         with pytest.raises(SeclaiAPIStatusError) as exc:
             await client.download_agent_run_attachment("r1", "att1", range_start=10)
         assert exc.value.status_code == 416
+        assert exc.value.headers["content-range"] == "bytes */10"
 
     def test_no_range_arguments_add_no_range_header(self) -> None:
         seen: list[httpx.Request] = []
@@ -6045,3 +6047,81 @@ class TestDownloadAgentRunAttachmentRange:
         ).close()
         assert seen[0].url.params["download_name"] == "a.mp4"
         assert seen[0].headers["range"] == "bytes=0-3"
+
+
+# ---------------------------------------------------------------------------
+# Response headers on status errors
+# ---------------------------------------------------------------------------
+
+_VALIDATION_422 = {
+    "detail": [{"loc": ["query", "x"], "msg": "bad", "type": "value_error"}]
+}
+
+
+class TestStatusErrorHeaders:
+    def test_json_request_error_carries_headers(self) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                503,
+                headers={"Retry-After": "30"},
+                json={"error": {"code": "database_unavailable"}},
+            )
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            client.list_agents()
+        assert exc.value.status_code == 503
+        assert exc.value.headers["retry-after"] == "30"
+
+    @pytest.mark.asyncio
+    async def test_json_request_error_carries_headers_async(self) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        async def handler(req: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                503,
+                headers={"Retry-After": "30"},
+                json={"error": {"code": "database_unavailable"}},
+            )
+
+        client = _async_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            await client.list_agents()
+        assert exc.value.headers["Retry-After"] == "30"
+
+    def test_validation_error_carries_headers(self) -> None:
+        from seclai import SeclaiAPIValidationError
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                422, headers={"X-Request-Id": "req-1"}, json=_VALIDATION_422
+            )
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIValidationError) as exc:
+            client.list_agents()
+        assert exc.value.headers["x-request-id"] == "req-1"
+
+    def test_streaming_run_error_carries_headers(self) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        def handler(req: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                409, headers={"X-Request-Id": "req-2"}, json={"detail": "invalid"}
+            )
+
+        client = _sync_client(handler)
+        with pytest.raises(SeclaiAPIStatusError) as exc:
+            client.run_streaming_agent_and_wait("a1", AgentRunStreamRequest(input="x"))
+        assert exc.value.status_code == 409
+        assert exc.value.headers["x-request-id"] == "req-2"
+
+    def test_headers_default_to_empty(self) -> None:
+        from seclai import SeclaiAPIStatusError
+
+        err = SeclaiAPIStatusError(
+            message="m", status_code=500, method="GET", url="u", response_text=None
+        )
+        assert len(err.headers) == 0

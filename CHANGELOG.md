@@ -14,11 +14,12 @@
 
 - Add `include_commentary` as an optional key of `AgentRunStreamRequest`, to receive `stream_commentary` events from `run_streaming_agent()` carrying the text a model on OpenAI's Responses API writes outside its final answer, for a `prompt_call` whose `run_result` enables `show_commentary`. `run_streaming_agent_and_wait()`, which keeps only the `init`, `result` and `done` events, removes it from the body before sending, as it does `include_reasoning`
 - Add `range_start`, `range_end` and `range_suffix` to `download_agent_run_attachment()`, to fetch one byte range of the file, answered with 206 and `Content-Range`. A combination that is not one byte range (`range_end` without `range_start`, `range_suffix` with either, a negative value, a `range_suffix` of 0, an end before the start, or a value that is not an `int`, a `bool` included) raises `ValueError` without sending a request; a range that starts at or past the end of a non-empty file raises `SeclaiAPIStatusError` with status 416
+- Add `headers` to `SeclaiAPIStatusError` and `SeclaiAPIValidationError`, the response headers of the failed request as `httpx.Headers`, empty when unknown. A 416 from a ranged `download_agent_run_attachment()` carries the file size in `Content-Range` (`bytes */<size>`)
 - Add `ApiVersion` members for `2026-11-08`, `2026-11-09`, `2026-11-14` and `2026-11-19`, so each can be selected without `allow_unknown_api_version`
 
 ### Fixed
 
-- Decode an agent run, step or attempt whose `status` is `cancelled`. An account pinned server-side to API version `2026-11-08` or later, or a client built with `allow_unknown_api_version=True`, got a `ValueError` from `get_agent_run()`, `run_agent_and_poll()` and the other methods returning one
+- Decode an agent run, step or attempt whose `status` is `cancelled`. An account pinned server-side to API version `2026-11-08` or later, or a client built with `allow_unknown_api_version=True`, got a `ValueError` from `get_agent_run()`, `run_agent_and_poll()` and the other methods returning one; `run_streaming_agent_and_wait()` instead dropped the `done` event and returned the earlier, unfinished snapshot, or with `raise_on_incomplete=True` raised `SeclaiStreamingError`
 
 ## [1.10.0] - 2026-11-05
 
