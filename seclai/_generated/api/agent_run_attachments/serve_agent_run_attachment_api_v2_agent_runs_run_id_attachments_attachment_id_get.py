@@ -123,8 +123,8 @@ def sync_detailed(
     prevent cross-tenant existence enumeration.
 
     MIME handling:
-    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
-    application/vnd.seclai.manifest+json) are served with their declared type.
+    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain) are served with their
+    declared type.
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
@@ -190,8 +190,8 @@ def sync(
     prevent cross-tenant existence enumeration.
 
     MIME handling:
-    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
-    application/vnd.seclai.manifest+json) are served with their declared type.
+    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain) are served with their
+    declared type.
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
@@ -252,8 +252,8 @@ async def asyncio_detailed(
     prevent cross-tenant existence enumeration.
 
     MIME handling:
-    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
-    application/vnd.seclai.manifest+json) are served with their declared type.
+    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain) are served with their
+    declared type.
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
@@ -317,8 +317,8 @@ async def asyncio(
     prevent cross-tenant existence enumeration.
 
     MIME handling:
-    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain,
-    application/vnd.seclai.manifest+json) are served with their declared type.
+    - Inline-safe MIMEs (image/*, audio/*, video/*, application/pdf, text/plain) are served with their
+    declared type.
     - Everything else is served as ``application/octet-stream`` with an attachment disposition to
     prevent stored-XSS.
 
