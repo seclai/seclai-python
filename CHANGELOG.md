@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.11.1] - 2026-11-27
+
+### Changed
+
+- Time out `run_agent()`, `list_agent_runs()`, `get_agent_run()`, `delete_agent_run()`, `list_sources()`, `get_content_detail()`, `delete_content()`, `list_content_embeddings()`, `upload_file_to_source()` and `upload_file_to_content()` when no `timeout` is passed to `Seclai(...)` or `AsyncSeclai(...)`, as the other methods but `run_streaming_agent()` and `run_streaming_agent_and_wait()` do: after 30 seconds on the client the SDK builds, or after the timeout of a supplied `http_client`. They waited without limit. A `timeout` passed to the constructor still applies to them
+
+### Fixed
+
+- Apply a `timeout` passed to `Seclai(...)` or `AsyncSeclai(...)` to every method when an `http_client` is supplied. `request()`, the methods built on it, `upload_agent_input()`, `download_agent_run_attachment()`, `download_content_attachment()` and `download_source_export()` used the supplied client's own timeout instead
+- Raise `SeclaiStreamingError` from `run_streaming_agent_and_wait()` when the server sends an `error` event, with the server's error text in the message and the latest snapshot in `run`, and when it sends a `timeout` event, with the latest snapshot in `run`. By default it returned the unfinished snapshot with no error; with `raise_on_incomplete=True` it raised a generic error without the server's message
+- Return the `done` run from `run_streaming_agent_and_wait()`, or with `return_on_result=True` the `result` one, when its lines were read before the connection was cut, rather than raising the `httpx` error. `run_streaming_agent()` likewise yields an event read before a cut, then raises the error
+- Read a plain JSON reply to a streaming run as one `done` event carrying the run: `run_streaming_agent()` yielded nothing, and `run_streaming_agent_and_wait()` raised `SeclaiStreamingError` with no snapshot
+- Put the server's error text in the message of the `SeclaiStreamingError` that `run_streaming_agent()` raises for an `error` event, rather than the event's raw JSON data
+- Yield the event `run_streaming_agent()` was reading when its `timeout` passed, then raise `SeclaiError`, rather than dropping it
+- Stream without a time limit from `run_streaming_agent()` and `run_streaming_agent_and_wait()` on a client built with `timeout=None`, unless the call passes its own `timeout`. They raised `TypeError`
+
 ## [1.11.0] - 2026-11-27
 
 ### Changed
@@ -304,6 +320,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.11.1]: https://github.com/seclai/seclai-python/releases/tag/1.11.1
 [1.11.0]: https://github.com/seclai/seclai-python/releases/tag/1.11.0
 [1.10.0]: https://github.com/seclai/seclai-python/releases/tag/1.10.0
 [1.9.0]: https://github.com/seclai/seclai-python/releases/tag/1.9.0

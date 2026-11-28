@@ -79,12 +79,11 @@ asyncio.run(main())
 | `default_headers` | — | `None` |
 | `http_client` | — | `None` (auto-created `httpx.Client`) |
 
-Ten methods wait without limit unless you pass `timeout` yourself: `run_agent()`,
-`list_agent_runs()`, `get_agent_run()`, `delete_agent_run()`, `list_sources()`,
-`get_content_detail()`, `delete_content()`, `list_content_embeddings()`,
-`upload_file_to_source()` and `upload_file_to_content()`. The 30-second default
-does not apply to them, and neither does the timeout of an `http_client` you
-supply. Requests from every other method use a supplied client's own timeout.
+A `timeout` you pass applies to every method, also through an `http_client`
+you supply. Without one, every method uses the HTTP client's own timeout: 30
+seconds for the client the SDK builds, or that of the `http_client` you supply.
+`run_streaming_agent()` and `run_streaming_agent_and_wait()` take their own
+`timeout`, which defaults to the one you passed, or to 30 seconds.
 
 Set `SECLAI_API_URL` to point at a different API host (e.g., staging):
 
@@ -390,9 +389,9 @@ try:
         raise_on_incomplete=True,
     )
 except SeclaiStreamingError as e:
-    # Timed out, or the stream ended or was cut, before `done`. `e.run` is the
-    # latest snapshot: the `result` one if it arrived, so its `output` is the
-    # answer even though the run had not finished.
+    # Timed out, failed on the server, or the stream ended or was cut, before
+    # `done`. `e.run` is the latest snapshot: the `result` one if it arrived,
+    # so its `output` is the answer even though the run had not finished.
     if e.run is not None and e.run.result_reported_at:
         print(e.run.output)
     else:
@@ -406,8 +405,11 @@ in `e.run` (or `None` if none arrived).
 By default it behaves as in earlier releases: when the stream ends before
 `done` it returns the latest snapshot, which may be a run that has not
 finished, so check `status` and `result_reported_at`; a connection cut
-mid-stream raises the `httpx` error (such as `httpx.ReadError`). On `timeout`
-it raises `SeclaiStreamingError`, with `e.run`, either way.
+mid-stream raises the `httpx` error (such as `httpx.ReadError`), unless the
+`done` event, or with `return_on_result=True` the `result` event, was read
+before the cut. On `timeout`, and when the server sends
+an `error` or `timeout` event, it raises `SeclaiStreamingError`, with `e.run`,
+either way; for an `error` event the message includes the server's error text.
 
 Pass `return_on_result=True` to return the `result` snapshot as soon as it
 arrives, without waiting for `done`. That run may still be in progress: its
@@ -1089,7 +1091,7 @@ except SeclaiConfigurationError as e:
 | `SeclaiConfigurationError` | Missing API key, invalid configuration |
 | `SeclaiAPIStatusError` | Non-2xx HTTP response |
 | `SeclaiAPIValidationError` | HTTP 422 (inherits `SeclaiAPIStatusError`) |
-| `SeclaiStreamingError` | SSE stream error event received; `run_streaming_agent_and_wait()` timed out, or, with `raise_on_incomplete=True`, its stream ended or was cut before `done` (`e.run` holds the latest snapshot) |
+| `SeclaiStreamingError` | SSE stream error event received; `run_streaming_agent_and_wait()` timed out or got a server `error` or `timeout` event, or, with `raise_on_incomplete=True`, its stream ended or was cut before `done` (`e.run` holds the latest snapshot) |
 
 ## Low-level access
 
