@@ -41,6 +41,7 @@ import json
 import logging
 import mimetypes
 import os
+import re
 import time
 from collections.abc import (
     AsyncGenerator,
@@ -379,11 +380,16 @@ class _SseParser:
     def __init__(self) -> None:
         self._event: str | None = None
         self._data: list[str] = []
+        #: A field line of an event has been read and its blank line has not.
+        self.in_event = False
 
     def feed(self, line: str) -> _StreamEvent | None:
         """Take one line; return the event a blank line completes, if any."""
         if line == "":
             return self.flush()
+        if line.startswith(":"):
+            return None  # a comment, such as a keepalive
+        self.in_event = True
         if line.startswith("event:"):
             self._event = line[len("event:") :].strip() or None
         elif line.startswith("data:"):
@@ -394,9 +400,44 @@ class _SseParser:
         """Return the event read so far, if it has a name and data, and reset."""
         event, data = self._event, self._data
         self._event, self._data = None, []
+        self.in_event = False
         if event is None or not data:
             return None
         return _decode_event(event, "\n".join(data))
+
+
+_NEWLINE = re.compile(r"\r\n|\r|\n")
+
+
+class _LineSplitter:
+    """Split decoded text chunks into SSE lines, ended by CRLF, CR or LF."""
+
+    def __init__(self) -> None:
+        self._buffer = ""
+        self._after_cr = False
+
+    def decode(self, text: str) -> list[str]:
+        """Return the lines ``text`` completes; keep the partial last one."""
+        if self._after_cr:
+            self._after_cr = False
+            if text.startswith("\n"):
+                text = text[1:]  # the LF of a CRLF split across chunks
+        if not text:
+            return []
+        self._after_cr = text.endswith("\r")
+        lines = _NEWLINE.split(self._buffer + text)
+        self._buffer = lines.pop()
+        return lines
+
+    @property
+    def empty(self) -> bool:
+        """Whether no partial line is buffered."""
+        return not self._buffer
+
+    def flush(self) -> list[str]:
+        """Return the final line, which had no line ending, if any."""
+        line, self._buffer = self._buffer, ""
+        return [line] if line else []
 
 
 def _is_json_reply(response: httpx.Response) -> bool:
@@ -405,32 +446,50 @@ def _is_json_reply(response: httpx.Response) -> bool:
 
 
 def _iter_stream_events(
-    response: httpx.Response, deadline: float
+    response: httpx.Response, deadline: float, grace: float | None
 ) -> Generator[_StreamEvent]:
     """Yield the events of an open agent-run stream.
 
-    A plain JSON reply is one ``done`` event carrying the run. The deadline (a
-    ``time.monotonic()`` value) is checked against the time each line
-    was read, after the line is handled, and passing it raises
-    :class:`_StreamDeadline`. An event whose closing blank line never
-    came is still yielded: at the end of the stream, and before a transport
-    error or :class:`_StreamDeadline` is raised.
+    A plain JSON reply is one ``done`` event carrying the run (the wait helper
+    reads one that has neither finished nor, with ``return_on_result``,
+    reported its result as a snapshot). The deadline (a
+    ``time.monotonic()`` value) is checked after each chunk of the body is
+    handled, against the time that chunk arrived, and only at an event
+    boundary: no partial line is buffered and no event has begun (after a
+    dispatched event or a comment such as a keepalive, or before any line).
+    Passing it there raises :class:`_StreamDeadline`. So an event that has
+    begun arriving, including in the first chunk after the deadline, is read
+    to its end; one that starts after a chunk that ended at a boundary past
+    the deadline is not read. An event in progress extends the read by at
+    most ``grace`` (the call's timeout) past the deadline: after that the
+    deadline fires whatever the parser holds. An event whose closing blank
+    line never came is still yielded: at the end of the stream, and before a
+    transport error or :class:`_StreamDeadline` is raised.
     """
     if _is_json_reply(response):
         response.read()
         yield _decode_event("done", response.text)
         return
     parser = _SseParser()
+    lines = _LineSplitter()
     try:
-        for line in response.iter_lines():
+        for text in response.iter_text():
             # Taken before yielding, so time the caller spends on the last
-            # event, after which no line is read, does not count.
+            # event, after which nothing is read, does not count.
             arrived = time.monotonic()
+            for line in lines.decode(text):
+                event = parser.feed(line)
+                if event is not None:
+                    yield event
+            if arrived > deadline and (
+                (lines.empty and not parser.in_event)
+                or arrived > deadline + (grace or 0.0)
+            ):
+                raise _StreamDeadline
+        for line in lines.flush():
             event = parser.feed(line)
             if event is not None:
                 yield event
-            if arrived > deadline:
-                raise _StreamDeadline
     except (httpx.TransportError, _StreamDeadline):
         event = parser.flush()
         if event is not None:
@@ -442,7 +501,7 @@ def _iter_stream_events(
 
 
 async def _aiter_stream_events(
-    response: httpx.Response, deadline: float
+    response: httpx.Response, deadline: float, grace: float | None
 ) -> AsyncGenerator[_StreamEvent]:
     """Async twin of :func:`_iter_stream_events`."""
     if _is_json_reply(response):
@@ -450,21 +509,34 @@ async def _aiter_stream_events(
         yield _decode_event("done", response.text)
         return
     parser = _SseParser()
+    lines = _LineSplitter()
+    # Closed here, not left to the event loop, when the caller stops early.
+    chunks = cast(AsyncGenerator[str], response.aiter_text())
     try:
-        async for line in response.aiter_lines():
+        async for text in chunks:
             # Taken before yielding, so time the caller spends on the last
-            # event, after which no line is read, does not count.
+            # event, after which nothing is read, does not count.
             arrived = time.monotonic()
+            for line in lines.decode(text):
+                event = parser.feed(line)
+                if event is not None:
+                    yield event
+            if arrived > deadline and (
+                (lines.empty and not parser.in_event)
+                or arrived > deadline + (grace or 0.0)
+            ):
+                raise _StreamDeadline
+        for line in lines.flush():
             event = parser.feed(line)
             if event is not None:
                 yield event
-            if arrived > deadline:
-                raise _StreamDeadline
     except (httpx.TransportError, _StreamDeadline):
         event = parser.flush()
         if event is not None:
             yield event
         raise
+    finally:
+        await chunks.aclose()
     event = parser.flush()
     if event is not None:
         yield event
@@ -498,6 +570,10 @@ class _RunWait:
         #: Why the stream stopped before ``done``; ``None`` when it just ended.
         self.ending: str | None = None
         self.cause: BaseException | None = None
+        #: Whether the server answered with plain JSON rather than SSE.
+        self.json_reply = False
+        #: A JSON reply carried a run that has not finished.
+        self.json_unfinished = False
 
     def take(self, event: _StreamEvent) -> AgentRunResponse | None:
         """Handle one event; return the run to return, if any.
@@ -523,6 +599,17 @@ class _RunWait:
         except Exception:
             return None
         if name == "done":
+            if self.json_reply and not (
+                run.status in _TERMINAL_RUN_STATUSES
+                or (self.return_on_result and run.result_reported_at)
+            ):
+                # A JSON reply is the run as it stands, not a final event.
+                self.json_unfinished = True
+                if run.result_reported_at:
+                    self.result = run
+                else:
+                    self.latest = run
+                return None
             return run
         if name == "result":
             self.result = run
@@ -540,8 +627,13 @@ class _RunWait:
             if self.result is not None
             else "the run had not reported a result"
         )
+        message = (
+            f"The server answered with JSON for a run that has not finished: {outcome}."
+            if self.ending is None and self.json_unfinished
+            else f"{self.ending or 'The stream ended'} before the 'done' event: {outcome}."
+        )
         raise SeclaiStreamingError(
-            f"{self.ending or 'The stream ended'} before the 'done' event: {outcome}.",
+            message,
             run_id=snapshot.run_id if snapshot is not None else self.run_id,
             run=snapshot,
         ) from self.cause
@@ -997,29 +1089,36 @@ def _send_url(client: httpx.Client | httpx.AsyncClient, path: str) -> str:
     return path if str(client.base_url) else f"{SECLAI_API_URL.rstrip('/')}{path}"
 
 
-def _send_timeout(options: ClientOptions) -> Any:
+def _send_timeout(options: ClientOptions, *, upload: bool = False) -> Any:
     """Return the ``timeout`` argument for a request, the same for every method
-    but the agent-run streams, which send their own.
+    but the agent-run streams, which send their own, and the file uploads
+    (``upload``).
 
     A timeout passed to the constructor wins. Without one, the client's own
     timeout applies: the 30-second default of the client the SDK builds, or
-    that of a supplied ``http_client``. ``timeout=None`` is sent only when the
-    caller passed it, since httpx reads it as "no limit".
+    that of a supplied ``http_client``. ``timeout=None``, which httpx reads as
+    "no limit", is sent when the caller passed it, and for a file upload
+    without a constructor timeout.
     """
     if isinstance(options.explicit_timeout, Unset):
-        return httpx.USE_CLIENT_DEFAULT
+        # As released, the file uploads wait without limit unless the caller
+        # passed a timeout.
+        return None if upload else httpx.USE_CLIENT_DEFAULT
     return options.explicit_timeout
 
 
 class _SyncSender:
     """What the generated client sends through: the client every method uses."""
 
-    def __init__(self, options: ClientOptions, client: httpx.Client) -> None:
+    def __init__(
+        self, options: ClientOptions, client: httpx.Client, *, upload: bool = False
+    ) -> None:
         self._options = options
         self._client = client
+        self._upload = upload
 
     def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        kwargs["timeout"] = _send_timeout(self._options)
+        kwargs["timeout"] = _send_timeout(self._options, upload=self._upload)
         kwargs["headers"] = _merge_request_headers(
             options=self._options,
             client_headers=self._client.headers,
@@ -1033,12 +1132,19 @@ class _SyncSender:
 class _AsyncSender:
     """Async twin of :class:`_SyncSender`."""
 
-    def __init__(self, options: ClientOptions, client: httpx.AsyncClient) -> None:
+    def __init__(
+        self,
+        options: ClientOptions,
+        client: httpx.AsyncClient,
+        *,
+        upload: bool = False,
+    ) -> None:
         self._options = options
         self._client = client
+        self._upload = upload
 
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        kwargs["timeout"] = _send_timeout(self._options)
+        kwargs["timeout"] = _send_timeout(self._options, upload=self._upload)
         kwargs["headers"] = await _merge_request_headers_async(
             options=self._options,
             client_headers=self._client.headers,
@@ -1331,12 +1437,15 @@ class Seclai(_SeclaiBase):
             access_token: Static bearer token string or a callable returning one.
                 Mutually exclusive with ``api_key``.
             timeout: Request timeout (seconds), applied to every method.
-                Without it, every method uses the HTTP client's own timeout:
+                Without it, every method but those named below uses the HTTP
+                client's own timeout:
                 30 seconds for the client the SDK builds, or that of a
                 supplied ``http_client``. ``run_streaming_agent`` and
                 ``run_streaming_agent_and_wait`` take their own ``timeout``,
                 which defaults to this one, or to 30 seconds, also with an
-                ``http_client``.
+                ``http_client``. ``upload_file_to_source`` and
+                ``upload_file_to_content`` wait without limit unless you pass
+                one.
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
             http_client: Optional pre-configured ``httpx.Client`` to use. A
@@ -1374,6 +1483,11 @@ class Seclai(_SeclaiBase):
         )
         self._generated = GeneratedClient(base_url=SECLAI_API_URL).set_httpx_client(
             cast(httpx.Client, _SyncSender(self._options, self._client))
+        )
+        self._generated_upload = GeneratedClient(
+            base_url=SECLAI_API_URL
+        ).set_httpx_client(
+            cast(httpx.Client, _SyncSender(self._options, self._client, upload=True))
         )
         self._owns_client = http_client is None
         if http_client is not None:
@@ -1560,7 +1674,8 @@ class Seclai(_SeclaiBase):
         or ``timeout`` event from the server, it raises
         :class:`SeclaiStreamingError` with ``run`` either way; for ``error``
         the message includes the server's error text. A plain JSON reply is
-        read as the ``done`` event.
+        read as the ``done`` event when its run has finished (or, with
+        ``return_on_result``, reported its result), else as the latest snapshot.
 
         Every event but ``init``, ``result``, ``done``, ``error`` and
         ``timeout`` is discarded, so
@@ -1626,7 +1741,8 @@ class Seclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so the error carries
                 # its text and a 422 its field-level detail.
                 _raise_for_unread_status(response)
-                events = _iter_stream_events(response, deadline)
+                wait.json_reply = _is_json_reply(response)
+                events = _iter_stream_events(response, deadline, timeout_seconds)
                 try:
                     for event in events:
                         run = wait.take(event)
@@ -2349,7 +2465,7 @@ class Seclai(_SeclaiBase):
             # Note: openapi-python-client currently struggles with Seclai's spec for this endpoint
             # due to duplicate schema names, so we send the multipart request directly and parse
             # into our SDK model types.
-            http = self._generated.get_httpx_client()
+            http = self._generated_upload.get_httpx_client()
             raw = http.request(
                 "POST",
                 endpoint_path,
@@ -2491,7 +2607,7 @@ class Seclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = sync_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=self._generated,
+                client=self._generated_upload,
                 body=body,
             )
             self._raise_for_openapi_response(
@@ -6278,7 +6394,8 @@ class Seclai(_SeclaiBase):
             Tuples of ``(event_type, parsed_data)`` for each SSE event. A plain
             JSON reply is yielded as one ``"done"`` event carrying the run. An
             event read before the connection is cut is yielded before the
-            ``httpx`` error is raised.
+            error is raised: the ``httpx`` error, or :class:`SeclaiError` on a
+            timeout. The iteration ends after ``done``.
 
         Raises:
             SeclaiAPIStatusError: If the API returns a non-success status code.
@@ -6310,7 +6427,7 @@ class Seclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so a 422's field-level
                 # detail survives into SeclaiAPIValidationError.
                 _raise_for_unread_status(response)
-                events = _iter_stream_events(response, deadline)
+                events = _iter_stream_events(response, deadline, timeout_seconds)
                 try:
                     for name, data, raw in events:
                         if name == "error":
@@ -6319,6 +6436,8 @@ class Seclai(_SeclaiBase):
                                 run_id=_event_run_id(data),
                             )
                         yield (name, data)
+                        if name == "done":
+                            return  # the server closes the stream after it
                 except _StreamDeadline:
                     raise SeclaiError(timed_out) from None
                 finally:
@@ -6397,12 +6516,15 @@ class AsyncSeclai(_SeclaiBase):
             access_token: Static bearer token string or a callable returning one
                 (sync or async). Mutually exclusive with ``api_key``.
             timeout: Request timeout (seconds), applied to every method.
-                Without it, every method uses the HTTP client's own timeout:
+                Without it, every method but those named below uses the HTTP
+                client's own timeout:
                 30 seconds for the client the SDK builds, or that of a
                 supplied ``http_client``. ``run_streaming_agent`` and
                 ``run_streaming_agent_and_wait`` take their own ``timeout``,
                 which defaults to this one, or to 30 seconds, also with an
-                ``http_client``.
+                ``http_client``. ``upload_file_to_source`` and
+                ``upload_file_to_content`` wait without limit unless you pass
+                one.
             api_key_header: Header name to use for the API key.
             default_headers: Extra headers to include on every request.
             http_client: Optional pre-configured ``httpx.AsyncClient`` to use. A
@@ -6442,6 +6564,14 @@ class AsyncSeclai(_SeclaiBase):
             base_url=SECLAI_API_URL
         ).set_async_httpx_client(
             cast(httpx.AsyncClient, _AsyncSender(self._options, self._client))
+        )
+        self._generated_upload = GeneratedClient(
+            base_url=SECLAI_API_URL
+        ).set_async_httpx_client(
+            cast(
+                httpx.AsyncClient,
+                _AsyncSender(self._options, self._client, upload=True),
+            )
         )
         self._owns_client = http_client is None
         if http_client is not None:
@@ -6630,7 +6760,8 @@ class AsyncSeclai(_SeclaiBase):
         or ``timeout`` event from the server, it raises
         :class:`SeclaiStreamingError` with ``run`` either way; for ``error``
         the message includes the server's error text. A plain JSON reply is
-        read as the ``done`` event.
+        read as the ``done`` event when its run has finished (or, with
+        ``return_on_result``, reported its result), else as the latest snapshot.
 
         Every event but ``init``, ``result``, ``done``, ``error`` and
         ``timeout`` is discarded, so
@@ -6696,7 +6827,8 @@ class AsyncSeclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so the error carries
                 # its text and a 422 its field-level detail.
                 await _araise_for_unread_status(response)
-                events = _aiter_stream_events(response, deadline)
+                wait.json_reply = _is_json_reply(response)
+                events = _aiter_stream_events(response, deadline, timeout_seconds)
                 try:
                     async for event in events:
                         run = wait.take(event)
@@ -7421,7 +7553,7 @@ class AsyncSeclai(_SeclaiBase):
 
             endpoint_path = f"/sources/{source_connection_id}/upload"
 
-            http = self._generated.get_async_httpx_client()
+            http = self._generated_upload.get_async_httpx_client()
             raw = await http.request(
                 "POST",
                 endpoint_path,
@@ -7563,7 +7695,7 @@ class AsyncSeclai(_SeclaiBase):
             endpoint_path = f"/contents/{source_connection_content_version}/upload"
             response = await asyncio_detailed(
                 source_connection_content_version=source_connection_content_version,
-                client=self._generated,
+                client=self._generated_upload,
                 body=body,
             )
             self._raise_for_openapi_response(
@@ -11415,7 +11547,8 @@ class AsyncSeclai(_SeclaiBase):
             ``(event_type, parsed_data)`` tuples for each SSE event. A plain
             JSON reply is yielded as one ``"done"`` event carrying the run. An
             event read before the connection is cut is yielded before the
-            ``httpx`` error is raised.
+            error is raised: the ``httpx`` error, or :class:`SeclaiError` on a
+            timeout. The iteration ends after ``done``.
 
         Raises:
             SeclaiAPIStatusError: If the API returns a non-success status code.
@@ -11447,7 +11580,7 @@ class AsyncSeclai(_SeclaiBase):
                 # Lazy body inside `stream()`; read it so a 422's field-level
                 # detail survives into SeclaiAPIValidationError.
                 await _araise_for_unread_status(response)
-                events = _aiter_stream_events(response, deadline)
+                events = _aiter_stream_events(response, deadline, timeout_seconds)
                 try:
                     async for name, data, raw in events:
                         if name == "error":
@@ -11456,6 +11589,8 @@ class AsyncSeclai(_SeclaiBase):
                                 run_id=_event_run_id(data),
                             )
                         yield (name, data)
+                        if name == "done":
+                            return  # the server closes the stream after it
                 except _StreamDeadline:
                     raise SeclaiError(timed_out) from None
                 finally:

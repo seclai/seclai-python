@@ -80,10 +80,13 @@ asyncio.run(main())
 | `http_client` | — | `None` (auto-created `httpx.Client`) |
 
 A `timeout` you pass applies to every method, also through an `http_client`
-you supply. Without one, every method uses the HTTP client's own timeout: 30
-seconds for the client the SDK builds, or that of the `http_client` you supply.
+you supply. Without one, every method but those named below uses the HTTP
+client's own timeout: 30 seconds for the client the SDK builds, or that of the
+`http_client` you supply.
 `run_streaming_agent()` and `run_streaming_agent_and_wait()` take their own
 `timeout`, which defaults to the one you passed, or to 30 seconds.
+`upload_file_to_source()` and `upload_file_to_content()` wait without limit
+unless you pass a `timeout`.
 
 Set `SECLAI_API_URL` to point at a different API host (e.g., staging):
 
@@ -402,8 +405,8 @@ With `raise_on_incomplete=True`, on `timeout`, or when the stream ends or is
 cut before `done`, it raises `SeclaiStreamingError` with the latest snapshot
 in `e.run` (or `None` if none arrived).
 
-By default it behaves as in earlier releases: when the stream ends before
-`done` it returns the latest snapshot, which may be a run that has not
+By default, when the stream ends before `done` it returns the latest
+snapshot, as in earlier releases, which may be a run that has not
 finished, so check `status` and `result_reported_at`; a connection cut
 mid-stream raises the `httpx` error (such as `httpx.ReadError`), unless the
 `done` event, or with `return_on_result=True` the `result` event, was read

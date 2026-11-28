@@ -184,10 +184,10 @@ def test_an_explicit_none_timeout_still_means_no_timeout_everywhere() -> None:
     assert set(seen[1].extensions["timeout"].values()) == {None}
 
 
-# One timeout rule for every method but the agent-run streams, typed or built
-# on `request()`: a timeout passed to the constructor wins; without one, the
-# HTTP client's own applies (a supplied client's, or the 30 seconds of the
-# client the SDK builds).
+# One timeout rule for the typed methods and those built on `request()`
+# (the agent-run streams and the file uploads have their own): a timeout
+# passed to the constructor wins; without one, the HTTP client's own applies
+# (a supplied client's, or the 30 seconds of the client the SDK builds).
 
 
 def _sync_calls(client: Seclai) -> list[Any]:
@@ -226,7 +226,7 @@ _TIMEOUT_CASES = [
 
 @pytest.mark.parametrize("call", range(5), ids=_CALL_IDS)
 @pytest.mark.parametrize(("passed", "client_timeout", "expected"), _TIMEOUT_CASES)
-def test_every_non_streaming_method_follows_one_timeout_rule(
+def test_typed_and_request_methods_follow_one_timeout_rule(
     call: int, passed: float | None, client_timeout: float | None, expected: float
 ) -> None:
     seen: list[httpx.Request] = []
@@ -253,7 +253,7 @@ def test_every_non_streaming_method_follows_one_timeout_rule(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("call", range(5), ids=_CALL_IDS)
 @pytest.mark.parametrize(("passed", "client_timeout", "expected"), _TIMEOUT_CASES)
-async def test_async_every_non_streaming_method_follows_one_timeout_rule(
+async def test_async_typed_and_request_methods_follow_one_timeout_rule(
     call: int, passed: float | None, client_timeout: float | None, expected: float
 ) -> None:
     seen: list[httpx.Request] = []
@@ -293,3 +293,85 @@ def test_an_explicit_none_timeout_applies_through_a_supplied_client() -> None:
 
     assert set(seen[0].extensions["timeout"].values()) == {None}
     assert set(seen[1].extensions["timeout"].values()) == {None}
+
+
+# The file uploads wait without limit unless a timeout was passed, as released.
+
+_UPLOAD_CASES = [
+    pytest.param(7.0, 3.0, 7.0, id="explicit-and-http-client"),
+    pytest.param(None, 3.0, None, id="http-client-alone"),
+    pytest.param(None, None, None, id="neither"),
+]
+
+
+def _failing_recorder(seen: list[httpx.Request]) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(503, text="down")
+
+    return httpx.MockTransport(handler)
+
+
+@pytest.mark.parametrize("method", ["source", "content"])
+@pytest.mark.parametrize(("passed", "client_timeout", "expected"), _UPLOAD_CASES)
+def test_file_uploads_wait_without_limit_unless_a_timeout_is_passed(
+    method: str, passed: float | None, client_timeout: float | None, expected: Any
+) -> None:
+    seen: list[httpx.Request] = []
+    kwargs: dict[str, Any] = {} if passed is None else {"timeout": passed}
+    if client_timeout is None:
+        client = Seclai(api_key="k", **kwargs)
+        client._client._transport = _failing_recorder(seen)
+    else:
+        client = Seclai(
+            api_key="k",
+            http_client=httpx.Client(
+                transport=_failing_recorder(seen),
+                base_url="https://proxy.invalid",
+                timeout=client_timeout,
+            ),
+            **kwargs,
+        )
+    upload = (
+        client.upload_file_to_source
+        if method == "source"
+        else client.upload_file_to_content
+    )
+
+    with pytest.raises(seclai_module.SeclaiAPIStatusError):
+        upload("id_1", file=b"x", file_name="a.txt")
+
+    assert set(seen[0].extensions["timeout"].values()) == {expected}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("method", ["source", "content"])
+@pytest.mark.parametrize(("passed", "client_timeout", "expected"), _UPLOAD_CASES)
+async def test_async_file_uploads_wait_without_limit_unless_a_timeout_is_passed(
+    method: str, passed: float | None, client_timeout: float | None, expected: Any
+) -> None:
+    seen: list[httpx.Request] = []
+    kwargs: dict[str, Any] = {} if passed is None else {"timeout": passed}
+    if client_timeout is None:
+        client = AsyncSeclai(api_key="k", **kwargs)
+        client._client._transport = _failing_recorder(seen)
+    else:
+        client = AsyncSeclai(
+            api_key="k",
+            http_client=httpx.AsyncClient(
+                transport=_failing_recorder(seen),
+                base_url="https://proxy.invalid",
+                timeout=client_timeout,
+            ),
+            **kwargs,
+        )
+    upload = (
+        client.upload_file_to_source
+        if method == "source"
+        else client.upload_file_to_content
+    )
+
+    with pytest.raises(seclai_module.SeclaiAPIStatusError):
+        await upload("id_1", file=b"x", file_name="a.txt")
+
+    assert set(seen[0].extensions["timeout"].values()) == {expected}
