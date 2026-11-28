@@ -74,7 +74,7 @@ asyncio.run(main())
 | `config_dir` | `SECLAI_CONFIG_DIR` | `~/.seclai` |
 | `auto_refresh` | — | `True` |
 | `account_id` | — | — |
-| `timeout` | — | `30.0` (seconds), or the supplied `http_client`'s timeout; no limit for `upload_file_to_source()` and `upload_file_to_content()`; 30 s for `run_streaming_agent()` and `run_streaming_agent_and_wait()`, also with an `http_client`, counting time spent waiting on the stream, not time spent handling yielded events |
+| `timeout` | — | `30.0` (seconds), or the supplied `http_client`'s timeout; no limit for `upload_file_to_source()` and `upload_file_to_content()`; 30 s for `run_streaming_agent()` and `run_streaming_agent_and_wait()`, also with an `http_client`, checked between events (an event already arriving may run up to one more `timeout` past it, and each read is also bounded by `timeout`); for `run_streaming_agent()`, time spent handling yielded events does not count |
 | `api_key_header` | — | `x-api-key` |
 | `default_headers` | — | `None` |
 | `http_client` | — | `None` (auto-created `httpx.Client`) |
