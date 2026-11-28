@@ -1562,3 +1562,92 @@ async def test_async_run_streaming_agent_reads_a_field_line_with_no_colon() -> N
             )
         ]
     assert events == [("stream_token", {"raw": "a\n\nb"})]
+
+
+# A read timeout is a cut: the `done` line read without its LF is kept.
+
+
+class _ReadTimeoutAfterDoneWithoutLf(httpx.SyncByteStream):
+    def __iter__(self) -> Any:
+        yield _DONE_WITHOUT_LF
+        raise httpx.ReadTimeout("read timed out")
+
+
+class _AsyncReadTimeoutAfterDoneWithoutLf(httpx.AsyncByteStream):
+    async def __aiter__(self) -> Any:
+        yield _DONE_WITHOUT_LF
+        raise httpx.ReadTimeout("read timed out")
+
+
+def test_streaming_methods_keep_a_done_line_cut_by_a_read_timeout() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    client = _sync_client(_ReadTimeoutAfterDoneWithoutLf())
+    assert client.run_streaming_agent_and_wait("agent_1", body=body).output == "ok"
+    assert [n for n, _ in client.run_streaming_agent("agent_1", body=body)] == ["done"]
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_methods_keep_a_done_line_cut_by_a_read_timeout() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    async with _async_client(_AsyncReadTimeoutAfterDoneWithoutLf()) as client:
+        res = await client.run_streaming_agent_and_wait("agent_1", body=body)
+        names = [n async for n, _ in client.run_streaming_agent("agent_1", body=body)]
+    assert res.output == "ok"
+    assert names == ["done"]
+
+
+# Past the deadline's grace, the unfinished line is not read: it is
+# incomplete by construction.
+
+
+class _UnfinishedLinePastTheCap(httpx.SyncByteStream):
+    def __init__(self, head: bytes, tail: bytes) -> None:
+        self.head, self.tail = head, tail
+
+    def __iter__(self) -> Any:
+        yield self.head
+        time.sleep(0.25)  # past the 0.1s deadline plus 0.1s grace
+        yield self.tail  # the line still has no LF
+        time.sleep(1.0)
+
+
+class _AsyncUnfinishedLinePastTheCap(httpx.AsyncByteStream):
+    def __init__(self, head: bytes, tail: bytes) -> None:
+        self.head, self.tail = head, tail
+
+    async def __aiter__(self) -> Any:
+        yield self.head
+        await asyncio.sleep(0.25)
+        yield self.tail
+        await asyncio.sleep(1.0)
+
+
+_TOKEN_HEAD = b"event: stream_token\ndata: hel"
+_DONE_HEAD = _DONE_WITHOUT_LF  # complete JSON, but its line is unfinished
+
+
+def test_streaming_methods_drop_an_unfinished_line_past_the_cap() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    client = _sync_client(_UnfinishedLinePastTheCap(_TOKEN_HEAD, b"lo"))
+    seen: list[tuple[str, dict[str, Any]]] = []
+    with pytest.raises(SeclaiError, match="Timed out"):
+        for event in client.run_streaming_agent("agent_1", body=body, timeout=0.1):
+            seen.append(event)
+    assert seen == []
+    client = _sync_client(_UnfinishedLinePastTheCap(_DONE_HEAD, b" "))
+    with pytest.raises(SeclaiStreamingError, match="Timed out"):
+        client.run_streaming_agent_and_wait("agent_1", body=body, timeout=0.1)
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_methods_drop_an_unfinished_line_past_the_cap() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    seen: list[tuple[str, dict[str, Any]]] = []
+    async with _async_client(_AsyncUnfinishedLinePastTheCap(_TOKEN_HEAD, b"lo")) as c:
+        with pytest.raises(SeclaiError, match="Timed out"):
+            async for event in c.run_streaming_agent("agent_1", body=body, timeout=0.1):
+                seen.append(event)
+    assert seen == []
+    async with _async_client(_AsyncUnfinishedLinePastTheCap(_DONE_HEAD, b" ")) as c:
+        with pytest.raises(SeclaiStreamingError, match="Timed out"):
+            await c.run_streaming_agent_and_wait("agent_1", body=body, timeout=0.1)

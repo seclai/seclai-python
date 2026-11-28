@@ -506,11 +506,15 @@ def _iter_stream_events(
             event = parser.feed(line)
             if event is not None:
                 yield event
-    except (httpx.TransportError, _StreamDeadline):
-        # The line read so far counts too: a data line whose LF never came
-        # may be whole, and a truncated one decodes to `{"raw": ...}`.
-        for line in lines.flush():
-            parser.feed(line)
+    except (httpx.TransportError, _StreamDeadline) as e:
+        # On a cut the line read so far counts too, as it may have arrived
+        # whole without its LF. A cut line of JSON data decodes to
+        # `{"raw": ...}` and one of other data is yielded as its text; the
+        # error is raised after either. Not at the deadline, which fires only
+        # after a chunk that left the line unfinished.
+        if isinstance(e, httpx.TransportError):
+            for line in lines.flush():
+                parser.feed(line)
         event = parser.flush()
         if event is not None:
             yield event
@@ -550,11 +554,15 @@ async def _aiter_stream_events(
             event = parser.feed(line)
             if event is not None:
                 yield event
-    except (httpx.TransportError, _StreamDeadline):
-        # The line read so far counts too: a data line whose LF never came
-        # may be whole, and a truncated one decodes to `{"raw": ...}`.
-        for line in lines.flush():
-            parser.feed(line)
+    except (httpx.TransportError, _StreamDeadline) as e:
+        # On a cut the line read so far counts too, as it may have arrived
+        # whole without its LF. A cut line of JSON data decodes to
+        # `{"raw": ...}` and one of other data is yielded as its text; the
+        # error is raised after either. Not at the deadline, which fires only
+        # after a chunk that left the line unfinished.
+        if isinstance(e, httpx.TransportError):
+            for line in lines.flush():
+                parser.feed(line)
         event = parser.flush()
         if event is not None:
             yield event
