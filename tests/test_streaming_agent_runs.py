@@ -1301,7 +1301,7 @@ def test_line_splitter_clears_a_pending_cr_on_a_lone_lf_chunk() -> None:
 # U+2028, U+2029, U+0085, \x0b, \x0c and \x1c to \x1e) inside a data field
 # is kept (httpx's iter_lines split on them).
 
-_ODD_OUTPUT = "a\u2028b\u2029c\u0085d\x0ce"
+_ODD_OUTPUT = "a\u2028b\u2029c\u0085d\x0ce\x0bf\x1cg\x1dh\x1ei"
 _ODD_DONE = (
     "event: done\ndata: "
     + json.dumps(
@@ -1475,3 +1475,90 @@ async def test_async_streaming_methods_trim_trailing_whitespace_from_event_names
         )
     assert names == ["done"]
     assert res.output == "ok"
+
+
+# A data line whose LF never came before a cut still counts.
+
+_DONE_WITHOUT_LF = (
+    b"event: done\ndata: "
+    + json.dumps(_agent_run_payload("completed", output="ok")).encode()
+)
+
+
+class _CutAfterDoneWithoutLf(httpx.SyncByteStream):
+    def __iter__(self) -> Any:
+        yield _DONE_WITHOUT_LF
+        raise httpx.ReadError("connection reset")
+
+
+class _AsyncCutAfterDoneWithoutLf(httpx.AsyncByteStream):
+    async def __aiter__(self) -> Any:
+        yield _DONE_WITHOUT_LF
+        raise httpx.ReadError("connection reset")
+
+
+def test_streaming_methods_keep_a_done_line_cut_before_its_lf() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    client = _sync_client(_CutAfterDoneWithoutLf())
+    assert client.run_streaming_agent_and_wait("agent_1", body=body).output == "ok"
+    assert [n for n, _ in client.run_streaming_agent("agent_1", body=body)] == ["done"]
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_methods_keep_a_done_line_cut_before_its_lf() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    async with _async_client(_AsyncCutAfterDoneWithoutLf()) as client:
+        res = await client.run_streaming_agent_and_wait("agent_1", body=body)
+        names = [n async for n, _ in client.run_streaming_agent("agent_1", body=body)]
+    assert res.output == "ok"
+    assert names == ["done"]
+
+
+# A byte order mark opening the stream is skipped; a field line with no colon
+# is that field with an empty value.
+
+_BOM_STREAM = b"\xef\xbb\xbf" + _sse(
+    ("done", _agent_run_payload("completed", output="ok"))
+)
+_NO_COLON = (
+    b"event: stream_token\ndata: a\ndata\ndata: b\n\nevent: init\nevent\ndata: x\n\n"
+)
+
+
+def test_streaming_methods_skip_a_leading_byte_order_mark() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    client = _sync_client(_BOM_STREAM)
+    assert [n for n, _ in client.run_streaming_agent("agent_1", body=body)] == ["done"]
+    assert client.run_streaming_agent_and_wait("agent_1", body=body).output == "ok"
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_methods_skip_a_leading_byte_order_mark() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    async with _async_client(_BOM_STREAM) as client:
+        names = [n async for n, _ in client.run_streaming_agent("agent_1", body=body)]
+        res = await client.run_streaming_agent_and_wait("agent_1", body=body)
+    assert names == ["done"]
+    assert res.output == "ok"
+
+
+def test_run_streaming_agent_reads_a_field_line_with_no_colon() -> None:
+    client = _sync_client(_NO_COLON)
+    events = list(
+        client.run_streaming_agent("agent_1", body=AgentRunStreamRequest(input="hi"))
+    )
+    # `data` alone adds an empty line; `event` alone clears the name, so that
+    # event has none and is not dispatched, as for `event:`.
+    assert events == [("stream_token", {"raw": "a\n\nb"})]
+
+
+@pytest.mark.asyncio
+async def test_async_run_streaming_agent_reads_a_field_line_with_no_colon() -> None:
+    async with _async_client(_NO_COLON) as client:
+        events = [
+            e
+            async for e in client.run_streaming_agent(
+                "agent_1", body=AgentRunStreamRequest(input="hi")
+            )
+        ]
+    assert events == [("stream_token", {"raw": "a\n\nb"})]

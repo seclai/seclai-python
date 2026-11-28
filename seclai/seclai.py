@@ -399,8 +399,12 @@ class _SseParser:
         if line.startswith("event:"):
             # Trimmed both sides, as released, so `event: done ` is `done`.
             self._event = line[len("event:") :].strip() or None
+        elif line == "event":
+            self._event = None  # no colon: the field with an empty value
         elif line.startswith("data:"):
             self._data.append(_field_value(line, "data:"))
+        elif line == "data":
+            self._data.append("")
         return None
 
     def flush(self) -> _StreamEvent | None:
@@ -422,6 +426,7 @@ class _LineSplitter:
     def __init__(self) -> None:
         self._buffer = ""
         self._after_cr = False
+        self._started = False
 
     def decode(self, text: str) -> list[str]:
         """Return the lines ``text`` completes; keep the partial last one."""
@@ -429,6 +434,10 @@ class _LineSplitter:
             self._after_cr = False
             if text.startswith("\n"):
                 text = text[1:]  # the LF of a CRLF split across chunks
+        if not self._started and text:
+            self._started = True
+            if text.startswith("\ufeff"):
+                text = text[1:]  # a byte order mark opening the stream
         if not text:
             return []
         self._after_cr = text.endswith("\r")
@@ -498,6 +507,10 @@ def _iter_stream_events(
             if event is not None:
                 yield event
     except (httpx.TransportError, _StreamDeadline):
+        # The line read so far counts too: a data line whose LF never came
+        # may be whole, and a truncated one decodes to `{"raw": ...}`.
+        for line in lines.flush():
+            parser.feed(line)
         event = parser.flush()
         if event is not None:
             yield event
@@ -538,6 +551,10 @@ async def _aiter_stream_events(
             if event is not None:
                 yield event
     except (httpx.TransportError, _StreamDeadline):
+        # The line read so far counts too: a data line whose LF never came
+        # may be whole, and a truncated one decodes to `{"raw": ...}`.
+        for line in lines.flush():
+            parser.feed(line)
         event = parser.flush()
         if event is not None:
             yield event
