@@ -370,6 +370,12 @@ def _decode_event(event: str, raw: str) -> _StreamEvent:
     return (event, data, raw)
 
 
+def _field_value(line: str, field: str) -> str:
+    """The value of an SSE data line: one space after the colon is dropped."""
+    value = line[len(field) :]
+    return value[1:] if value.startswith(" ") else value
+
+
 class _SseParser:
     """The one SSE parser of the agent-run streams, fed a line at a time.
 
@@ -391,9 +397,10 @@ class _SseParser:
             return None  # a comment, such as a keepalive
         self.in_event = True
         if line.startswith("event:"):
+            # Trimmed both sides, as released, so `event: done ` is `done`.
             self._event = line[len("event:") :].strip() or None
         elif line.startswith("data:"):
-            self._data.append(line[len("data:") :].lstrip())
+            self._data.append(_field_value(line, "data:"))
         return None
 
     def flush(self) -> _StreamEvent | None:
@@ -6395,7 +6402,7 @@ class Seclai(_SeclaiBase):
             JSON reply is yielded as one ``"done"`` event carrying the run. An
             event read before the connection is cut is yielded before the
             error is raised: the ``httpx`` error, or :class:`SeclaiError` on a
-            timeout. The iteration ends after ``done``.
+            timeout. The iteration ends after a ``done`` whose data decoded.
 
         Raises:
             SeclaiAPIStatusError: If the API returns a non-success status code.
@@ -6436,8 +6443,11 @@ class Seclai(_SeclaiBase):
                                 run_id=_event_run_id(data),
                             )
                         yield (name, data)
-                        if name == "done":
-                            return  # the server closes the stream after it
+                        if name == "done" and data != {"raw": raw}:
+                            # The server closes the stream after `done`. A
+                            # `done` whose data did not decode (cut short, or
+                            # not JSON) keeps reading, so an error still raises.
+                            return
                 except _StreamDeadline:
                     raise SeclaiError(timed_out) from None
                 finally:
@@ -11548,7 +11558,7 @@ class AsyncSeclai(_SeclaiBase):
             JSON reply is yielded as one ``"done"`` event carrying the run. An
             event read before the connection is cut is yielded before the
             error is raised: the ``httpx`` error, or :class:`SeclaiError` on a
-            timeout. The iteration ends after ``done``.
+            timeout. The iteration ends after a ``done`` whose data decoded.
 
         Raises:
             SeclaiAPIStatusError: If the API returns a non-success status code.
@@ -11589,8 +11599,11 @@ class AsyncSeclai(_SeclaiBase):
                                 run_id=_event_run_id(data),
                             )
                         yield (name, data)
-                        if name == "done":
-                            return  # the server closes the stream after it
+                        if name == "done" and data != {"raw": raw}:
+                            # The server closes the stream after `done`. A
+                            # `done` whose data did not decode (cut short, or
+                            # not JSON) keeps reading, so an error still raises.
+                            return
                 except _StreamDeadline:
                     raise SeclaiError(timed_out) from None
                 finally:

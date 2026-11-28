@@ -1297,10 +1297,11 @@ def test_line_splitter_clears_a_pending_cr_on_a_lone_lf_chunk() -> None:
     assert lines == ["a", ""]
 
 
-# Only CR, LF and CRLF end an SSE line: U+2028, U+2029 and U+0085 inside a
-# data field are kept (httpx's iter_lines split on them).
+# Only CR, LF and CRLF end an SSE line: any other line break (such as
+# U+2028, U+2029, U+0085, \x0b, \x0c and \x1c to \x1e) inside a data field
+# is kept (httpx's iter_lines split on them).
 
-_ODD_OUTPUT = "a\u2028b\u2029c\u0085d"
+_ODD_OUTPUT = "a\u2028b\u2029c\u0085d\x0ce"
 _ODD_DONE = (
     "event: done\ndata: "
     + json.dumps(
@@ -1377,3 +1378,100 @@ async def test_async_streaming_methods_cap_an_event_that_never_ends() -> None:
             ):
                 pass
         assert time.monotonic() - start < 0.7
+
+
+# A `done` cut short (its data does not decode) is yielded, and the error
+# that cut it still raised: only a decoded `done` ends the iteration.
+
+
+class _CutInsideDone(httpx.SyncByteStream):
+    def __iter__(self) -> Any:
+        yield b'event: done\ndata: {"run_id": "r",\n'
+        raise httpx.ReadError("connection reset")
+
+
+class _AsyncCutInsideDone(httpx.AsyncByteStream):
+    async def __aiter__(self) -> Any:
+        yield b'event: done\ndata: {"run_id": "r",\n'
+        raise httpx.ReadError("connection reset")
+
+
+def test_run_streaming_agent_raises_after_a_done_cut_short() -> None:
+    client = _sync_client(_CutInsideDone())
+    seen: list[tuple[str, dict[str, Any]]] = []
+    with pytest.raises(httpx.ReadError):
+        for event in client.run_streaming_agent(
+            "agent_1", body=AgentRunStreamRequest(input="hi")
+        ):
+            seen.append(event)
+    assert seen == [("done", {"raw": '{"run_id": "r",'})]
+
+
+@pytest.mark.asyncio
+async def test_async_run_streaming_agent_raises_after_a_done_cut_short() -> None:
+    seen: list[tuple[str, dict[str, Any]]] = []
+    async with _async_client(_AsyncCutInsideDone()) as client:
+        with pytest.raises(httpx.ReadError):
+            async for event in client.run_streaming_agent(
+                "agent_1", body=AgentRunStreamRequest(input="hi")
+            ):
+                seen.append(event)
+    assert seen == [("done", {"raw": '{"run_id": "r",'})]
+
+
+# A field value loses exactly one leading space, as the SSE format says.
+
+_INDENTED = b"event: stream_token\ndata: def f():\ndata:     return 1\ndata:x\n\n"
+
+
+def test_run_streaming_agent_keeps_the_indentation_of_text_data() -> None:
+    client = _sync_client(_INDENTED)
+    events = list(
+        client.run_streaming_agent("agent_1", body=AgentRunStreamRequest(input="hi"))
+    )
+    assert events == [("stream_token", {"raw": "def f():\n    return 1\nx"})]
+
+
+@pytest.mark.asyncio
+async def test_async_run_streaming_agent_keeps_the_indentation_of_text_data() -> None:
+    async with _async_client(_INDENTED) as client:
+        events = [
+            e
+            async for e in client.run_streaming_agent(
+                "agent_1", body=AgentRunStreamRequest(input="hi")
+            )
+        ]
+    assert events == [("stream_token", {"raw": "def f():\n    return 1\nx"})]
+
+
+# Event names are trimmed on both sides, as released.
+
+_DONE_WITH_TRAILING_SPACE = (
+    b"event: done \ndata: "
+    + json.dumps(_agent_run_payload("completed", output="ok")).encode()
+    + b"\n\n"
+)
+
+
+def test_streaming_methods_trim_trailing_whitespace_from_event_names() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    client = _sync_client(_DONE_WITH_TRAILING_SPACE)
+    assert [n for n, _ in client.run_streaming_agent("agent_1", body=body)] == ["done"]
+    res = client.run_streaming_agent_and_wait(
+        "agent_1", body=body, raise_on_incomplete=True
+    )
+    assert res.output == "ok"
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_methods_trim_trailing_whitespace_from_event_names() -> (
+    None
+):
+    body = AgentRunStreamRequest(input="hi")
+    async with _async_client(_DONE_WITH_TRAILING_SPACE) as client:
+        names = [n async for n, _ in client.run_streaming_agent("agent_1", body=body)]
+        res = await client.run_streaming_agent_and_wait(
+            "agent_1", body=body, raise_on_incomplete=True
+        )
+    assert names == ["done"]
+    assert res.output == "ok"
