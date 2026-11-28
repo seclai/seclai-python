@@ -6421,7 +6421,9 @@ class Seclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
-            timeout: Max time (seconds) to wait. Defaults to this client's timeout.
+            timeout: Max time (seconds) to wait on the stream. Time you spend
+                handling a yielded event does not count. Defaults to this
+                client's timeout.
             headers: Optional extra headers.
 
         Yields:
@@ -11577,7 +11579,9 @@ class AsyncSeclai(_SeclaiBase):
         Args:
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
-            timeout: Max time (seconds) to wait. Defaults to this client's timeout.
+            timeout: Max time (seconds) to wait on the stream. Time you spend
+                handling a yielded event does not count. Defaults to this
+                client's timeout.
             headers: Optional extra headers.
 
         Yields:

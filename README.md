@@ -74,7 +74,7 @@ asyncio.run(main())
 | `config_dir` | `SECLAI_CONFIG_DIR` | `~/.seclai` |
 | `auto_refresh` | — | `True` |
 | `account_id` | — | — |
-| `timeout` | — | `30.0` (seconds), or the supplied `http_client`'s timeout; no limit for `upload_file_to_source()` and `upload_file_to_content()`; 30 s for `run_streaming_agent()` and `run_streaming_agent_and_wait()`, also with an `http_client` |
+| `timeout` | — | `30.0` (seconds), or the supplied `http_client`'s timeout; no limit for `upload_file_to_source()` and `upload_file_to_content()`; 30 s for `run_streaming_agent()` and `run_streaming_agent_and_wait()`, also with an `http_client`, counting time spent waiting on the stream, not time spent handling yielded events |
 | `api_key_header` | — | `x-api-key` |
 | `default_headers` | — | `None` |
 | `http_client` | — | `None` (auto-created `httpx.Client`) |
@@ -428,6 +428,9 @@ for event_type, data in client.run_streaming_agent(
 ):
     print(event_type, data)
 ```
+
+Its `timeout` counts time spent waiting on the stream, not time your loop
+spends handling the events it yields.
 
 Set `include_reasoning=True` in the request to also receive `stream_reasoning`
 events with the model's reasoning, for a `prompt_call` whose `run_result`

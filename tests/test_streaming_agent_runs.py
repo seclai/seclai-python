@@ -1765,3 +1765,48 @@ async def test_async_run_streaming_agent_yields_a_token_cut_at_the_grace() -> No
             ):
                 seen.append(event)
     assert seen == [("stream_token", {"raw": "hello"})]
+
+
+# A `done` line still stopped mid-JSON when the grace runs out: the wait
+# helper times out, and the iterator yields it as `{"raw": ...}` then raises.
+
+_DONE_CUT_PAST_THE_GRACE: tuple[bytes | float, ...] = (
+    _INIT + b"event: done\n" + _DONE_LINE[:10],
+    0.15,
+    _DONE_LINE[10:20],
+    0.15,
+    _DONE_LINE[20:30],
+    0.15,  # 0.45s: past the 0.2s deadline plus 0.2s grace
+    _DONE_LINE[30:40],
+)
+
+
+def test_streaming_methods_time_out_on_a_done_cut_past_the_grace() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    client = _sync_client(_Chunks(*_DONE_CUT_PAST_THE_GRACE))
+    with pytest.raises(SeclaiStreamingError, match="Timed out"):
+        client.run_streaming_agent_and_wait("agent_1", body=body, timeout=0.2)
+    client = _sync_client(_Chunks(*_DONE_CUT_PAST_THE_GRACE))
+    seen: list[tuple[str, dict[str, Any]]] = []
+    with pytest.raises(SeclaiError, match="Timed out"):
+        for event in client.run_streaming_agent("agent_1", body=body, timeout=0.2):
+            seen.append(event)
+    assert [name for name, _ in seen] == ["init", "done"]
+    assert seen[-1][1] == {"raw": _DONE_LINE[len(b"data: ") : 40].decode()}
+
+
+@pytest.mark.asyncio
+async def test_async_streaming_methods_time_out_on_a_done_cut_past_the_grace() -> None:
+    body = AgentRunStreamRequest(input="hi")
+    async with _async_client(_AsyncChunks(*_DONE_CUT_PAST_THE_GRACE)) as client:
+        with pytest.raises(SeclaiStreamingError, match="Timed out"):
+            await client.run_streaming_agent_and_wait("agent_1", body=body, timeout=0.2)
+    seen: list[tuple[str, dict[str, Any]]] = []
+    async with _async_client(_AsyncChunks(*_DONE_CUT_PAST_THE_GRACE)) as client:
+        with pytest.raises(SeclaiError, match="Timed out"):
+            async for event in client.run_streaming_agent(
+                "agent_1", body=body, timeout=0.2
+            ):
+                seen.append(event)
+    assert [name for name, _ in seen] == ["init", "done"]
+    assert seen[-1][1] == {"raw": _DONE_LINE[len(b"data: ") : 40].decode()}
