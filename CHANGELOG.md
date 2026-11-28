@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.11.1] - 2026-11-27
+
+### Changed
+
+- Time out `run_agent()`, `list_agent_runs()`, `get_agent_run()`, `delete_agent_run()`, `list_sources()`, `get_content_detail()`, `delete_content()` and `list_content_embeddings()` when no `timeout` is passed to `Seclai(...)` or `AsyncSeclai(...)`, as most other methods do: after 30 seconds on the client the SDK builds, or after the timeout of a supplied `http_client`. They waited without limit. A `timeout` passed to the constructor still applies to them. `upload_file_to_source()` and `upload_file_to_content()` still wait without limit unless one is passed
+- Stop `run_streaming_agent()` after a `done` event whose data decoded, as the server closes the stream after it; after a `done` whose data is not JSON it keeps reading. 1.11.0 read until the server closed the stream
+
+### Fixed
+
+- Apply a `timeout` passed to `Seclai(...)` or `AsyncSeclai(...)` to every method when an `http_client` is supplied. `request()`, the methods built on it, `upload_agent_input()`, `download_agent_run_attachment()`, `download_content_attachment()` and `download_source_export()` used the supplied client's own timeout instead
+- Raise `SeclaiStreamingError` from `run_streaming_agent_and_wait()` when the server sends an `error` event, with the server's error text in the message and the latest snapshot in `run`, and when it sends a `timeout` event, with the latest snapshot in `run`. By default it returned the unfinished snapshot with no error, so a run that failed on the server came back looking like an unfinished success; with `raise_on_incomplete=True` it raised a generic error without the server's message
+- Return the `done` run from `run_streaming_agent_and_wait()`, or with `return_on_result=True` the `result` one, when its lines were read before the connection was cut, rather than raising the `httpx` error. `run_streaming_agent()` likewise yields the event read so far at a cut (a cut JSON object shows as `{"raw": ...}`), then raises the error unless that event was a `done` whose data decoded
+- Read a plain JSON reply to a streaming run as the run: `run_streaming_agent()` yields it as one `done` event, and `run_streaming_agent_and_wait()` returns it, or, with `raise_on_incomplete=True` and a run that has not finished (nor, with `return_on_result`, reported its result), raises `SeclaiStreamingError` with it in `run`. `run_streaming_agent()` yielded nothing, and `run_streaming_agent_and_wait()` raised `SeclaiStreamingError` with no snapshot
+- Put the server's error text in the message of the `SeclaiStreamingError` that `run_streaming_agent()` raises for an `error` event, rather than the event's raw JSON data
+- Check the `timeout` of `run_streaming_agent()` and `run_streaming_agent_and_wait()` when a chunk arrives, so an event that has begun arriving, including one in the first chunk after the `timeout`, is read on, and the first chunk that arrives more than one more `timeout` past the deadline is the last one read; each read can wait up to `timeout`. They stopped at the first line read after it passed, which dropped an event arriving then: `run_streaming_agent_and_wait()` could raise `SeclaiStreamingError` for a run whose `done` was arriving. When the timeout passes, `run_streaming_agent()` yields the event read so far (a cut JSON object shows as `{"raw": ...}`), then raises `SeclaiError` unless that event was a `done` whose data decoded. Time the caller spends handling a yielded event does not count against the timeout ([#23](https://github.com/seclai/seclai-python/issues/23))
+- Keep any line break but CR, LF and CRLF (such as U+2028, U+2029, U+0085, `\x0b`, `\x0c` and `\x1c` to `\x1e`) inside an SSE data line from `run_streaming_agent()` and `run_streaming_agent_and_wait()`; only CR, LF and CRLF end a line. The stream was split at them, so an event whose data held one was cut short: `run_streaming_agent()` yielded it as `{"raw": ...}` and `run_streaming_agent_and_wait()` ignored it
+- Strip exactly one space after the colon of an SSE data line in `run_streaming_agent()` and `run_streaming_agent_and_wait()`, as the SSE format does, rather than all leading whitespace, so an indented line of a text payload keeps its indentation
+- Read a data line that arrived in full but without its line ending when the connection is then cut or the `timeout` passes, in `run_streaming_agent()` and `run_streaming_agent_and_wait()`. A `done` sent that way was dropped: `run_streaming_agent_and_wait()` raised the transport error instead of returning the run
+- Skip a byte order mark (U+FEFF) opening the stream, and read a `data` or `event` line with no colon as that field with an empty value, in `run_streaming_agent()` and `run_streaming_agent_and_wait()`, as the SSE format says. A byte order mark hid the first event
+- Stream without a time limit from `run_streaming_agent()` and `run_streaming_agent_and_wait()` on a client built with `timeout=None`, unless the call passes its own `timeout`. They raised `TypeError`
+
 ## [1.11.0] - 2026-11-27
 
 ### Changed
@@ -304,6 +325,7 @@ _Stable release. Packaging, CI, and documentation deployment only; no API change
 
 _Initial release._
 
+[1.11.1]: https://github.com/seclai/seclai-python/releases/tag/1.11.1
 [1.11.0]: https://github.com/seclai/seclai-python/releases/tag/1.11.0
 [1.10.0]: https://github.com/seclai/seclai-python/releases/tag/1.10.0
 [1.9.0]: https://github.com/seclai/seclai-python/releases/tag/1.9.0
