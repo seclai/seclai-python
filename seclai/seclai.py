@@ -1722,12 +1722,12 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait for the final result
-                (client-side), checked when a chunk arrives. An event that has
-                begun arriving is read on until a chunk arrives more than one
-                more ``timeout`` past it, which ends the call mid-event; each
-                read can wait up to ``timeout``. Defaults to the ``timeout``
-                passed to the constructor, else 30 seconds (also with an
-                ``http_client``).
+                (client-side), checked when a chunk arrives. An event in
+                progress when the timeout passes is read on until a chunk
+                arrives more than one more ``timeout`` past the deadline, which
+                ends the call mid-event; each read can wait up to ``timeout``.
+                Defaults to the ``timeout`` passed to the constructor, else 30
+                seconds (also with an ``http_client``).
             headers: Optional extra headers for this request.
             return_on_result: Return the ``result`` snapshot as soon as it
                 arrives, without waiting for ``done``. That run may still be
@@ -6427,12 +6427,12 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait on the stream, checked when a
-                chunk arrives. An event that has begun arriving is read on
-                until a chunk arrives more than one more ``timeout`` past it,
-                which ends the call mid-event; each read can wait up to
-                ``timeout``. Time you spend handling a yielded event does not
-                count. Defaults to the ``timeout`` passed to the constructor,
-                else 30 seconds (also with an ``http_client``).
+                chunk arrives. An event in progress when the timeout passes is
+                read on until a chunk arrives more than one more ``timeout``
+                past the deadline, which ends the call mid-event; each read can
+                wait up to ``timeout``. Time you spend handling a yielded event
+                does not count. Defaults to the ``timeout`` passed to the
+                constructor, else 30 seconds (also with an ``http_client``).
             headers: Optional extra headers.
 
         Yields:
@@ -6822,12 +6822,12 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait for the final result
-                (client-side), checked when a chunk arrives. An event that has
-                begun arriving is read on until a chunk arrives more than one
-                more ``timeout`` past it, which ends the call mid-event; each
-                read can wait up to ``timeout``. Defaults to the ``timeout``
-                passed to the constructor, else 30 seconds (also with an
-                ``http_client``).
+                (client-side), checked when a chunk arrives. An event in
+                progress when the timeout passes is read on until a chunk
+                arrives more than one more ``timeout`` past the deadline, which
+                ends the call mid-event; each read can wait up to ``timeout``.
+                Defaults to the ``timeout`` passed to the constructor, else 30
+                seconds (also with an ``http_client``).
             headers: Optional extra headers for this request.
             return_on_result: Return the ``result`` snapshot as soon as it
                 arrives, without waiting for ``done``. That run may still be
@@ -11594,12 +11594,12 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait on the stream, checked when a
-                chunk arrives. An event that has begun arriving is read on
-                until a chunk arrives more than one more ``timeout`` past it,
-                which ends the call mid-event; each read can wait up to
-                ``timeout``. Time you spend handling a yielded event does not
-                count. Defaults to the ``timeout`` passed to the constructor,
-                else 30 seconds (also with an ``http_client``).
+                chunk arrives. An event in progress when the timeout passes is
+                read on until a chunk arrives more than one more ``timeout``
+                past the deadline, which ends the call mid-event; each read can
+                wait up to ``timeout``. Time you spend handling a yielded event
+                does not count. Defaults to the ``timeout`` passed to the
+                constructor, else 30 seconds (also with an ``http_client``).
             headers: Optional extra headers.
 
         Yields:

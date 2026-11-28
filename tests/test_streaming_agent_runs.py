@@ -345,8 +345,8 @@ class _AsyncDoneSpanningTheDeadline(httpx.AsyncByteStream):
         yield b"\n"
 
 
-# The deadline is checked only between events: an event that began before it
-# is read to its end.
+# The deadline is checked when a chunk arrives: an event in progress when it
+# passes is read on, up to one more timeout past it.
 
 
 def test_run_streaming_agent_and_wait_finishes_an_event_begun_before_the_deadline() -> (
