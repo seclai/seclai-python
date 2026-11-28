@@ -1349,7 +1349,7 @@ async def test_async_streaming_methods_keep_unicode_line_separators_in_data() ->
     assert events == [("done", _agent_run_payload("completed", output=_ODD_OUTPUT))]
 
 
-# An event that never ends extends the call by at most one more `timeout`.
+# An event that never ends is read on for at most one more `timeout` (plus one read).
 
 
 class _NeverEndingEvent(httpx.SyncByteStream):

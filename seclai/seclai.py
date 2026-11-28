@@ -1722,10 +1722,11 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait for the final result
-                (client-side), checked between events: an event already
-                arriving may run up to one more ``timeout`` past it, and each
-                read is also bounded by ``timeout``. Defaults to this client's
-                configured timeout.
+                (client-side), checked between events: an event that has
+                begun arriving when it is checked is read on for up to one
+                more ``timeout``, and as each read can wait up to ``timeout``,
+                the call can end up to about two ``timeout`` past it. Defaults
+                to this client's configured timeout.
             headers: Optional extra headers for this request.
             return_on_result: Return the ``result`` snapshot as soon as it
                 arrives, without waiting for ``done``. That run may still be
@@ -6425,10 +6426,11 @@ class Seclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait on the stream, checked between
-                events: an event already arriving may run up to one more
-                ``timeout`` past it, and each read is also bounded by
-                ``timeout``. Time you spend handling a yielded event does not
-                count. Defaults to this client's timeout.
+                events: an event that has begun arriving when it is checked
+                is read on for up to one more ``timeout``, and as each read
+                can wait up to ``timeout``, the call can end up to about two
+                ``timeout`` past it. Time you spend handling a yielded event
+                does not count. Defaults to this client's timeout.
             headers: Optional extra headers.
 
         Yields:
@@ -6818,10 +6820,11 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait for the final result
-                (client-side), checked between events: an event already
-                arriving may run up to one more ``timeout`` past it, and each
-                read is also bounded by ``timeout``. Defaults to this client's
-                configured timeout.
+                (client-side), checked between events: an event that has
+                begun arriving when it is checked is read on for up to one
+                more ``timeout``, and as each read can wait up to ``timeout``,
+                the call can end up to about two ``timeout`` past it. Defaults
+                to this client's configured timeout.
             headers: Optional extra headers for this request.
             return_on_result: Return the ``result`` snapshot as soon as it
                 arrives, without waiting for ``done``. That run may still be
@@ -11588,10 +11591,11 @@ class AsyncSeclai(_SeclaiBase):
             agent_id: Agent identifier.
             body: Streaming agent run request payload.
             timeout: Time (seconds) to wait on the stream, checked between
-                events: an event already arriving may run up to one more
-                ``timeout`` past it, and each read is also bounded by
-                ``timeout``. Time you spend handling a yielded event does not
-                count. Defaults to this client's timeout.
+                events: an event that has begun arriving when it is checked
+                is read on for up to one more ``timeout``, and as each read
+                can wait up to ``timeout``, the call can end up to about two
+                ``timeout`` past it. Time you spend handling a yielded event
+                does not count. Defaults to this client's timeout.
             headers: Optional extra headers.
 
         Yields:
