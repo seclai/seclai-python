@@ -330,18 +330,18 @@ _DONE_DATA = f"data: {json.dumps(_agent_run_payload('completed', output='final')
 class _DoneSpanningTheDeadline(httpx.SyncByteStream):
     def __iter__(self) -> Any:
         yield _INIT_AND_RESULT + b"event: done\n"
-        time.sleep(0.15)  # past the 0.05s deadline
-        yield _DONE_DATA.encode()
         time.sleep(0.15)
+        yield _DONE_DATA.encode()
+        time.sleep(0.15)  # past the 0.2s deadline
         yield b"\n"
 
 
 class _AsyncDoneSpanningTheDeadline(httpx.AsyncByteStream):
     async def __aiter__(self) -> Any:
         yield _INIT_AND_RESULT + b"event: done\n"
-        await asyncio.sleep(0.15)  # past the 0.05s deadline
-        yield _DONE_DATA.encode()
         await asyncio.sleep(0.15)
+        yield _DONE_DATA.encode()
+        await asyncio.sleep(0.15)  # past the 0.2s deadline
         yield b"\n"
 
 
@@ -355,7 +355,7 @@ def test_run_streaming_agent_and_wait_finishes_an_event_begun_before_the_deadlin
     client = _sync_client(_DoneSpanningTheDeadline())
     start = time.monotonic()
     res = client.run_streaming_agent_and_wait(
-        "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+        "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
     )
     assert time.monotonic() - start < 0.6
     assert res.status == "completed"
@@ -369,7 +369,7 @@ async def test_async_run_streaming_agent_and_wait_finishes_an_event_begun_before
     async with _async_client(_AsyncDoneSpanningTheDeadline()) as client:
         start = time.monotonic()
         res = await client.run_streaming_agent_and_wait(
-            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
         )
     assert time.monotonic() - start < 0.6
     assert res.status == "completed"
@@ -930,16 +930,20 @@ _RESULT_DATA = f"data: {json.dumps(_reported('processing'))}\n".encode()
 class _ResultSpanningTheDeadline(httpx.SyncByteStream):
     def __iter__(self) -> Any:
         yield _INIT + b"event: result\n"
-        time.sleep(0.15)  # past the 0.05s deadline
-        yield _RESULT_DATA + b"\n"
+        time.sleep(0.15)
+        yield _RESULT_DATA
+        time.sleep(0.15)  # past the 0.2s deadline
+        yield b"\n"
         time.sleep(1.0)
 
 
 class _AsyncResultSpanningTheDeadline(httpx.AsyncByteStream):
     async def __aiter__(self) -> Any:
         yield _INIT + b"event: result\n"
-        await asyncio.sleep(0.15)  # past the 0.05s deadline
-        yield _RESULT_DATA + b"\n"
+        await asyncio.sleep(0.15)
+        yield _RESULT_DATA
+        await asyncio.sleep(0.15)  # past the 0.2s deadline
+        yield b"\n"
         await asyncio.sleep(1.0)
 
 
@@ -948,7 +952,7 @@ def test_run_streaming_agent_yields_the_event_read_when_the_deadline_passes() ->
     names: list[str] = []
     with pytest.raises(SeclaiError, match="Timed out"):
         for name, _ in client.run_streaming_agent(
-            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
         ):
             names.append(name)
     assert names == ["init", "result"]
@@ -962,7 +966,7 @@ async def test_async_run_streaming_agent_yields_the_event_read_when_the_deadline
     async with _async_client(_AsyncResultSpanningTheDeadline()) as client:
         with pytest.raises(SeclaiError, match="Timed out"):
             async for name, _ in client.run_streaming_agent(
-                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
             ):
                 names.append(name)
     assert names == ["init", "result"]
@@ -1017,14 +1021,18 @@ async def test_async_run_streaming_agent_still_yields_a_timeout_event() -> None:
 class _DoneClosedAfterTheDeadline(httpx.SyncByteStream):
     def __iter__(self) -> Any:
         yield _INIT + b"event: done\n" + _DONE_DATA.encode()
-        time.sleep(0.15)  # past the 0.05s deadline
+        time.sleep(0.15)
+        yield b": keepalive\n"
+        time.sleep(0.15)  # past the 0.2s deadline
         yield b"\n"
 
 
 class _AsyncDoneClosedAfterTheDeadline(httpx.AsyncByteStream):
     async def __aiter__(self) -> Any:
         yield _INIT + b"event: done\n" + _DONE_DATA.encode()
-        await asyncio.sleep(0.15)  # past the 0.05s deadline
+        await asyncio.sleep(0.15)
+        yield b": keepalive\n"
+        await asyncio.sleep(0.15)  # past the 0.2s deadline
         yield b"\n"
 
 
@@ -1033,7 +1041,7 @@ def test_run_streaming_agent_does_not_time_out_after_done() -> None:
     names = [
         name
         for name, _ in client.run_streaming_agent(
-            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
         )
     ]
     assert names == ["init", "done"]
@@ -1045,7 +1053,7 @@ async def test_async_run_streaming_agent_does_not_time_out_after_done() -> None:
         names = [
             name
             async for name, _ in client.run_streaming_agent(
-                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
             )
         ]
     assert names == ["init", "done"]
@@ -1123,21 +1131,25 @@ _WHOLE_DONE = b"id: 2\n" + _sse(
 class _DoneWholeAfterTheDeadline(httpx.SyncByteStream):
     def __iter__(self) -> Any:
         yield b"id: 1\n" + _INIT
-        time.sleep(0.15)  # past the 0.05s deadline
+        time.sleep(0.15)
+        yield b": keepalive\n\n"
+        time.sleep(0.15)  # past the 0.2s deadline
         yield _WHOLE_DONE
 
 
 class _AsyncDoneWholeAfterTheDeadline(httpx.AsyncByteStream):
     async def __aiter__(self) -> Any:
         yield b"id: 1\n" + _INIT
-        await asyncio.sleep(0.15)  # past the 0.05s deadline
+        await asyncio.sleep(0.15)
+        yield b": keepalive\n\n"
+        await asyncio.sleep(0.15)  # past the 0.2s deadline
         yield _WHOLE_DONE
 
 
 def test_run_streaming_agent_and_wait_reads_an_event_arriving_whole_late() -> None:
     client = _sync_client(_DoneWholeAfterTheDeadline())
     res = client.run_streaming_agent_and_wait(
-        "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+        "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
     )
     assert res.status == "completed"
     assert res.output == "final"
@@ -1149,7 +1161,7 @@ async def test_async_run_streaming_agent_and_wait_reads_an_event_arriving_whole_
 ):
     async with _async_client(_AsyncDoneWholeAfterTheDeadline()) as client:
         res = await client.run_streaming_agent_and_wait(
-            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
         )
     assert res.status == "completed"
 
@@ -1159,7 +1171,7 @@ def test_run_streaming_agent_reads_an_event_arriving_whole_late() -> None:
     names = [
         name
         for name, _ in client.run_streaming_agent(
-            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
         )
     ]
     assert names == ["init", "done"]
@@ -1171,7 +1183,7 @@ async def test_async_run_streaming_agent_reads_an_event_arriving_whole_late() ->
         names = [
             name
             async for name, _ in client.run_streaming_agent(
-                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.05
+                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
             )
         ]
     assert names == ["init", "done"]
@@ -1243,7 +1255,9 @@ _BIG_DONE_CHUNKS = [_BIG_DONE[i : i + 65_536] for i in range(0, len(_BIG_DONE), 
 class _BigDoneAfterTheDeadline(httpx.SyncByteStream):
     def __iter__(self) -> Any:
         yield _INIT
-        time.sleep(0.25)  # past the 0.2s deadline, before the 0.4s cap
+        time.sleep(0.15)
+        yield b": keepalive\n\n"
+        time.sleep(0.15)  # past the 0.2s deadline, before its 0.2s grace runs out
         for chunk in _BIG_DONE_CHUNKS:
             yield chunk
             time.sleep(0.01)
@@ -1252,7 +1266,11 @@ class _BigDoneAfterTheDeadline(httpx.SyncByteStream):
 class _AsyncBigDoneAfterTheDeadline(httpx.AsyncByteStream):
     async def __aiter__(self) -> Any:
         yield _INIT
-        await asyncio.sleep(0.25)  # past the 0.2s deadline, before the 0.4s cap
+        await asyncio.sleep(0.15)
+        yield b": keepalive\n\n"
+        await asyncio.sleep(
+            0.15
+        )  # past the 0.2s deadline, before its 0.2s grace runs out
         for chunk in _BIG_DONE_CHUNKS:
             yield chunk
             await asyncio.sleep(0.01)
@@ -1596,58 +1614,154 @@ async def test_async_streaming_methods_keep_a_done_line_cut_by_a_read_timeout() 
     assert names == ["done"]
 
 
-# Past the deadline's grace, the unfinished line is not read: it is
-# incomplete by construction.
+# The transports below keep every gap between chunks shorter than the call's
+# `timeout`, which is also httpx's read timeout, so a real connection would
+# deliver them the same way.
 
 
-class _UnfinishedLinePastTheCap(httpx.SyncByteStream):
-    def __init__(self, head: bytes, tail: bytes) -> None:
-        self.head, self.tail = head, tail
+class _Chunks(httpx.SyncByteStream):
+    def __init__(self, *steps: bytes | float) -> None:
+        self.steps = steps
 
     def __iter__(self) -> Any:
-        yield self.head
-        time.sleep(0.25)  # past the 0.1s deadline plus 0.1s grace
-        yield self.tail  # the line still has no LF
-        time.sleep(1.0)
+        for step in self.steps:
+            if isinstance(step, float):
+                time.sleep(step)
+            else:
+                yield step
 
 
-class _AsyncUnfinishedLinePastTheCap(httpx.AsyncByteStream):
-    def __init__(self, head: bytes, tail: bytes) -> None:
-        self.head, self.tail = head, tail
+class _AsyncChunks(httpx.AsyncByteStream):
+    def __init__(self, *steps: bytes | float) -> None:
+        self.steps = steps
 
     async def __aiter__(self) -> Any:
-        yield self.head
-        await asyncio.sleep(0.25)
-        yield self.tail
-        await asyncio.sleep(1.0)
+        for step in self.steps:
+            if isinstance(step, float):
+                await asyncio.sleep(step)
+            else:
+                yield step
 
 
-_TOKEN_HEAD = b"event: stream_token\ndata: hel"
-_DONE_HEAD = _DONE_WITHOUT_LF  # complete JSON, but its line is unfinished
+# (a) A `done` whose last bytes arrive past the grace, with no final LF, then
+# a clean close: the line read so far is fed in and the run returned.
+
+_DONE_LINE = (
+    b"data: " + json.dumps(_agent_run_payload("completed", output="ok")).encode()
+)
+_DONE_PAST_THE_GRACE: tuple[bytes | float, ...] = (
+    _INIT + b"event: done\n" + _DONE_LINE[:20],
+    0.15,
+    _DONE_LINE[20:40],
+    0.15,
+    _DONE_LINE[40:60],
+    0.15,  # 0.45s: past the 0.2s deadline plus 0.2s grace
+    _DONE_LINE[60:],
+)
 
 
-def test_streaming_methods_drop_an_unfinished_line_past_the_cap() -> None:
+def test_streaming_methods_return_a_done_ending_past_the_grace_without_lf() -> None:
     body = AgentRunStreamRequest(input="hi")
-    client = _sync_client(_UnfinishedLinePastTheCap(_TOKEN_HEAD, b"lo"))
-    seen: list[tuple[str, dict[str, Any]]] = []
-    with pytest.raises(SeclaiError, match="Timed out"):
-        for event in client.run_streaming_agent("agent_1", body=body, timeout=0.1):
-            seen.append(event)
-    assert seen == []
-    client = _sync_client(_UnfinishedLinePastTheCap(_DONE_HEAD, b" "))
-    with pytest.raises(SeclaiStreamingError, match="Timed out"):
-        client.run_streaming_agent_and_wait("agent_1", body=body, timeout=0.1)
+    client = _sync_client(_Chunks(*_DONE_PAST_THE_GRACE))
+    res = client.run_streaming_agent_and_wait("agent_1", body=body, timeout=0.2)
+    assert res.output == "ok"
+    client = _sync_client(_Chunks(*_DONE_PAST_THE_GRACE))
+    names = [
+        n for n, _ in client.run_streaming_agent("agent_1", body=body, timeout=0.2)
+    ]
+    assert names == ["init", "done"]
 
 
 @pytest.mark.asyncio
-async def test_async_streaming_methods_drop_an_unfinished_line_past_the_cap() -> None:
+async def test_async_streaming_methods_return_a_done_ending_past_the_grace_without_lf() -> (
+    None
+):
     body = AgentRunStreamRequest(input="hi")
+    async with _async_client(_AsyncChunks(*_DONE_PAST_THE_GRACE)) as client:
+        res = await client.run_streaming_agent_and_wait(
+            "agent_1", body=body, timeout=0.2
+        )
+    async with _async_client(_AsyncChunks(*_DONE_PAST_THE_GRACE)) as client:
+        names = [
+            n
+            async for n, _ in client.run_streaming_agent(
+                "agent_1", body=body, timeout=0.2
+            )
+        ]
+    assert res.output == "ok"
+    assert names == ["init", "done"]
+
+
+# (b) Time the caller holds `init` does not count, also for a `done` split
+# across chunks that follows it.
+
+_DONE_EVENT_BYTES = _sse(("done", _agent_run_payload("completed", output="ok")))
+_SLOW_CALLER_STREAM: tuple[bytes | float, ...] = (
+    _INIT,
+    _DONE_EVENT_BYTES[:30],
+    _DONE_EVENT_BYTES[30:],
+)
+
+
+def test_run_streaming_agent_ignores_a_slow_caller_before_a_split_done() -> None:
+    client = _sync_client(_Chunks(*_SLOW_CALLER_STREAM))
+    names: list[str] = []
+    for name, _ in client.run_streaming_agent(
+        "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
+    ):
+        names.append(name)
+        if name == "init":
+            time.sleep(0.5)  # past the deadline plus its grace
+    assert names == ["init", "done"]
+
+
+@pytest.mark.asyncio
+async def test_async_run_streaming_agent_ignores_a_slow_caller_before_a_split_done() -> (
+    None
+):
+    names: list[str] = []
+    async with _async_client(_AsyncChunks(*_SLOW_CALLER_STREAM)) as client:
+        async for name, _ in client.run_streaming_agent(
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
+        ):
+            names.append(name)
+            if name == "init":
+                await asyncio.sleep(0.5)
+    assert names == ["init", "done"]
+
+
+# (c) A text token still unfinished when the grace runs out is yielded as
+# what was read, then the timeout raised.
+
+_CUT_TOKEN: tuple[bytes | float, ...] = (
+    b"event: stream_token\ndata: he",
+    0.15,
+    b"l",
+    0.15,
+    b"l",
+    0.15,  # 0.45s: past the 0.2s deadline plus 0.2s grace
+    b"o",
+)
+
+
+def test_run_streaming_agent_yields_a_token_cut_at_the_grace() -> None:
+    client = _sync_client(_Chunks(*_CUT_TOKEN))
     seen: list[tuple[str, dict[str, Any]]] = []
-    async with _async_client(_AsyncUnfinishedLinePastTheCap(_TOKEN_HEAD, b"lo")) as c:
+    with pytest.raises(SeclaiError, match="Timed out"):
+        for event in client.run_streaming_agent(
+            "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
+        ):
+            seen.append(event)
+    assert seen == [("stream_token", {"raw": "hello"})]
+
+
+@pytest.mark.asyncio
+async def test_async_run_streaming_agent_yields_a_token_cut_at_the_grace() -> None:
+    seen: list[tuple[str, dict[str, Any]]] = []
+    async with _async_client(_AsyncChunks(*_CUT_TOKEN)) as client:
         with pytest.raises(SeclaiError, match="Timed out"):
-            async for event in c.run_streaming_agent("agent_1", body=body, timeout=0.1):
+            async for event in client.run_streaming_agent(
+                "agent_1", body=AgentRunStreamRequest(input="hi"), timeout=0.2
+            ):
                 seen.append(event)
-    assert seen == []
-    async with _async_client(_AsyncUnfinishedLinePastTheCap(_DONE_HEAD, b" ")) as c:
-        with pytest.raises(SeclaiStreamingError, match="Timed out"):
-            await c.run_streaming_agent_and_wait("agent_1", body=body, timeout=0.1)
+    assert seen == [("stream_token", {"raw": "hello"})]

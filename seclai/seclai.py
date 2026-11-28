@@ -468,19 +468,25 @@ def _iter_stream_events(
 
     A plain JSON reply is one ``done`` event carrying the run (the wait helper
     reads one that has neither finished nor, with ``return_on_result``,
-    reported its result as a snapshot). The deadline (a
-    ``time.monotonic()`` value) is checked after each chunk of the body is
-    handled, against the time that chunk arrived, and only at an event
-    boundary: no partial line is buffered and no event has begun (after a
-    dispatched event or a comment such as a keepalive, or before any line).
-    Passing it there raises :class:`_StreamDeadline`. So an event that has
-    begun arriving, including in the first chunk after the deadline, is read
-    to its end; one that starts after a chunk that ended at a boundary past
-    the deadline is not read. An event in progress extends the read by at
-    most ``grace`` (the call's timeout) past the deadline: after that the
-    deadline fires whatever the parser holds. An event whose closing blank
-    line never came is still yielded: at the end of the stream, and before a
-    transport error or :class:`_StreamDeadline` is raised.
+    reported its result as a snapshot).
+
+    The deadline (a ``time.monotonic()`` value) is checked after each chunk
+    of the body is handled, against the time that chunk arrived, and only at
+    an event boundary: no partial line is buffered and no event has begun
+    (after a dispatched event or a comment such as a keepalive, or before any
+    line). Passing it there raises :class:`_StreamDeadline`. So an event that
+    has begun arriving, including in the first chunk after the deadline, is
+    read to its end; one that starts after a chunk that ended at a boundary
+    past the deadline is not read. An event in progress extends the read by
+    at most ``grace`` (the call's timeout) past the deadline: after that the
+    deadline fires whatever the parser holds. Time the caller spends
+    handling a yielded event does not count: the clock stops from each yield
+    until the generator resumes.
+
+    At a transport error or the deadline, the event read so far, with the
+    line read so far, is yielded (a cut JSON object shows as
+    ``{"raw": ...}``), and the error is raised after it. At the end of the
+    stream an event whose closing blank line never came is yielded too.
     """
     if _is_json_reply(response):
         response.read()
@@ -488,15 +494,17 @@ def _iter_stream_events(
         return
     parser = _SseParser()
     lines = _LineSplitter()
+    held_total = 0.0  # seconds the caller has held yielded events
     try:
         for text in response.iter_text():
-            # Taken before yielding, so time the caller spends on the last
-            # event, after which nothing is read, does not count.
-            arrived = time.monotonic()
+            # The stream's own clock: time the caller holds an event is left out.
+            arrived = time.monotonic() - held_total
             for line in lines.decode(text):
                 event = parser.feed(line)
                 if event is not None:
+                    held = time.monotonic()
                     yield event
+                    held_total += time.monotonic() - held
             if arrived > deadline and (
                 (lines.empty and not parser.in_event)
                 or arrived > deadline + (grace or 0.0)
@@ -506,15 +514,11 @@ def _iter_stream_events(
             event = parser.feed(line)
             if event is not None:
                 yield event
-    except (httpx.TransportError, _StreamDeadline) as e:
-        # On a cut the line read so far counts too, as it may have arrived
-        # whole without its LF. A cut line of JSON data decodes to
-        # `{"raw": ...}` and one of other data is yielded as its text; the
-        # error is raised after either. Not at the deadline, which fires only
-        # after a chunk that left the line unfinished.
-        if isinstance(e, httpx.TransportError):
-            for line in lines.flush():
-                parser.feed(line)
+    except (httpx.TransportError, _StreamDeadline):
+        # The line read so far is fed in, and the event read so far yielded,
+        # before the error is raised.
+        for line in lines.flush():
+            parser.feed(line)
         event = parser.flush()
         if event is not None:
             yield event
@@ -534,17 +538,19 @@ async def _aiter_stream_events(
         return
     parser = _SseParser()
     lines = _LineSplitter()
+    held_total = 0.0  # seconds the caller has held yielded events
     # Closed here, not left to the event loop, when the caller stops early.
     chunks = cast(AsyncGenerator[str], response.aiter_text())
     try:
         async for text in chunks:
-            # Taken before yielding, so time the caller spends on the last
-            # event, after which nothing is read, does not count.
-            arrived = time.monotonic()
+            # The stream's own clock: time the caller holds an event is left out.
+            arrived = time.monotonic() - held_total
             for line in lines.decode(text):
                 event = parser.feed(line)
                 if event is not None:
+                    held = time.monotonic()
                     yield event
+                    held_total += time.monotonic() - held
             if arrived > deadline and (
                 (lines.empty and not parser.in_event)
                 or arrived > deadline + (grace or 0.0)
@@ -554,15 +560,11 @@ async def _aiter_stream_events(
             event = parser.feed(line)
             if event is not None:
                 yield event
-    except (httpx.TransportError, _StreamDeadline) as e:
-        # On a cut the line read so far counts too, as it may have arrived
-        # whole without its LF. A cut line of JSON data decodes to
-        # `{"raw": ...}` and one of other data is yielded as its text; the
-        # error is raised after either. Not at the deadline, which fires only
-        # after a chunk that left the line unfinished.
-        if isinstance(e, httpx.TransportError):
-            for line in lines.flush():
-                parser.feed(line)
+    except (httpx.TransportError, _StreamDeadline):
+        # The line read so far is fed in, and the event read so far yielded,
+        # before the error is raised.
+        for line in lines.flush():
+            parser.feed(line)
         event = parser.flush()
         if event is not None:
             yield event
